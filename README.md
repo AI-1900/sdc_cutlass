@@ -286,6 +286,28 @@ NVIDIA Blackwell GeForce RTX 50 series GPUs (SM120). As a result, kernels
 compiled for Blackwell SM100 architecture with arch conditional features
 (using `sm100a`) are not compatible with RTX 50 series GPUs.
 
+### Optional pseudo-architecture alias: `ecosda`
+
+For internal Blackwell-like platforms, CUTLASS can optionally map a pseudo
+architecture token `ecosda` to a concrete CUDA architecture target during
+CMake configure, so the rest of the build remains unchanged.
+
+```bash
+cmake .. \
+  -DCUTLASS_ENABLE_ECOSDA=ON \
+  -DCUTLASS_ECOSDA_BASE_ARCH=100a \
+  -DCUTLASS_NVCC_ARCHS=ecosda
+```
+
+You may also mix it with explicit architectures:
+
+```bash
+cmake .. \
+  -DCUTLASS_ENABLE_ECOSDA=ON \
+  -DCUTLASS_ECOSDA_BASE_ARCH=100a \
+  -DCUTLASS_NVCC_ARCHS="ecosda;90a"
+```
+
 Please refer to the [functionality documentation](https://docs.nvidia.com/cutlass/latest/media/docs/cpp/functionality.html)
 for details on which kernels require which target architectures.
 
