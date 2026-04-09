@@ -204,7 +204,27 @@ if (CUDA_VERSION VERSION_GREATER_EQUAL 13.0)
   list(APPEND CUTLASS_NVCC_ARCHS_SUPPORTED 110 110a)
 endif()
 
+# Optional pseudo-architecture alias for internal Blackwell-like platforms.
+# This keeps downstream CMake logic unchanged by rewriting `ecosda` to a real
+# CUTLASS CUDA architecture target before validation and target generation.
+set(CUTLASS_ENABLE_ECOSDA OFF CACHE BOOL "Enable pseudo architecture alias 'ecosda' for a Blackwell-like platform.")
+set(CUTLASS_ECOSDA_BASE_ARCH "100a" CACHE STRING "CUDA architecture backing the 'ecosda' alias.")
+set_property(CACHE CUTLASS_ECOSDA_BASE_ARCH PROPERTY STRINGS 100 100a 100f 103a 103f 120 120a 120f 121 121a 121f 110 110a 110f)
+
 set(CUTLASS_NVCC_ARCHS ${CUTLASS_NVCC_ARCHS_SUPPORTED} CACHE STRING "The SM architectures requested.")
+set(CUTLASS_NVCC_ARCHS_INPUT ${CUTLASS_NVCC_ARCHS})
+if (CUTLASS_ENABLE_ECOSDA)
+  if ("ecosda" IN_LIST CUTLASS_NVCC_ARCHS_INPUT)
+    list(REMOVE_ITEM CUTLASS_NVCC_ARCHS_INPUT "ecosda")
+    list(APPEND CUTLASS_NVCC_ARCHS_INPUT ${CUTLASS_ECOSDA_BASE_ARCH})
+    list(REMOVE_DUPLICATES CUTLASS_NVCC_ARCHS_INPUT)
+    set(CUTLASS_NVCC_ARCHS ${CUTLASS_NVCC_ARCHS_INPUT} CACHE STRING "The SM architectures requested." FORCE)
+    message(STATUS "CUTLASS ecosda alias enabled: mapping 'ecosda' -> '${CUTLASS_ECOSDA_BASE_ARCH}'")
+  else()
+    message(STATUS "CUTLASS ecosda alias enabled, but no 'ecosda' architecture was requested.")
+  endif()
+endif()
+
 set(CUTLASS_NVCC_ARCHS_ENABLED ${CUTLASS_NVCC_ARCHS} CACHE STRING "The SM architectures to build code for.")
 
 # Find unsupported and deprecated compute capabilities
@@ -1209,4 +1229,3 @@ install(
 ################################################################################
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/NvidiaCutlassPackageConfig.cmake)
-
