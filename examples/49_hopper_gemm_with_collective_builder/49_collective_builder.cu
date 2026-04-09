@@ -434,6 +434,22 @@ struct ExampleRunner {
 
     initialize(problem_size);
 
+    // --------------------------------------------------------------------------------------------
+    // MMA/TMA call-flow notes (for readers tuning Hopper GEMM):
+    //
+    //  1) Host constructs Gemm::Arguments (problem shape, pointers, strides, epilogue params).
+    //  2) CollectiveBuilder-selected MainloopScheduleType picks the data movement strategy.
+    //     - KernelTma* schedules opt into Hopper TMA global->shared movement.
+    //     - OpClassTensorOp implies Tensor Core math path (GMMA on SM90 collectives).
+    //  3) gemm_op.initialize(...) materializes kernel params/workspace.
+    //  4) gemm_op.run() launches GemmUniversal kernel.
+    //  5) Device mainloop pipelines TMA copies with GMMA (MMA) compute across K-tiles.
+    //  6) Epilogue schedule writes outputs (for TmaWarpSpecialized* schedules, epilogue can
+    //     also use TMA-oriented pathways depending on the selected collective).
+    //
+    // In this example, AlignmentA/B/C/D are 16-byte aligned for half precision tensors, which
+    // satisfies TMA-friendly alignment constraints used by SM90 collective builders.
+    // --------------------------------------------------------------------------------------------
     typename Gemm::Arguments arguments{
       cutlass::gemm::GemmUniversalMode::kGemm,
       problem_size,
