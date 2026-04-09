@@ -97,6 +97,21 @@ using namespace cute;
 /////////////////////////////////////////////////////////////////////////////////////////////////
 /// GEMM kernel configurations
 /////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// 【段落说明 1：这个 FP8 示例和 FP16 示例的差异】
+// 本文件重点演示 Blackwell FP8 GEMM 的“融合尾处理”能力：
+//  - 输入/输出数据是 FP8（e4m3）
+//  - 仍使用 float 进行累加与计算
+//  - epilogue 里融合了 per-tensor scaling、激活函数、Aux 输出以及 amax 统计
+// 这类融合路径是 FP8 训练/推理常见需求。
+//
+// 【段落说明 2：FusionOp 的定位】
+// FusionOp 通过 ScaledLinCombPerRowBiasEltActAmaxAux 把多个操作编织到同一个 epilogue：
+//  1) linear combination（alpha/beta）
+//  2) 激活（ReLU）
+//  3) 可选 aux 保存（激活前中间值）
+//  4) 可选 amax 统计（用于后续量化缩放）
+// 这样能减少独立 kernel 次数，降低带宽与 launch 开销。
 // A matrix configuration
 using ElementA            = cutlass::float_e4m3_t;                          // Element type for A matrix operand
 using LayoutA             = cutlass::layout::RowMajor;                      // Layout type for A matrix operand
@@ -361,6 +376,12 @@ bool initialize_tensor(
 
 /// Initialize operands to be used in the GEMM and reference GEMM
 void initialize(const Options &options) {
+  // 【段落说明 3：初始化内容比 FP16 更复杂】
+  // 除 A/B/C/D 之外，本示例还会按开关准备：
+  //  - aux tensor（保存激活前值）
+  //  - device-side scalar/scale 缓冲（alpha/beta/scale_*）
+  //  - amax 输出缓冲（D 与 aux）
+  // 这些开关由 options.save_aux / options.device_scale / options.save_amax 控制。
 
   stride_A = cutlass::make_cute_packed_stride(StrideA{}, cute::make_shape(options.m, options.k, options.l));
   stride_B = cutlass::make_cute_packed_stride(StrideB{}, cute::make_shape(options.n, options.k, options.l));
@@ -435,6 +456,11 @@ void initialize(const Options &options) {
 /// Populates a Gemm::Arguments structure from the given commandline options
 typename Gemm::Arguments args_from_options(const Options &options)
 {
+  // 【段落说明 4：Epilogue 融合参数装配】
+  // 这里不仅填基础 GEMM 参数，还会把 fusion_args 全量设置：
+  //  - alpha/beta 与 scale_a/b/c/d/aux（可走 host 值或 device 指针）
+  //  - aux_ptr / amax_aux_ptr / amax_D_ptr
+  // 通过把指针置空（nullptr）可在运行时关闭某些融合分支。
   typename Gemm::Arguments arguments{
     cutlass::gemm::GemmUniversalMode::kGemm,
     {options.m, options.n, options.k, options.l},
@@ -485,6 +511,12 @@ typename Gemm::Arguments args_from_options(const Options &options)
 }
 
 bool verify(const Options &options) {
+  // 【段落说明 5：参考实现与比对策略】
+  // 与 FP16 示例不同，这里使用 host 侧 Gemm3x 参考路径，原因是要同步验证：
+  //  - D 主输出
+  //  - 可选 Aux 输出
+  //  - 可选 amax 标量输出
+  // 最终 passed 由上述多项检查“与”得到。
   //
   // Compute reference output
   //
@@ -559,6 +591,11 @@ bool verify(const Options &options) {
 template <typename Gemm>
 int run(Options &options)
 {
+  // 【段落说明 6：执行流程】
+  // 整体流程仍遵循 CUTLASS device API 规范：
+  //   initialize -> args_from_options -> can_implement -> initialize -> run
+  // 之后先做 correctness 校验，再进入 profiling loop。
+  // profiling 阶段只重复 gemm.run()，避免把初始化成本混入 steady-state 吞吐统计。
   initialize(options);
 
   
@@ -625,6 +662,9 @@ int run(Options &options)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char const **args) {
+  // 【段落说明 7：入口门禁】
+  // 仅在 CUDA 12.8+ 且 GPU 为 SM100a 时执行；
+  // 其余场景直接返回 0，便于在不支持环境下安全跳过示例。
 
   // CUTLASS must be compiled with CUDA 12.8 Toolkit to run this example
   // and must have compute capability at least sm100a.
