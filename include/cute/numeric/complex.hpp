@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/numeric/complex.hpp
+ * Layer: numeric/metaprogramming layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): cutlass; T; D; A; B; C
+ */
+
 #pragma once
 
 #include <cute/config.hpp>    // CUTE_HOST_DEVICE

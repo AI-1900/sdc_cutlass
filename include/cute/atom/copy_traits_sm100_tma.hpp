@@ -29,6 +29,15 @@
  *
  **************************************************************************************************/
 
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/atom/copy_traits_sm100_tma.hpp
+ * Layer: instruction metadata (atom/traits) layer
+ * Purpose: copy instruction/algorithm abstraction
+ * Key type/function entries (best-effort): SM100_TMA_2SM_LOAD_OP; NumBitsPerTMA; AuxParams_; Copy_Traits; ThrID; SrcLayout
+ */
+
+
 
 
 #pragma once

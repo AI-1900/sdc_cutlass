@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/config.hpp
+ * Layer: top-level
+ * Purpose: compile configuration and macro adaptation
+ * Key type/function entries (best-effort): the; Copyright; DAMAGES; TORT; map; defined
+ */
+
 #pragma once
 
 // For a complete file-by-file CuTe module map (including directory layering and

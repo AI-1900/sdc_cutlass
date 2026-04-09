@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/algorithm/copy.hpp
+ * Layer: tensor algorithm layer
+ * Purpose: copy instruction/algorithm abstraction
+ * Key type/function entries (best-effort): PrdTensor; SrcEngine; SrcLayout; DstEngine; DstLayout; SrcType
+ */
+
 #pragma once
 
 #include <cute/config.hpp>            // CUTE_HOST_DEVICE

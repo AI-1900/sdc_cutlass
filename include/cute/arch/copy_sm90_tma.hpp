@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/copy_sm90_tma.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: copy instruction/algorithm abstraction
+ * Key type/function entries (best-effort): SM90_TMA_LOAD_1D; PREFETCH; SM90_TMA_LOAD_2D; SM90_TMA_LOAD_3D; SM90_TMA_LOAD_4D; SM90_TMA_LOAD_5D
+ */
+
 #pragma once
 
 #include <cute/config.hpp>

@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/algorithm/prefetch.hpp
+ * Layer: tensor algorithm layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): GEngine; GLayout; VecType; CopyOp; CopyType; Prefetch_Traits
+ */
+
 #pragma once
 
 #include <cute/config.hpp>          // CUTE_HOST_DEVICE

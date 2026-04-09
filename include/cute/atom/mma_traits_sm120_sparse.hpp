@@ -29,6 +29,15 @@
  *
  **************************************************************************************************/
 
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/atom/mma_traits_sm120_sparse.hpp
+ * Layer: instruction metadata (atom/traits) layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): SM120_16x8_Row; MMAOp; TD; DLayout; TA; ALayout
+ */
+
+
 #pragma once
 
 #include <cute/arch/mma_sm120.hpp>

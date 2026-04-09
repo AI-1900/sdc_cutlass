@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/underscore.hpp
+ * Layer: top-level
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): Underscore; X; is_integral; T; is_underscore; Tuple
+ */
+
 #pragma once
 
 #include <cute/config.hpp>                     // CUTE_INLINE_CONSTANT, CUTE_HOST_DEVICE

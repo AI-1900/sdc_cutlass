@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/algorithm/prefer.hpp
+ * Layer: tensor algorithm layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): prefer; Copyright; DAMAGES; TORT
+ */
+
 #pragma once
 
 namespace cute

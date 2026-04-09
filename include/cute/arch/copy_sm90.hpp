@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/copy_sm90.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: copy instruction/algorithm abstraction
+ * Key type/function entries (best-effort): SM90_U32x1_STSM_N; SRegisters; DRegisters; SM90_U32x2_STSM_N; SM90_U32x4_STSM_N; SM90_U16x2_STSM_T
+ */
+
 #pragma once
 
 #include <cute/config.hpp>      // CUTE_HOST_DEVICE

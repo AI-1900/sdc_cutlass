@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/numeric/integral_constant.hpp
+ * Layer: numeric/metaprogramming layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): C; type; value_type; T; constant; bool_constant
+ */
+
 #pragma once
 
 #include <cute/numeric/math.hpp>      // cute::max, etc

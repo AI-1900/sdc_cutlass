@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/numeric/int.hpp
+ * Layer: numeric/metaprogramming layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): int2_t; int4_t; int6_t; CUTE_STL_NAMESPACE; int_bit; type
+ */
+
 #pragma once
 #include "cutlass/cutlass.h"
 #if defined(__CUDACC_RTC__)

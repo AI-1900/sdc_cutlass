@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/mma_sm90_gmma_ext.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): MMA_64x24x16_F16F16F16_SS; DRegisters; ARegisters; BRegisters; CRegisters; MMA_64x24x16_F16F16F16_RS
+ */
+
  
 #pragma once
   

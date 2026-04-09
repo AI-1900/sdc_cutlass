@@ -29,6 +29,15 @@
  *
  **************************************************************************************************/
 
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/copy_sm100_tma.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: copy instruction/algorithm abstraction
+ * Key type/function entries (best-effort): SM100_TMA_2SM_LOAD_1D; SM100_TMA_2SM_LOAD_2D; SM100_TMA_2SM_LOAD_3D; SM100_TMA_2SM_LOAD_4D; SM100_TMA_2SM_LOAD_5D; SM100_TMA_2SM_LOAD
+ */
+
+
 
 
 #pragma once

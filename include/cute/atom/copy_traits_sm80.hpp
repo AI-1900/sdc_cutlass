@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/atom/copy_traits_sm80.hpp
+ * Layer: instruction metadata (atom/traits) layer
+ * Purpose: copy instruction/algorithm abstraction
+ * Key type/function entries (best-effort): S; D; Copy_Traits; ThrID; SrcLayout; DstLayout
+ */
+
 #pragma once
 
 #include <cute/arch/copy_sm80.hpp>

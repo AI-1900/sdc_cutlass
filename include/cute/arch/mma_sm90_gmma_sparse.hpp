@@ -29,6 +29,15 @@
  *
  **************************************************************************************************/
 
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/mma_sm90_gmma_sparse.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): GMMA_64x8x32_F16F16F16_SS; DRegisters; ARegisters; ERegisters; BRegisters; CRegisters
+ */
+
+
 #pragma once
 
 #include <cute/config.hpp>                 // CUTE_HOST_DEVICE

@@ -29,6 +29,15 @@
  *
  **************************************************************************************************/
 
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/tmem_allocator_sm100.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): MAX_CAPACITY_BITS; DP_b; T; DP; require; Allocator1Sm
+ */
+
+
 #pragma once
 
 #include <cute/arch/config.hpp>

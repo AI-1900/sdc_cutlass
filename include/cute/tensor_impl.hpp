@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/tensor_impl.hpp
+ * Layer: top-level
+ * Purpose: tensor abstraction and tensor composition helpers
+ * Key type/function entries (best-effort): iterator; value_type; element_type; reference; T; ArrayEngine
+ */
+
 /*! \file
     \brief This file contains the definition of Tensor as well as classes/functions most closely associated with it.
 

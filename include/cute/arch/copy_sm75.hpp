@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/copy_sm75.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: copy instruction/algorithm abstraction
+ * Key type/function entries (best-effort): SM75_U32x1_LDSM_N; SRegisters; DRegisters; SM75_U32x2_LDSM_N; SM75_U32x4_LDSM_N; SM75_U16x2_LDSM_T
+ */
+
 #pragma once
 
 #include <cute/config.hpp>

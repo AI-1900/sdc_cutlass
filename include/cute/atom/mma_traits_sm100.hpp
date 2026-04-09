@@ -29,6 +29,15 @@
  *
  **************************************************************************************************/
 
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/atom/mma_traits_sm100.hpp
+ * Layer: instruction metadata (atom/traits) layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): cute; Layout_MN_SW128_32B_Atom_Bits; Type; Layout_MN_SW128_32B_Atom; Layout_MN_SW128_32B_SpAtom; Layout_INTER_SpAtom
+ */
+
+
 #pragma once
 
 #include <cute/config.hpp>

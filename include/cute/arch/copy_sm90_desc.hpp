@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/copy_sm90_desc.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: copy instruction/algorithm abstraction
+ * Key type/function entries (best-effort): SmemSwizzleBits; SmemSwizzleBase; OOBFill; L2Promotion; DescriptorAuxParams; CacheHintSm90
+ */
+
 #pragma once
 
 #include "cutlass/numeric_types.h"

@@ -29,6 +29,15 @@
  *
  **************************************************************************************************/
 
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/pointer_sparse.hpp
+ * Layer: top-level
+ * Purpose: pointer engine extensions (swizzle/sparse/flagged)
+ * Key type/function entries (best-effort): is; T; sparse_elem; raw_type; is_sparse; sizeof_bits
+ */
+
+
 #pragma once
 
 #include <cute/config.hpp>                     // CUTE_HOST_DEVICE

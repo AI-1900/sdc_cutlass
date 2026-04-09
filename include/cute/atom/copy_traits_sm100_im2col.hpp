@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/atom/copy_traits_sm100_im2col.hpp
+ * Layer: instruction metadata (atom/traits) layer
+ * Purpose: copy instruction/algorithm abstraction
+ * Key type/function entries (best-effort): SM100_TMA_2SM_LOAD_IM2COL_OP; NumBitsPerTMA; TMATensor; Copy_Traits; ThrID; SrcLayout
+ */
+
 #pragma once
 
 /*! \file

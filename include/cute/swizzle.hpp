@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/swizzle.hpp
+ * Layer: top-level
+ * Purpose: swizzle transformation utilities
+ * Key type/function entries (best-effort): Swizzle; bit_msk; yyy_msk; zzz_msk; msk_sft; Offset
+ */
+
 #pragma once
 
 #include <cute/config.hpp>                      // CUTE_HOST_DEVICE

@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/util/type_traits.hpp
+ * Layer: debug/printing utility layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): CUTE_STL_NAMESPACE; Src; Dst; copy_cv; type; copy_cv_t
+ */
+
 #pragma once
 #include "cutlass/cutlass.h"
 #if defined(__CUDACC_RTC__)

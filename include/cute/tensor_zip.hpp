@@ -29,6 +29,15 @@
  *
  **************************************************************************************************/
 
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/tensor_zip.hpp
+ * Layer: top-level
+ * Purpose: tensor abstraction and tensor composition helpers
+ * Key type/function entries (best-effort): ZipIterator; value_type; element_type; reference; is_rmem; is_smem
+ */
+
+
 #pragma once
 
 #include <cute/config.hpp>           // CUTE_HOST_DEVICE

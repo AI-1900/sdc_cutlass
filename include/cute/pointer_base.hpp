@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/pointer_base.hpp
+ * Layer: top-level
+ * Purpose: pointer engine extensions (swizzle/sparse/flagged)
+ * Key type/function entries (best-effort): T; iter_ref; type; iter_reference; iter_reference_t; iter_e
+ */
+
 #pragma once
 
 #include <cute/config.hpp>                     // CUTE_HOST_DEVICE

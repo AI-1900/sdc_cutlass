@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/int_tuple.hpp
+ * Layer: top-level
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): of; T; IntTuple; rank_t; T0; Tuple
+ */
+
 #pragma once
 
 #include <cute/config.hpp>                      // CUTE_HOST_DEVICE

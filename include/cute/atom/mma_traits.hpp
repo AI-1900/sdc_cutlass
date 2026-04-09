@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/atom/mma_traits.hpp
+ * Layer: instruction metadata (atom/traits) layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): ValTypeD; ValTypeA; ValTypeB; ValTypeC; FrgTypeA; FrgTypeB
+ */
+
 #pragma once
 
 #include <cute/tensor_impl.hpp>  // cute::Tensor

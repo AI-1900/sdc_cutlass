@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/util.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): MmaOp; CallFMA; CopyOp; CallCOPY; Fn; PtrA
+ */
+
 #pragma once
 
 #include <cute/config.hpp>

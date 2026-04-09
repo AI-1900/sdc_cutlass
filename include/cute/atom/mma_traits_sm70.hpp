@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/atom/mma_traits_sm70.hpp
+ * Layer: instruction metadata (atom/traits) layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): SM70_QuadPair; SM70_8x4_Row; SM70_8x4_Col; SM70_8x8_16b; SM70_8x8_32b; MMA_Traits
+ */
+
 #pragma once
 
 #include <cute/arch/mma_sm70.hpp>

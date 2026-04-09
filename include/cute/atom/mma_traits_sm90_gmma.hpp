@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/atom/mma_traits_sm90_gmma.hpp
+ * Layer: instruction metadata (atom/traits) layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): Engine; Layout; Layout_MN_INTER_Atom_Bits; Layout_MN_SW32_Atom_Bits; Layout_MN_SW64_Atom_Bits; Layout_MN_SW128_Atom_Bits
+ */
+
 #pragma once
 
 #include <cute/pointer_flagged.hpp>            // cute::smem_ptr_flag
