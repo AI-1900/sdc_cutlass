@@ -30,6 +30,9 @@
  **************************************************************************************************/
 #pragma once
 
+// For a complete file-by-file CuTe module map (including directory layering and
+// key entry points), see: include/cute/FILE_MAP.md
+
 #if defined(__CUDACC__) || defined(_NVHPC_CUDA)
 #  define CUTE_HOST_DEVICE __forceinline__ __host__ __device__
 #  define CUTE_DEVICE      __forceinline__          __device__
