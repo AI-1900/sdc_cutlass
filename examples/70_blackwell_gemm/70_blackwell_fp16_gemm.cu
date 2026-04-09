@@ -84,6 +84,34 @@
 
 using namespace cute;
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Call chain map (file/function level)
+// -----------------------------------
+// [File] examples/70_blackwell_gemm/70_blackwell_fp16_gemm.cu
+//
+// main(...)
+//   ├─ Options::parse(...)
+//   └─ run<Gemm>(options)
+//        ├─ initialize(options)
+//        │    └─ initialize_block(...)
+//        ├─ args_from_options(options)
+//        ├─ Gemm::get_workspace_size(arguments)
+//        ├─ GemmUniversalAdapter::can_implement(...)
+//        ├─ GemmUniversalAdapter::initialize(...)
+//        ├─ GemmUniversalAdapter::run()              // warmup / correctness
+//        ├─ verify(options)
+//        │    └─ DeviceGemmReference::operator()(...)
+//        └─ profiling loop:
+//             ├─ GemmUniversalAdapter::initialize(...)
+//             └─ GemmUniversalAdapter::run()
+//
+// Notes:
+// - helper.h provides CUDA/CUTLASS check macros and GpuTimer used by run().
+// - CollectiveBuilder typedefs in this file determine Blackwell SM100 kernel composition.
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
 #if defined(CUTLASS_ARCH_MMA_SM100_SUPPORTED)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

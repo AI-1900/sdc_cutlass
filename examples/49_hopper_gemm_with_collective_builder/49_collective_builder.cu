@@ -145,6 +145,29 @@
 using namespace cute;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Call chain map (file/function level)
+// -----------------------------------
+// [File] examples/49_hopper_gemm_with_collective_builder/49_collective_builder.cu
+//
+// main()
+//   ├─ Options::parse(...)
+//   ├─ ExampleRunner<...>::run(...)
+//   │    ├─ ExampleRunner<...>::initialize(...)
+//   │    │    └─ initialize_block(...)                // fill A/B/C
+//   │    ├─ Gemm::get_workspace_size(arguments)
+//   │    ├─ GemmUniversalAdapter::can_implement(...)
+//   │    ├─ GemmUniversalAdapter::initialize(...)
+//   │    ├─ GemmUniversalAdapter::run()
+//   │    └─ ExampleRunner<...>::verify(...)
+//   │         └─ cutlass::reference::device::GemmComplex(...)
+//   └─ print_result(...)
+//
+// Notes:
+// - CollectiveMainloop/CollectiveEpilogue are composed via CollectiveBuilder in this file.
+// - Template schedule tags selected in main() determine the TMA/MMA orchestration path.
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// Command line options parsing
 struct Options {

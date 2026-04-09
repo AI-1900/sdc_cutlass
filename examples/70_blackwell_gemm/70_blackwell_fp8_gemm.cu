@@ -91,6 +91,34 @@
 
 using namespace cute;
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Call chain map (file/function level)
+// -----------------------------------
+// [File] examples/70_blackwell_gemm/70_blackwell_fp8_gemm.cu
+//
+// main(...)
+//   ├─ Options::parse(...)
+//   └─ run<Gemm>(options)
+//        ├─ initialize(options)
+//        │    └─ initialize_tensor(...)
+//        ├─ args_from_options(options)
+//        ├─ Gemm::get_workspace_size(arguments)
+//        ├─ GemmUniversalAdapter::can_implement(...)
+//        ├─ GemmUniversalAdapter::initialize(...)
+//        ├─ GemmUniversalAdapter::run()              // warmup / correctness
+//        ├─ verify(options)
+//        │    └─ cutlass::reference::host::Gemm3x(...)
+//        └─ profiling loop:
+//             └─ GemmUniversalAdapter::run()
+//
+// Notes:
+// - Compared to FP16 variant, args_from_options() additionally wires fusion parameters
+//   (scales, aux pointers, amax pointers) into arguments.epilogue.thread.
+// - helper.h provides CUDA/CUTLASS check macros and GpuTimer used by run().
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
 #if defined(CUTLASS_ARCH_MMA_SM100_SUPPORTED)
 
 
