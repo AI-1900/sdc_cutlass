@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/mma_sm120_sparse.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): a_type; b_type; c_type; SM120_SPARSE_16x8x64_TN; DRegisters; ARegisters
+ */
+
 #pragma once
 
 #include <cute/arch/config.hpp>

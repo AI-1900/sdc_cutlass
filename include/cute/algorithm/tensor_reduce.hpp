@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/algorithm/tensor_reduce.hpp
+ * Layer: tensor algorithm layer
+ * Purpose: tensor abstraction and tensor composition helpers
+ * Key type/function entries (best-effort): binary; SrcEngine; SrcLayout; T; BinaryOp; DstEngine
+ */
+
 #pragma once
 
 #include <iostream>

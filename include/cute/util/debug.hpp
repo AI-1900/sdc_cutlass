@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/util/debug.hpp
+ * Layer: debug/printing utility layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): Copyright; DAMAGES; TORT; defined; CUTE_LOG; printf
+ */
+
 #pragma once
 
 /**

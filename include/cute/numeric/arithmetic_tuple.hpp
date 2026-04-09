@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/numeric/arithmetic_tuple.hpp
+ * Layer: numeric/metaprogramming layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): ArithmeticTuple; is_tuple; is_flat; T; ArithTuple; ArithmeticTupleIterator
+ */
+
 #pragma once
 
 #include <cute/config.hpp>

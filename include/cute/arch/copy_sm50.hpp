@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/copy_sm50.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: copy instruction/algorithm abstraction
+ * Key type/function entries (best-effort): SM50_Shuffle_U32_2x2Trans_XOR1; SRegisters; DRegisters; SM50_Shuffle_U32_2x2Trans_XOR4
+ */
+
 #pragma once
 
 #include <cute/config.hpp>

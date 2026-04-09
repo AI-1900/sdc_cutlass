@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/algorithm/cooperative_gemm.hpp
+ * Layer: tensor algorithm layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): TSC; InputTypeC; ComputeTypeC; Alpha; TRC; RCLayout
+ */
+
 #pragma once
 
 #include <cute/config.hpp>

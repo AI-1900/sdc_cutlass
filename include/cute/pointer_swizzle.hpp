@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/pointer_swizzle.hpp
+ * Layer: top-level
+ * Purpose: pointer engine extensions (swizzle/sparse/flagged)
+ * Key type/function entries (best-effort): SwizzleFn; Iterator; swizzle_ptr; iterator; reference; element_type
+ */
+
 #pragma once
 
 #include <cute/config.hpp>                   // CUTE_HOST_DEVICE

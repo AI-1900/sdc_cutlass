@@ -29,6 +29,15 @@
  *
  **************************************************************************************************/
 
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/mma_sm89.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): SM89_16x8x32_F32E4M3E4M3F32_TN; DRegisters; ARegisters; BRegisters; CRegisters; SM89_16x8x32_F32E4M3E5M2F32_TN
+ */
+
+
 //
 
 //

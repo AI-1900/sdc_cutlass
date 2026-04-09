@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/numeric/integer_sequence.hpp
+ * Layer: numeric/metaprogramming layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): CUTE_STL_NAMESPACE; T; S; range_impl; type; reverse_impl
+ */
+
 #pragma once
 
 #include <cute/config.hpp>

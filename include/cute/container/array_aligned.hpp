@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/container/array_aligned.hpp
+ * Layer: container/type utility layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): T; CUTE_ALIGNAS; Copyright; DAMAGES; TORT
+ */
+
 #pragma once
 
 #include <cute/container/alignment.hpp>  // CUTE_ALIGNAS

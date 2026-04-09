@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/container/array.hpp
+ * Layer: container/type utility layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): T; array; element_type; value_type; size_type; difference_type
+ */
+
 #pragma once
 
 #include <cute/config.hpp>

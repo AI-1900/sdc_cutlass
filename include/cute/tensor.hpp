@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/tensor.hpp
+ * Layer: top-level
+ * Purpose: tensor abstraction and tensor composition helpers
+ * Key type/function entries (best-effort): Copyright; DAMAGES; TORT
+ */
+
 #pragma once
 
 #include <cute/tensor_impl.hpp>

@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/stride.hpp
+ * Layer: top-level
+ * Purpose: stride construction and transformations
+ * Key type/function entries (best-effort): Coord; Shape; Stride; CInt; STuple; DTuple
+ */
+
 #pragma once
 
 #include <cute/config.hpp>                     // CUTE_HOST_DEVICE

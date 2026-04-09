@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/util/print_latex.hpp
+ * Layer: debug/printing utility layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): TikzColor_White; TikzColor_BWx8; TikzColor_TV; LayoutA; TikzColorFn; SwizzleFn
+ */
+
 #pragma once
 
 #include <cute/config.hpp>           // CUTE_HOST_DEVICE

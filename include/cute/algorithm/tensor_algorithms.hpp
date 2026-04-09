@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/algorithm/tensor_algorithms.hpp
+ * Layer: tensor algorithm layer
+ * Purpose: tensor abstraction and tensor composition helpers
+ * Key type/function entries (best-effort): Engine; Layout; UnaryOp; EngineIn; LayoutIn; EngineOut
+ */
+
 /** Common algorithms on (hierarchical) tensors */
 
 #pragma once

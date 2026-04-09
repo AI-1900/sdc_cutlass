@@ -29,6 +29,15 @@
  *
  **************************************************************************************************/
 
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/mma_sm90_desc.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): LayoutType; Copyright; DAMAGES; TORT; to_string; defined
+ */
+
+
 #pragma once
 
 #include <cute/arch/config.hpp>

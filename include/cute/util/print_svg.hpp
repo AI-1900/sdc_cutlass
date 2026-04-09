@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/util/print_svg.hpp
+ * Layer: debug/printing utility layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): TSVGColor_White; TSVGColor_BWx8; SVGColor_TV; LayoutC; LayoutA; LayoutB
+ */
+
 #pragma once
 
 #include <cute/config.hpp>           // CUTE_HOST_DEVICE

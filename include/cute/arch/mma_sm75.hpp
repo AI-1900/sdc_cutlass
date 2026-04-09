@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/mma_sm75.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): SM75_16x8x8_F32F16F16F32_TN; DRegisters; ARegisters; BRegisters; CRegisters; SM75_8x8x16_S32S8S8S32_TN
+ */
+
 #pragma once
 
 #include <cute/config.hpp>

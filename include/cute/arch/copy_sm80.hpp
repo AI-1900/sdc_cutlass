@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/copy_sm80.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: copy instruction/algorithm abstraction
+ * Key type/function entries (best-effort): TS; TD; SM80_CP_ASYNC_CACHEALWAYS; SRegisters; DRegisters; SM80_CP_ASYNC_CACHEGLOBAL
+ */
+
 #pragma once
 
 #include <cute/config.hpp>

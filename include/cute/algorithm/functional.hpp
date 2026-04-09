@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/algorithm/functional.hpp
+ * Layer: tensor algorithm layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): identity; T; R; constant_fn; NAME; shift_right_const
+ */
+
 #pragma once
 
 #include <cute/config.hpp>          // CUTE_HOST_DEVICE

@@ -29,6 +29,15 @@
  *
  **************************************************************************************************/
 
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/atom/mma_traits_sm90_gmma_sparse.hpp
+ * Layer: instruction metadata (atom/traits) layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): Type; Layout_MN_INTER_SpAtom; Layout_MN_SW32_SpAtom; Layout_MN_SW64_SpAtom; Layout_MN_SW128_SpAtom; Layout_K_INTER_SpAtom
+ */
+
+
 #pragma once
 
 #include <cute/pointer_sparse.hpp>             // cute::smem_sparse_ptr_flag

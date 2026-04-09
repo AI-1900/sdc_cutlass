@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/container/type_list.hpp
+ * Layer: container/type utility layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): type_list; find_true; X; tuple_size; tuple_element
+ */
+
 #pragma once
 
 #include <cute/config.hpp>            // CUTE_HOST_DEVICE, CUTE_STL_NAMESPACE

@@ -1,0 +1,152 @@
+# CuTe 文件功能总览（include/cute）
+
+> 说明：本清单覆盖 `include/cute` 下全部文件（含子目录），并从“硬件架构层/软件编程模型层”角度给出职责。
+
+## 分层视图
+- **硬件架构层**：`include/cute/arch/*`（SM 专用指令包装）。
+- **指令元信息层**：`include/cute/atom/*`（traits/atom/tiled 组合）。
+- **数据与布局层**：顶层 `layout/tensor/stride/swizzle/pointer*` + `container/*` + `numeric/*`。
+- **算法编程层**：`include/cute/algorithm/*`（copy/gemm/reduce 等）。
+- **工具层**：`include/cute/util/*`（调试与打印）。
+
+## 逐文件说明
+- `include/cute/FILE_MAP.md`：本文件：逐文件模块说明。
+- `include/cute/algorithm/axpby.hpp`：算法层：在 Tensor/Layout 上实现 copy/gemm/fill/reduce 等。
+- `include/cute/algorithm/clear.hpp`：算法层：在 Tensor/Layout 上实现 copy/gemm/fill/reduce 等。
+- `include/cute/algorithm/cooperative_copy.hpp`：算法层：在 Tensor/Layout 上实现 copy/gemm/fill/reduce 等。
+- `include/cute/algorithm/cooperative_gemm.hpp`：算法层：在 Tensor/Layout 上实现 copy/gemm/fill/reduce 等。
+- `include/cute/algorithm/copy.hpp`：算法层：在 Tensor/Layout 上实现 copy/gemm/fill/reduce 等。
+- `include/cute/algorithm/fill.hpp`：算法层：在 Tensor/Layout 上实现 copy/gemm/fill/reduce 等。
+- `include/cute/algorithm/functional.hpp`：算法层：在 Tensor/Layout 上实现 copy/gemm/fill/reduce 等。
+- `include/cute/algorithm/gemm.hpp`：算法层：在 Tensor/Layout 上实现 copy/gemm/fill/reduce 等。
+- `include/cute/algorithm/prefer.hpp`：算法层：在 Tensor/Layout 上实现 copy/gemm/fill/reduce 等。
+- `include/cute/algorithm/prefetch.hpp`：算法层：在 Tensor/Layout 上实现 copy/gemm/fill/reduce 等。
+- `include/cute/algorithm/tensor_algorithms.hpp`：算法层：在 Tensor/Layout 上实现 copy/gemm/fill/reduce 等。
+- `include/cute/algorithm/tensor_reduce.hpp`：算法层：在 Tensor/Layout 上实现 copy/gemm/fill/reduce 等。
+- `include/cute/algorithm/tuple_algorithms.hpp`：算法层：在 Tensor/Layout 上实现 copy/gemm/fill/reduce 等。
+- `include/cute/arch/cluster_sm100.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/cluster_sm90.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/config.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/copy.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/copy_sm100.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/copy_sm100_tma.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/copy_sm50.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/copy_sm75.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/copy_sm80.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/copy_sm90.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/copy_sm90_desc.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/copy_sm90_tma.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/mma.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/mma_sm100.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/mma_sm100_desc.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/mma_sm100_umma.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/mma_sm120.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/mma_sm120_sparse.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/mma_sm61.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/mma_sm70.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/mma_sm75.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/mma_sm80.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/mma_sm89.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/mma_sm90.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/mma_sm90_desc.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/mma_sm90_gmma.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/mma_sm90_gmma_ext.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/mma_sm90_gmma_sparse.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/mma_sm90_gmma_sparse_ext.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/simd_sm100.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/tmem_allocator_sm100.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/arch/util.hpp`：硬件封装层：SM 专用 copy/mma/cluster/tmem 指令包装。
+- `include/cute/atom/copy_atom.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/copy_traits.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/copy_traits_sm100.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/copy_traits_sm100_im2col.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/copy_traits_sm100_tma.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/copy_traits_sm50.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/copy_traits_sm75.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/copy_traits_sm80.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/copy_traits_sm90.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/copy_traits_sm90_im2col.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/copy_traits_sm90_tma.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/copy_traits_sm90_tma_swizzle.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/mma_atom.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/mma_traits.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/mma_traits_sm100.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/mma_traits_sm120.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/mma_traits_sm120_sparse.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/mma_traits_sm61.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/mma_traits_sm70.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/mma_traits_sm75.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/mma_traits_sm80.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/mma_traits_sm89.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/mma_traits_sm90.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/mma_traits_sm90_gmma.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/mma_traits_sm90_gmma_ext.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/mma_traits_sm90_gmma_sparse.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/mma_traits_sm90_gmma_sparse_ext.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/atom/partitioner.hpp`：指令元信息层：traits/atom/tiled 组合与分区。
+- `include/cute/config.hpp`：CuTe 全局编译配置与宏（`CUTE_HOST_DEVICE` 等）。
+- `include/cute/container/alignment.hpp`：容器与类型工具：tuple/array/对齐/位域等。
+- `include/cute/container/array.hpp`：容器与类型工具：tuple/array/对齐/位域等。
+- `include/cute/container/array_aligned.hpp`：容器与类型工具：tuple/array/对齐/位域等。
+- `include/cute/container/array_subbyte.hpp`：容器与类型工具：tuple/array/对齐/位域等。
+- `include/cute/container/bit_field.hpp`：容器与类型工具：tuple/array/对齐/位域等。
+- `include/cute/container/cuda_types.hpp`：容器与类型工具：tuple/array/对齐/位域等。
+- `include/cute/container/tuple.hpp`：容器与类型工具：tuple/array/对齐/位域等。
+- `include/cute/container/type_list.hpp`：容器与类型工具：tuple/array/对齐/位域等。
+- `include/cute/int_tuple.hpp`：CuTe 基础模块。
+- `include/cute/layout.hpp`：核心 Layout 抽象与布局代数入口（shape/stride/compose/tile）。
+- `include/cute/layout_composed.hpp`：布局相关扩展能力。
+- `include/cute/numeric/arithmetic_tuple.hpp`：数值类型与编译期数值工具。
+- `include/cute/numeric/complex.hpp`：数值类型与编译期数值工具。
+- `include/cute/numeric/int.hpp`：数值类型与编译期数值工具。
+- `include/cute/numeric/integer_sequence.hpp`：数值类型与编译期数值工具。
+- `include/cute/numeric/integral_constant.hpp`：数值类型与编译期数值工具。
+- `include/cute/numeric/integral_ratio.hpp`：数值类型与编译期数值工具。
+- `include/cute/numeric/math.hpp`：数值类型与编译期数值工具。
+- `include/cute/numeric/numeric_types.hpp`：数值类型与编译期数值工具。
+- `include/cute/numeric/real.hpp`：数值类型与编译期数值工具。
+- `include/cute/pointer.hpp`：指针模型扩展（swizzle/sparse/flagged/base）。
+- `include/cute/pointer_base.hpp`：指针模型扩展（swizzle/sparse/flagged/base）。
+- `include/cute/pointer_flagged.hpp`：指针模型扩展（swizzle/sparse/flagged/base）。
+- `include/cute/pointer_sparse.hpp`：指针模型扩展（swizzle/sparse/flagged/base）。
+- `include/cute/pointer_swizzle.hpp`：指针模型扩展（swizzle/sparse/flagged/base）。
+- `include/cute/stride.hpp`：stride 工具与推导。
+- `include/cute/swizzle.hpp`：swizzle 变换相关支持。
+- `include/cute/swizzle_layout.hpp`：布局相关扩展能力。
+- `include/cute/tensor.hpp`：Tensor 用户入口，聚合实现与常用算法。
+- `include/cute/tensor_impl.hpp`：Tensor 核心模板实现。
+- `include/cute/tensor_zip.hpp`：tensor 相关扩展能力。
+- `include/cute/underscore.hpp`：CuTe 基础模块。
+- `include/cute/util/debug.hpp`：调试与打印、type traits 辅助。
+- `include/cute/util/print.hpp`：调试与打印、type traits 辅助。
+- `include/cute/util/print_latex.hpp`：调试与打印、type traits 辅助。
+- `include/cute/util/print_svg.hpp`：调试与打印、type traits 辅助。
+- `include/cute/util/print_tensor.hpp`：调试与打印、type traits 辅助。
+- `include/cute/util/type_traits.hpp`：调试与打印、type traits 辅助。
+
+## 关键文件的逐函数入口（重点）
+- `include/cute/layout.hpp`
+  - `make_shape/make_stride/make_coord/make_tile`：构造编译期层次形状与步长。
+  - `Layout::operator()(coord)`：坐标到线性索引映射，或带 `_` 时执行切片。
+  - `Layout::compose(...)`：布局复合。
+  - `Layout::tile(...)`：布局分块。
+- `include/cute/tensor_impl.hpp`
+  - `make_tensor(...)`：构造 Tensor（引擎 + layout）。
+  - `local_tile/local_partition` 相关族：把全局张量映射到线程块/线程局部视图。
+  - `copy` 相关路径所依赖的 tensor 访问器与 layout 组合接口。
+- `include/cute/algorithm/gemm.hpp`
+  - `gemm(...)` 系列重载：按 rank/内存类别自动分派。
+  - `gemm(MMA_Atom<...>, ...)`：显式指定 mma 原子执行路径。
+- `include/cute/atom/mma_atom.hpp`
+  - `MMA_Atom::call(D,A,B,C)`：执行原子 MMA。
+  - `make_fragment_A/B/C`：生成/适配 fragment 张量。
+  - `TiledMMA`：把 atom 扩展为 tile 级组织。
+- `include/cute/atom/copy_atom.hpp`
+  - `Copy_Atom` / `TiledCopy`：copy 原子与 tile 化 copy 的核心抽象。
+- `include/cute/algorithm/copy.hpp`
+  - `copy(...)`：在不同 tensor/layout 组合下选择最优复制路径（含向量化/协作复制）。
+
+## 使用建议
+1. 先读 `layout.hpp` 与 `tensor_impl.hpp`，建立布局+张量心智模型。
+2. 再读 `atom/mma_atom.hpp` 与 `atom/copy_atom.hpp`，理解“原子指令 -> tile 组织”。
+3. 最后读 `algorithm/gemm.hpp` 与 `algorithm/copy.hpp`，理解“算法分派 -> 指令落地”。

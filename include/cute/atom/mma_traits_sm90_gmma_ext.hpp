@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/atom/mma_traits_sm90_gmma_ext.hpp
+ * Layer: instruction metadata (atom/traits) layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): CLayout_64x24; CLayout_64x40; CLayout_64x48; CLayout_64x56; CLayout_64x72; CLayout_64x80
+ */
+
  
 #pragma once
   

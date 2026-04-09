@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/copy_sm100.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: copy instruction/algorithm abstraction
+ * Key type/function entries (best-effort): SM100_LOAD_256bit_CACHE_NOALLOCATION; SRegisters; DRegisters; SM100_STORE_256bit_CACHE_NOALLOCATION; SM100_U8x8_LDSM_T; SM100_U8x16_LDSM_T
+ */
+
 #pragma once
 
 #include <cute/arch/config.hpp>

@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/algorithm/axpby.hpp
+ * Layer: tensor algorithm layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): Alpha; XEngine; XLayout; Beta; YEngine; YLayout
+ */
+
 #pragma once
 
 #include <cute/config.hpp>

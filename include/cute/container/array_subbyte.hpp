@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/container/array_subbyte.hpp
+ * Layer: container/type utility layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): T; subbyte_storage_type_t; subbyte_iterator; swizzle_ptr; subbyte_reference; element_type
+ */
+
 /*! \file
     \brief Statically sized array of elements that accommodates subbyte trivial types
            in a packed storage.

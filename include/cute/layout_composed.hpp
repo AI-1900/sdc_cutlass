@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/layout_composed.hpp
+ * Layer: top-level
+ * Purpose: layout algebra and coordinate/index mapping
+ * Key type/function entries (best-effort): LayoutA; Offset; LayoutB; ComposedLayout; Coord; Coord0
+ */
+
 #pragma once
 
 #include <cute/config.hpp>                     // CUTE_HOST_DEVICE, CUTE_GCC_UNREACHABLE

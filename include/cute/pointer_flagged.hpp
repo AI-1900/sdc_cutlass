@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/pointer_flagged.hpp
+ * Layer: top-level
+ * Purpose: pointer engine extensions (swizzle/sparse/flagged)
+ * Key type/function entries (best-effort): smem_ptr_flag_bits; smem_ptr_flag; Iterator; SwizzleFn; Layout; Tensor
+ */
+
 #pragma once
 
 #include <cute/config.hpp>                     // CUTE_HOST_DEVICE

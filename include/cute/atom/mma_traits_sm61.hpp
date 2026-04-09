@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/atom/mma_traits_sm61.hpp
+ * Layer: instruction metadata (atom/traits) layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): MMA_Traits; ValTypeD; ValTypeA; ValTypeB; ValTypeC; Shape_MNK
+ */
+
 #pragma once
 
 #include <cute/arch/mma_sm61.hpp>

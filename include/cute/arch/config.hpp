@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/config.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: compile configuration and macro adaptation
+ * Key type/function entries (best-effort): Copyright; DAMAGES; TORT; defined
+ */
+
 #pragma once
 
 #include <cutlass/arch/config.h> // CUTLASS_ARCH_MMA_SMxx_ENABLED

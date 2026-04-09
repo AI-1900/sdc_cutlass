@@ -29,6 +29,15 @@
  *
  **************************************************************************************************/
 
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/atom/mma_traits_sm89.hpp
+ * Layer: instruction metadata (atom/traits) layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): SM80_16x8_Row; MMA_Traits; ValTypeD; ValTypeA; ValTypeB; ValTypeC
+ */
+
+
 //
 
 //

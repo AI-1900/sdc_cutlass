@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/container/cuda_types.hpp
+ * Layer: container/type utility layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): dim3; tuple_size; tuple_element; type; uint3
+ */
+
 #pragma once
 
 #include <cute/config.hpp>                     // CUTE_HOST_DEVICE, CUTE_GCC_UNREACHABLE

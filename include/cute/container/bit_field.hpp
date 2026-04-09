@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/container/bit_field.hpp
+ * Layer: container/type utility layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): dummy_type; OtherValueType; bit_field; value_type; storage_type
+ */
+
 /*! \file
     \brief Portable bit field that supports byte and word straddling that can
            be used in unions to bit-wise define parameters.

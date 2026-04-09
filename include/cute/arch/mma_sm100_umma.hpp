@@ -29,6 +29,15 @@
  *
  **************************************************************************************************/
 
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/mma_sm100_umma.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): a_type; b_type; c_type; SM100_MMA_TF32_SS; DRegisters; ARegisters
+ */
+
+
 #pragma once
 
 #include <cute/arch/config.hpp>

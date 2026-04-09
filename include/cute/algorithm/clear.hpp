@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/algorithm/clear.hpp
+ * Layer: tensor algorithm layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): Engine; Layout; T; Copyright; DAMAGES; TORT
+ */
+
 #pragma once
 
 #include <cute/config.hpp>          // CUTE_HOST_DEVICE

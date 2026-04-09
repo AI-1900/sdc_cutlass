@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/atom/copy_traits_sm90_tma.hpp
+ * Layer: instruction metadata (atom/traits) layer
+ * Purpose: copy instruction/algorithm abstraction
+ * Key type/function entries (best-effort): GmemTmaBasisStrides_; TmaGmemBasis_; TmaSwizzle_; AuxTmaParams; GmemStrides; TmaGmemBasis
+ */
+
 #pragma once
 
 #if !defined(__CUDACC_RTC__)

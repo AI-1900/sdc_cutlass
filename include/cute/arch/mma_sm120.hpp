@@ -29,6 +29,15 @@
  *
  **************************************************************************************************/
 
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/mma_sm120.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): a_type; b_type; c_type; SM120_16x8x32_TN; DRegisters; ARegisters
+ */
+
+
 
 #pragma once
 

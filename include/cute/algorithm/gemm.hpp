@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/algorithm/gemm.hpp
+ * Layer: tensor algorithm layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): TA; ALayout; TB; BLayout; TC; CLayout
+ */
+
 #pragma once
 
 #include <cute/config.hpp>

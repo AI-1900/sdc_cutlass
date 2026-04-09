@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/layout.hpp
+ * Layer: top-level
+ * Purpose: layout algebra and coordinate/index mapping
+ * Key type/function entries (best-effort): Shape; Stride; Step; Coord; Tile; Layout
+ */
+
 #pragma once
 
 #include <cute/config.hpp>

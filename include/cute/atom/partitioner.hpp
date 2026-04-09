@@ -29,6 +29,15 @@
  *
  **************************************************************************************************/
 
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/atom/partitioner.hpp
+ * Layer: instruction metadata (atom/traits) layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): Layout_TV_; Tiler_MN_; TV_Tiler; Tiler_MN; TiledLayout_TV; Tensor
+ */
+
+
 #pragma once
 
 #include "cutlass/cutlass.h"

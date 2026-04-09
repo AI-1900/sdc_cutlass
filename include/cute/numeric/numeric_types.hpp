@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/numeric/numeric_types.hpp
+ * Layer: numeric/metaprogramming layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): T; sizeof_bits; cutlass; Derived
+ */
+
 #pragma once
 
 #include <cute/config.hpp>          // CUTE_HOST_DEVICE

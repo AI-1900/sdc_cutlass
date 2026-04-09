@@ -29,6 +29,15 @@
  *
  **************************************************************************************************/
 
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/mma_sm61.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: matrix multiply-accumulate abstraction
+ * Key type/function entries (best-effort): SM61_DP4A; DRegisters; ARegisters; BRegisters; CRegisters; SM61_DP2A
+ */
+
+
 #pragma once
 
 #include <cute/config.hpp>

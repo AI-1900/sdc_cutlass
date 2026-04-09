@@ -84,11 +84,57 @@
 
 using namespace cute;
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Call chain map (file/function level)
+// -----------------------------------
+// [File] examples/70_blackwell_gemm/70_blackwell_fp16_gemm.cu
+//
+// main(...)
+//   ├─ Options::parse(...)
+//   └─ run<Gemm>(options)
+//        ├─ initialize(options)
+//        │    └─ initialize_block(...)
+//        ├─ args_from_options(options)
+//        ├─ Gemm::get_workspace_size(arguments)
+//        ├─ GemmUniversalAdapter::can_implement(...)
+//        ├─ GemmUniversalAdapter::initialize(...)
+//        ├─ GemmUniversalAdapter::run()              // warmup / correctness
+//        ├─ verify(options)
+//        │    └─ DeviceGemmReference::operator()(...)
+//        └─ profiling loop:
+//             ├─ GemmUniversalAdapter::initialize(...)
+//             └─ GemmUniversalAdapter::run()
+//
+// Notes:
+// - helper.h provides CUDA/CUTLASS check macros and GpuTimer used by run().
+// - CollectiveBuilder typedefs in this file determine Blackwell SM100 kernel composition.
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
 #if defined(CUTLASS_ARCH_MMA_SM100_SUPPORTED)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 /// GEMM kernel configurations
 /////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// 【段落说明 1：内核类型与数据类型】
+// 本段定义 FP16 输入、FP32 累加/输出的 GEMM 形态：
+//  - A: RowMajor half
+//  - B: ColumnMajor half
+//  - C/D: ColumnMajor float
+// 这样可以保持较高的吞吐（半精度输入）并提高数值稳定性（FP32 累加与输出）。
+//
+// 【段落说明 2：AlignmentX 的含义】
+// AlignmentA/B/C 采用“128 bit / 元素位宽”得到按元素计的向量化访问粒度。
+// 例如 half(16 bit) => 8 elements，float(32 bit) => 4 elements。
+// 这些对齐设置会影响 CollectiveBuilder 选择的访存原子与调度实现。
+//
+// 【段落说明 3：Blackwell 主循环/尾处理组合】
+// 下面通过 CollectiveBuilder 分别生成:
+//  - CollectiveMainloop：负责 A/B 读取与 MMA 主循环
+//  - CollectiveEpilogue：负责把累加结果写回 D
+// 并使用 StageCountAutoCarveout 给主循环预留共享内存，避免与 epilogue 的 SharedStorage 冲突。
 
 // A matrix configuration
 using         ElementA    = half_t;                                         // Element type for A matrix operand
@@ -308,6 +354,10 @@ bool initialize_block(
 
 /// Initialize operands to be used in the GEMM and reference GEMM
 void initialize(const Options &options) {
+  // 【段落说明 4：初始化阶段】
+  // 1) 根据 problem size 构造 A/B/C/D 的 packed stride；
+  // 2) 分配 device buffer；
+  // 3) 用随机数填充 A/B/C，D 与 reference D 留给 kernel 输出。
 
   stride_A = cutlass::make_cute_packed_stride(StrideA{}, {options.m, options.k, 1});
   stride_B = cutlass::make_cute_packed_stride(StrideB{}, {options.n, options.k, 1});
@@ -328,6 +378,12 @@ void initialize(const Options &options) {
 /// Populates a Gemm::Arguments structure from the given commandline options
 typename Gemm::Arguments args_from_options(const Options &options)
 {
+  // 【段落说明 5：参数打包阶段】
+  // Gemm::Arguments 是 host->device 的“调用契约”，包含：
+  //  - GEMM 模式与问题规模 (M,N,K,L)
+  //  - A/B 指针与 stride
+  //  - epilogue 参数(alpha/beta) + C/D 指针与 stride
+  // 同时把 swizzle 写入 scheduler 参数，用于控制 cluster rasterization。
   typename Gemm::Arguments arguments{
     cutlass::gemm::GemmUniversalMode::kGemm,
     {options.m, options.n, options.k, 1},
@@ -341,6 +397,10 @@ typename Gemm::Arguments args_from_options(const Options &options)
 }
 
 bool verify(const Options &options) {
+  // 【段落说明 6：正确性校验阶段】
+  // 使用 CUTLASS 的 reference GEMM（device 侧）计算 ref_D，
+  // 然后逐元素比对 block_D 与 block_ref_D。
+  // 这是示例里判断“功能正确”的唯一依据。
   cutlass::TensorRef ref_A(block_A.get(), Gemm::LayoutA::packed({options.m, options.k}));
   cutlass::TensorRef ref_B(block_B.get(), Gemm::LayoutB::packed({options.k, options.n}));
   cutlass::TensorRef ref_C(block_C.get(), Gemm::LayoutC::packed({options.m, options.n}));
@@ -376,6 +436,13 @@ bool verify(const Options &options) {
 template <typename Gemm>
 int run(Options &options)
 {
+  // 【段落说明 7：执行主流程】
+  // run() 的顺序是 CUTLASS device API 的标准范式：
+  //   initialize() -> 构造 Gemm 对象 -> 组装 arguments
+  //   -> can_implement() -> initialize(arguments, workspace)
+  //   -> run() warmup + verify()
+  //   -> 迭代计时并统计 GFLOPS
+  // 其中 workspace 由 Gemm::get_workspace_size 决定，便于兼容不同 kernel 实现。
   initialize(options);
 
   // Instantiate CUTLASS kernel depending on templates
@@ -439,6 +506,12 @@ int run(Options &options)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char const **args) {
+  // 【段落说明 8：入口与环境门禁】
+  // 该示例只针对 Blackwell SM100a + CUDA 12.8+：
+  //  - 先检查编译工具链版本；
+  //  - 再检查当前设备 compute capability；
+  //  - 通过后解析命令行并运行 run<Gemm>()。
+  // 若环境不满足，示例直接返回 0（按 no-op 处理）。
 
   // CUTLASS must be compiled with CUDA 12.8 Toolkit to run this example
   // and must have compute capability at least 100a.

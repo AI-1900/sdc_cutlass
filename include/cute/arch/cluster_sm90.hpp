@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/cluster_sm90.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): ElectOneLaneIdReturnType; Copyright; DAMAGES; TORT; defined; cluster_arrive_relaxed
+ */
+
 #pragma once
 
 #include <cute/config.hpp>

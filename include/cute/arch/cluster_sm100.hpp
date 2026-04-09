@@ -29,6 +29,15 @@
  *
  **************************************************************************************************/
 
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/arch/cluster_sm100.hpp
+ * Layer: hardware architecture wrapper layer
+ * Purpose: core CuTe component
+ * Key type/function entries (best-effort): Copyright; DAMAGES; TORT; initialize_preferred_cluster_launch; cluster; within
+ */
+
+
 //
 
 //

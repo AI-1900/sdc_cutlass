@@ -28,6 +28,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **************************************************************************************************/
+
+/*
+ * [CuTe Annotated Guide]
+ * File: include/cute/util/print_tensor.hpp
+ * Layer: debug/printing utility layer
+ * Purpose: tensor abstraction and tensor composition helpers
+ * Key type/function entries (best-effort): Layout; SwizzleFn; Engine; Copyright; DAMAGES; TORT
+ */
+
 #pragma once
 
 #include <cute/config.hpp>           // CUTE_HOST_DEVICE
