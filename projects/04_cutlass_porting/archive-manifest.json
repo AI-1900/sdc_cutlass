@@ -64,18 +64,18 @@
     },
     {
       "path": "conversations/2026-10-19T13-02-14-01a15289-f37c-7381-98f3-761b35ea0b07.md",
-      "bytes": 2187,
-      "sha256": "944b55e2489c270aa636f33500ba8558c023c0891358b21bc0dcb4489aa74275"
+      "bytes": 2424,
+      "sha256": "212f1e2ff8a0706b2a3409f5f8dd51e673465c44d94bd44b751c35059965e6b0"
     },
     {
       "path": "conversations/index.json",
       "bytes": 3303,
-      "sha256": "f75ecf8ec763c85b71da9e56b49402d21c05c64dff32348a3eaa21c953497bce"
+      "sha256": "ed70d6501db981e2a218b0e9783789b6391fa63a508896dbf8493be00abe3313"
     },
     {
       "path": "conversations/README.md",
       "bytes": 2110,
-      "sha256": "8ef6ae0a1787cfbcd7fb4e56c320609129566968f6103cd337c37a43289d4ed5"
+      "sha256": "120a2eb1f6bc18a3a6413c4321345512978a68b78b9f012d8bafb5fefee0b7b5"
     },
     {
       "path": "CUTLASS_架构学习与源码调研指南.md",
@@ -339,8 +339,8 @@
     },
     {
       "path": "tools/sync_project.py",
-      "bytes": 2320,
-      "sha256": "31f417e7ad9205d8c84a12b62225550b9ef277ecbd9c272d06f1bf6c2571fa20"
+      "bytes": 2336,
+      "sha256": "62ba8136edb374593959e234b9990d711f20941247f6be4bce2bff78fc23161b"
     },
     {
       "path": "visualizations/01a14cda-1802-7303-a500-acc64777b621/sm100-gemm-visual-guide-standalone.html",

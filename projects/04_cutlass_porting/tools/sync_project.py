@@ -36,7 +36,7 @@ for item in manifest['files'] + [{'path': 'archive-manifest.json'}]:
     path = ROOT / item['path']
     if 'sha256' in item:
         assert hashlib.sha256(path.read_bytes()).hexdigest() == item['sha256'], 'Changed since export: ' + item['path']
-    sha = git('hash-object', '-w', '--', str(path))
+    sha = git('hash-object', '-w', '--no-filters', '--', str(path))
     entries.append(f'100644 {sha}\t{PREFIX}{item["path"]}\0')
 git('update-index', '-z', '--index-info', data=''.join(entries).encode('utf-8'))
 tree = git('write-tree')
