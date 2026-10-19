@@ -1,0 +1,1222 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CUTLASS 源码与架构指南</title><style>
+:root{--ink:#18344c;--muted:#53687d;--accent:#146f77;--line:#d7e2ea}*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:26px}body{margin:0;background:#f4f7fa;color:var(--ink);font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif;font-size:16px;line-height:1.85}aside{position:fixed;inset:0 auto 0 0;width:260px;background:#15354e;color:white;padding:32px 23px;overflow:auto}aside strong{display:block;font-size:24px;letter-spacing:1px;margin-bottom:8px}aside small{display:block;color:#b4d5df;margin-bottom:28px}aside a{display:block;color:#d6e8ed;text-decoration:none;padding:9px 0;line-height:1.5;font-size:14px;border-bottom:1px solid #305066}main{max-width:1270px;margin-left:260px;padding:48px 54px 100px;background:white;min-height:100vh}h1{font-size:38px;line-height:1.4;margin:0 0 30px}h2{font-size:28px;margin:58px 0 22px;border-bottom:2px solid var(--line);padding-bottom:12px}h3{font-size:21px;margin:33px 0 14px;color:#126e76}a{color:#166baa;text-decoration:none;overflow-wrap:anywhere}a:hover{text-decoration:underline}p{margin:14px 0}blockquote{background:#edf5f7;border-left:5px solid #127e82;margin:24px 0;padding:14px 22px;color:#34566a}table{width:100%;border-collapse:collapse;margin:22px 0;font-size:14px;line-height:1.7}th{background:#eaf2f6;color:#21495f;text-align:left}td,th{padding:11px 13px;border:1px solid var(--line);vertical-align:top}tbody tr:nth-child(even){background:#f8fafc}code{font-family:Consolas,monospace;font-size:.91em;background:#f0f4f7;padding:2px 5px;border-radius:4px;overflow-wrap:anywhere}pre{background:#142f45;color:#e2edf5;padding:22px;border-radius:9px;overflow:auto;line-height:1.65;font-size:14px}pre code{background:none;padding:0;overflow-wrap:normal}figure{margin:30px 0;break-inside:avoid}figure svg{width:100%;height:auto;display:block}figcaption{font-size:13px;color:var(--muted);text-align:center;margin-top:8px}li{margin:7px 0}#源码证据索引~table{font-size:13px}button{border:1px solid #638394;background:transparent;color:white;padding:8px 12px;border-radius:6px;margin-top:24px;cursor:pointer}@media(max-width:1000px){aside{position:static;width:100%;padding:24px}aside a{display:inline-block;margin-right:20px;border:0}main{margin:0;padding:30px 22px}h1{font-size:30px}table{display:block;overflow-x:auto}}@media print{aside{display:none}main{margin:0;padding:0;max-width:none}body{background:white;font-size:10pt}h1{font-size:25pt}h2{font-size:18pt;break-before:page;margin-top:12pt}h3{break-after:avoid}table{font-size:8pt}pre{white-space:pre-wrap;font-size:8pt}a{color:inherit}figure{break-inside:avoid}blockquote{font-size:9pt}@page{size:A4;margin:16mm}}
+</style><aside><strong>CUTLASS</strong><small>源码 · 架构 · 执行 · 移植<br>4.8.0 dev / ffa119a1</small><a href="#阅读导航">阅读导航</a><a href="#先建立整体认识">先建立整体认识</a><a href="#仓库地图与阅读入口">仓库地图与阅读入口</a><a href="#架构分层抽象边界与组合">架构分层、抽象边界与组合</a><a href="#cute空间映射的语言">CuTe：空间映射的语言</a><a href="#一次-gemm-的完整执行">一次 GEMM 的完整执行</a><a href="#从-hopper-到-blackwell">从 Hopper 到 Blackwell</a><a href="#调度策略与性能瓶颈">调度策略与性能瓶颈</a><a href="#修改与扩展的落点">修改与扩展的落点</a><a href="#新增硬件后端的实现路径">新增硬件后端的实现路径</a><a href="#构建验证与性能实验">构建、验证与性能实验</a><a href="#推荐阅读路线与问题索引">推荐阅读路线与问题索引</a><a href="#源码证据索引">源码证据索引</a><button onclick="window.print()">打印 / 保存为 PDF</button></aside><main><h1 id="cutlass-源码与架构指南">CUTLASS 源码与架构指南</h1>
+<blockquote>
+<p>从架构组合，到一次 GEMM 的执行，再到优化与硬件移植。<br>分析对象：<code>E:\000wsp\01repo\08sutlass\cutlass</code><br>版本：<code>CUTLASS 4.8.0</code> 开发快照，<code>v4.8.0dev-1-gffa119a1</code><br>提交：<code>ffa119a1255d78998536107466cc7097ecefa393</code><br>分析日期：2026-10-18。本文所述接口和文件以此工作区快照为准。</p>
+</blockquote>
+<h2 id="阅读导航">阅读导航</h2>
+<ol>
+<li><a href="#%E5%85%88%E5%BB%BA%E7%AB%8B%E6%95%B4%E4%BD%93%E8%AE%A4%E8%AF%86">先建立整体认识</a></li>
+<li><a href="#%E4%BB%93%E5%BA%93%E5%9C%B0%E5%9B%BE%E4%B8%8E%E9%98%85%E8%AF%BB%E5%85%A5%E5%8F%A3">仓库地图与阅读入口</a></li>
+<li><a href="#%E6%9E%B6%E6%9E%84%E5%88%86%E5%B1%82%E6%8A%BD%E8%B1%A1%E8%BE%B9%E7%95%8C%E4%B8%8E%E7%BB%84%E5%90%88">架构分层、抽象边界与组合</a></li>
+<li><a href="#cute%E7%A9%BA%E9%97%B4%E6%98%A0%E5%B0%84%E7%9A%84%E8%AF%AD%E8%A8%80">CuTe：空间映射的语言</a></li>
+<li><a href="#%E4%B8%80%E6%AC%A1-gemm-%E7%9A%84%E5%AE%8C%E6%95%B4%E6%89%A7%E8%A1%8C">一次 GEMM 的完整执行</a></li>
+<li><a href="#%E4%BB%8E-hopper-%E5%88%B0-blackwell">从 Hopper 到 Blackwell</a></li>
+<li><a href="#%E8%B0%83%E5%BA%A6%E7%AD%96%E7%95%A5%E4%B8%8E%E6%80%A7%E8%83%BD%E7%93%B6%E9%A2%88">调度策略与性能瓶颈</a></li>
+<li><a href="#%E4%BF%AE%E6%94%B9%E4%B8%8E%E6%89%A9%E5%B1%95%E7%9A%84%E8%90%BD%E7%82%B9">修改与扩展的落点</a></li>
+<li><a href="#%E6%96%B0%E5%A2%9E%E7%A1%AC%E4%BB%B6%E5%90%8E%E7%AB%AF%E7%9A%84%E5%AE%9E%E7%8E%B0%E8%B7%AF%E5%BE%84">新增硬件后端的实现路径</a></li>
+<li><a href="#%E6%9E%84%E5%BB%BA%E9%AA%8C%E8%AF%81%E4%B8%8E%E6%80%A7%E8%83%BD%E5%AE%9E%E9%AA%8C">构建、验证与性能实验</a></li>
+<li><a href="#%E6%8E%A8%E8%8D%90%E9%98%85%E8%AF%BB%E8%B7%AF%E7%BA%BF%E4%B8%8E%E9%97%AE%E9%A2%98%E7%B4%A2%E5%BC%95">推荐阅读路线与问题索引</a></li>
+<li><a href="#%E6%BA%90%E7%A0%81%E8%AF%81%E6%8D%AE%E7%B4%A2%E5%BC%95">源码证据索引</a></li>
+</ol>
+<h2 id="先建立整体认识">先建立整体认识</h2>
+<p>CUTLASS 的核心是<strong>把高性能 GPU 算子的实现拆成可组合的编译期组件</strong>。它提供模板库、CuTe 布局与操作抽象、实例化算子库、性能分析工具，以及 Python DSL 等入口。应用通常选定一组类型、布局、tile 和调度策略，编译器据此生成专用 kernel，再通过 Host 接口传入矩阵地址与问题规模。</p>
+<p>本文围绕三个问题展开：</p>
+<table>
+<thead>
+<tr>
+<th>核心问题</th>
+<th>应掌握的主线</th>
+<th>阅读后的实际能力</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>如何设计？</td>
+<td>Device → Kernel → Collective → Tiled MMA/Copy → Atom</td>
+<td>判断一个修改属于哪一层，理解模板组合如何生成实现</td>
+</tr>
+<tr>
+<td>如何执行？</td>
+<td>Arguments → Params → launch → 调度 → 搬运 → MMA → epilogue</td>
+<td>从应用参数一路定位到 PTX，以及对应硬件资源</td>
+</tr>
+<tr>
+<td>如何修改、优化、移植？</td>
+<td>先识别约束，再选择扩展点，最后验证性能</td>
+<td>区分参数调优、新算子融合、同厂商新架构适配、跨厂商重建</td>
+</tr>
+</tbody></table>
+<p>有两个方向需要同时理解：<strong>空间映射</strong>决定哪个线程、哪个 lane、哪条指令处理哪个元素；<strong>时间调度</strong>决定什么时候搬运、计算、等待、释放和复用存储。CuTe 主要提供前者的表达工具，Collective 和 Kernel 共同承担后者；两者在 MMA、Copy、barrier 等硬件操作处相接。<a href="#S02">S02</a><a href="#S03">S03</a></p>
+<p><figure><svg xmlns="http://www.w3.org/2000/svg" width="1100" height="700" viewBox="0 0 1100 700" role="img" aria-label="01  架构：编译期组合，运行期协作"><defs><marker id="arrow-01-architecture" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9" fill="#236caa"/></marker></defs><rect width="1100" height="700" rx="18" fill="#f7fafc"/><text x="30" y="39" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="24" font-weight="bold" fill="#16324f" text-anchor="start">01  架构：编译期组合，运行期协作</text><text x="30" y="68" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#53687d" text-anchor="start">主线为当前仓库保留的 C++ 3.x 风格 API；箭头表示依赖/组合，不是逐层虚函数调用。</text><rect x="35" y="95" width="680" height="69" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="50" y="123" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">Device / Host Adapter</text><text x="50" y="148" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">Arguments、workspace、Params、CUDA launch</text><path d="M375 164 L375 179" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-01-architecture)"/><rect x="35" y="183" width="680" height="69" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="50" y="211" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">Kernel / GemmUniversal</text><text x="50" y="236" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">线程角色、工作 tile、shared storage、资源生命周期</text><path d="M375 252 L375 267" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-01-architecture)"/><rect x="35" y="271" width="680" height="69" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="50" y="299" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">Collective / Mainloop + Epilogue</text><text x="50" y="324" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">K 循环、搬运/计算流水线、输出融合</text><path d="M375 340 L375 355" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-01-architecture)"/><rect x="35" y="359" width="680" height="69" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="50" y="387" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">CuTe / Tiled MMA + Copy</text><text x="50" y="412" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">将指令铺到 tile；划分线程和数据</text><path d="M375 428 L375 443" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-01-architecture)"/><rect x="35" y="447" width="680" height="69" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="50" y="475" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">Atom + Traits</text><text x="50" y="500" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">指令形状、fragment、线程/值布局、unpack</text><path d="M375 516 L375 531" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-01-architecture)"/><rect x="35" y="535" width="680" height="69" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="50" y="563" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">Architecture operations</text><text x="50" y="588" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">PTX、descriptor、barrier、TMEM 操作</text><rect x="770" y="120" width="295" height="126" rx="10" fill="white" stroke="#a76025" stroke-width="1.6"/><text x="785" y="148" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#a76025" text-anchor="start">编译期配置</text><text x="785" y="173" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">Arch / 类型 / Layout</text><text x="785" y="196" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">Tile / Cluster / Stage</text><text x="785" y="219" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">Schedule / Fusion</text><rect x="770" y="300" width="295" height="126" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="785" y="328" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">运行时输入</text><text x="785" y="353" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">M,N,K,L / stride</text><text x="785" y="376" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">A,B,C,D 指针</text><text x="785" y="399" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">alpha,beta / workspace</text><rect x="770" y="480" width="295" height="126" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="785" y="508" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">GPU 执行资源</text><text x="785" y="533" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">线程与矩阵单元</text><text x="785" y="556" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">GMEM / SMEM / 寄存器</text><text x="785" y="579" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">TMEM / 异步完成机制</text><path d="M770 183 L720 210" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-01-architecture)"/><path d="M770 363 L720 130" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-01-architecture)"/><path d="M715 580 L765 543" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-01-architecture)"/><text x="35" y="668" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="17" font-weight="normal" fill="#53687d" text-anchor="start">边界：CuTe 描述空间映射；Collective 与 Kernel 组织时间和协作。</text></svg><figcaption>图1：CUTLASS 分层架构及编译期组合</figcaption></figure></p>
+<h3 id="本文的边界与证据">本文的边界与证据</h3>
+<p>主线使用 C++ 的 <strong>3.x 风格 GEMM API</strong>，即当前 4.8 开发仓库仍在使用的 Device/Kernel/Collective 分层。仓库版本号为 4.x，不表示所有 C++ 接口都换成一套名为“4.x GEMM API”的新层级。较早的 2.x API、手写 CuTe kernel、Python DSL 与 CuTe IR 编译器另行解释。</p>
+<p>本文直接读取了本地关键实现、示例与文档；“新增非 NVIDIA 后端路线”是基于耦合点提出的工程方案，<strong>不是仓库已有的通用后端插件接口</strong>。当前机器检测到 RTX 4060 Laptop GPU（SM89），因此本文没有运行 Hopper/SM100 kernel，也没有给出这些架构的实测吞吐。文中资源估算和性能判断均标明适用条件。</p>
+<p>工作区已有未跟踪的 <code>.vscode/</code> 和 <code>docs/01_mma_sm100_host_device_callchain_zh.md</code>。分析保留这些内容；已有教程笔记只作为阅读线索，关键调用链以源码重新核对。指南产物放在独立的 <code>deliverables/cutlass-guide/</code>，没有修改目标仓库。</p>
+<h2 id="仓库地图与阅读入口">仓库地图与阅读入口</h2>
+<pre><code class="language-text">cutlass/
+├── include/
+│   ├── cutlass/
+│   │   ├── gemm/
+│   │   │   ├── device/           Host 侧 GEMM 接口与启动适配
+│   │   │   ├── kernel/           整个 kernel、tile scheduler
+│   │   │   ├── collective/       3.x 主循环及其 builder
+│   │   │   ├── dispatch_policy.hpp  策略标签与主循环 dispatch policy
+│   │   │   ├── threadblock/      2.x CTA 级实现
+│   │   │   ├── warp/             2.x warp 级实现
+│   │   │   └── thread/           2.x 线程级实现
+│   │   ├── epilogue/             输出阶段、融合操作、visitor
+│   │   ├── pipeline/             异步流水线与状态管理
+│   │   └── arch/                 架构标签、barrier、同步等低层设施
+│   └── cute/
+│       ├── layout*.hpp           布局与布局代数
+│       ├── tensor*.hpp           引擎 + Layout 的 tensor 视图
+│       ├── algorithm/            copy、gemm 等算法分派
+│       ├── atom/                 Copy/MMA traits、Atom、Tiled 操作
+│       └── arch/                 架构操作与内联 PTX、descriptor、TMEM
+├── examples/
+│   ├── 49_hopper_gemm_with_collective_builder/
+│   ├── 71_blackwell_gemm_with_collective_builder/
+│   ├── cute/tutorial/            CuTe 的较小教学 kernel
+│   └── python/CuTeDSL/           Python kernel 示例
+├── test/unit/                   组件与算子验证，含架构专用测试
+├── tools/
+│   ├── library/                 实例化操作与库接口
+│   ├── profiler/                操作枚举、正确性与性能测试
+│   └── util/                    分配、reference、计时等辅助工具
+├── python/                      实例生成器、Python DSL 等
+├── operators/                   当前快照的算子集成入口
+├── cutlass_compiler/            CuTe IR / MLIR 编译器栈
+└── media/docs/                  仓库内官方文档
+</code></pre>
+<h3 id="三种常见使用入口">三种常见使用入口</h3>
+<table>
+<thead>
+<tr>
+<th>入口</th>
+<th>用户直接控制什么</th>
+<th>适合什么任务</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>C++ Builder + Adapter</td>
+<td>架构、类型、布局、tile、cluster、stage、schedule、融合</td>
+<td>实例化和定制成熟的 GEMM 实现</td>
+</tr>
+<tr>
+<td>手写 CuTe kernel</td>
+<td>Tensor/Layout、线程划分、copy/MMA、同步和 launch</td>
+<td>学习、实验、已有 Collective 难以表达的算法</td>
+</tr>
+<tr>
+<td>CuTe DSL</td>
+<td>用 Python 表达相近的 layout/tensor/atom/pipeline 概念</td>
+<td>JIT/AOT 工作流与快速 kernel 开发</td>
+</tr>
+</tbody></table>
+<p>此外，<code>tools/library</code> 和 <code>tools/profiler</code> 可以围绕已生成的 kernel 实例枚举、运行和比较；这与直接实例化单个 C++ 模板是两个入口。<strong>单个 <code>GemmUniversalAdapter&lt;Kernel&gt;</code> 不会自动枚举整个库并为任意输入找到最优 kernel。</strong></p>
+<h3 id="不要把两代-api-的职责一一机械对应">不要把两代 API 的职责一一机械对应</h3>
+<p>2.x 常见阅读路线是 <code>device → kernel → threadblock → warp → thread/arch</code>，许多 iterator、MMA 和 epilogue 类型紧贴 GPU 层级。3.x 风格改用 CuTe 表达线程与数据映射，把 mainloop/epilogue 提升为 Collective。它们在当前仓库并存，<code>.h</code>/<code>.hpp</code> 文件后缀只能提供线索，不能作为可靠的版本判据。<a href="#S02">S02</a><a href="#S03">S03</a></p>
+<h2 id="架构分层抽象边界与组合">架构分层、抽象边界与组合</h2>
+<h3 id="各层到底负责什么">各层到底负责什么</h3>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>核心职责</th>
+<th>典型类型或入口</th>
+<th>主要不变量</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Device</td>
+<td>接收参数、检查实现条件、workspace、参数转换、launch</td>
+<td><code>GemmUniversalAdapter</code></td>
+<td>参数、目标架构、启动方式与具体 kernel 一致</td>
+</tr>
+<tr>
+<td>Kernel</td>
+<td>线程角色、shared storage、tile 调度、Collective 生命周期</td>
+<td><code>kernel::GemmUniversal</code> 的特化</td>
+<td>同一工作 tile 的坐标与各参与角色一致，尾部协议完成</td>
+</tr>
+<tr>
+<td>Collective</td>
+<td>K tile 循环、异步搬运/计算协作；或输出阶段融合与存储</td>
+<td><code>CollectiveMma</code>、epilogue Collective</td>
+<td>数据就绪后才能消费，完成消费后才能复用</td>
+</tr>
+<tr>
+<td>Tiled MMA/Copy</td>
+<td>将一个指令级操作在更大 tile 上铺开，给线程切片</td>
+<td><code>TiledMMA</code>、<code>TiledCopy</code></td>
+<td>数据的线程/值映射符合 Atom 的要求</td>
+</tr>
+<tr>
+<td>Atom / Traits</td>
+<td>指令形状、数据类型、参与线程、fragment、寄存器/descriptor 接口</td>
+<td><code>MMA_Atom</code>、<code>Copy_Atom</code>、<code>MMA_Traits</code></td>
+<td>软件视图与指令操作数 ABI 相符</td>
+</tr>
+<tr>
+<td>Architecture 封装</td>
+<td>发出 PTX、构造硬件 descriptor、管理特定资源</td>
+<td><code>cute/arch/*</code>、<code>cutlass/arch/*</code></td>
+<td>对齐、合法地址空间、同步语义和指令目标正确</td>
+</tr>
+</tbody></table>
+<p>最后一行是实现落点，通常把前五行称为 GEMM 的五层概念架构。Atom 既需要 Traits 描述语义，也依赖 Architecture 操作对象发出指令。<a href="#S03">S03</a><a href="#S14">S14</a><a href="#S15">S15</a></p>
+<p>Collective 不是固定等于“一个 warp”或“一个 CTA”的同义词。其含义是能利用硬件搬运、通信和同步机制协作的一组线程；不同实现可跨 warp，某些能力涉及 cluster 中的 CTA。Kernel 负责把这些协作组织到整个工作网格中。</p>
+<h3 id="编译期如何组装">编译期如何组装</h3>
+<p><code>49_collective_builder.cu</code> 提供了一条清晰的组装链：<a href="#S04">S04</a></p>
+<pre><code class="language-cpp">// 结构示意，省略完整模板参数；可编译版本见示例 49。
+using Epilogue = typename EpilogueBuilder&lt;...&gt;::CollectiveOp;
+using Mainloop = typename MainloopBuilder&lt;
+    ..., StageCountAutoCarveout&lt;sizeof(typename Epilogue::SharedStorage)&gt;,
+    MainloopSchedule
+&gt;::CollectiveOp;
+using Kernel = cutlass::gemm::kernel::GemmUniversal&lt;
+    cute::Shape&lt;int,int,int,int&gt;, Mainloop, Epilogue, TileSchedulerTag&gt;;
+using Gemm = cutlass::gemm::device::GemmUniversalAdapter&lt;Kernel&gt;;
+</code></pre>
+<p>这里把 epilogue 放在前面，是为了先知道它需要多少 shared memory，再让 mainloop builder 在剩余预算内选择 stage 数。实际共享存储还包含 barrier、scheduler 等结构，应以最终 <code>Kernel::SharedStorageSize</code> 和实现中的 carveout 规则为准。</p>
+<p>组合过程主要发生在编译期：</p>
+<ol>
+<li>Builder 根据 <code>ArchTag</code>、数据类型、布局、对齐、tile、cluster 和 schedule 选择模板特化。</li>
+<li>mainloop builder 选取 MMA 操作、SMEM 布局、copy 原语与 dispatch policy。</li>
+<li><code>GemmUniversal</code> 按 <code>DispatchPolicy::Schedule</code> 等条件匹配具体 Kernel 实现。</li>
+<li>Adapter 包装这个 Kernel，提供统一的 Host 操作接口。</li>
+</ol>
+<p>这是一种模板与标签分派结构，通常没有逐个 tile 经过虚函数分派的开销。编译器能静态推导的循环和映射可能展开；M/N/K、地址和 stride 中的动态部分仍在运行时参与计算。不能把“模板化”理解成“一切工作都在编译期完成”。<a href="#S05">S05</a><a href="#S06">S06</a></p>
+<h3 id="三个容易混淆的调度">三个容易混淆的“调度”</h3>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>决定什么</th>
+<th>修改入口</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Kernel/mainloop schedule</td>
+<td>producer/consumer 如何分工，采用何种搬运和 MMA 协作</td>
+<td><code>KernelSchedule...</code> 标签及其特化</td>
+</tr>
+<tr>
+<td>Tile scheduler</td>
+<td>CTA/cluster 接下来计算哪个 M/N/K/L 工作 tile</td>
+<td><code>PersistentScheduler</code>、<code>StreamKScheduler</code> 等</td>
+</tr>
+<tr>
+<td>Pipeline schedule / stage</td>
+<td>一个 tile 内不同批次的搬运、MMA、输出如何重叠</td>
+<td>stage 数、PipelineState、barrier 协议</td>
+</tr>
+</tbody></table>
+<p><code>KernelScheduleAuto</code> 和 <code>StageCountAuto</code> 是 builder 的选择规则，不等于针对当前输入执行在线全局性能搜索。更换 tile scheduler 也不自动重写 mainloop 内部的流水线。<a href="#S04">S04</a><a href="#S05">S05</a><a href="#S20">S20</a></p>
+<h2 id="cute空间映射的语言">CuTe：空间映射的语言</h2>
+<h3 id="tensorlayout-与真正的数据移动">Tensor、Layout 与真正的数据移动</h3>
+<p>CuTe 的 <code>Layout</code> 表示从逻辑坐标到线性索引的映射。最直观的例子：</p>
+<pre><code class="language-text">shape  = (2, 3)
+stride = (3, 1)
+offset(m,n) = 3*m+n
+
+        n=0  n=1  n=2
+m=0       0    1    2
+m=1       3    4    5
+</code></pre>
+<p>stride 通常以元素为单位；计算实际字节地址时还涉及元素类型、recast 和存储方式。对于 sub-byte 数据，不能简单把每个逻辑元素当成独立字节。</p>
+<p><code>Tensor</code> 可理解为 <strong>Engine（存储/访问引擎）+ Layout</strong>。它可以是现有 GMEM/SMEM 数据的视图，也可以承载寄存器 fragment 等。<code>make_tensor(pointer, layout)</code> 本身通常只建立视图；对视图进行 partition、slice、tile，不表示已经把数据从 GMEM 搬到了 SMEM。执行搬运的是后续 <code>copy</code>，执行乘加的是 <code>gemm</code> 分派到的 Atom。<a href="#S21">S21</a><a href="#S22">S22</a></p>
+<p><figure><svg xmlns="http://www.w3.org/2000/svg" width="1100" height="545" viewBox="0 0 1100 545" role="img" aria-label="02  CuTe：坐标、线程、存储与操作"><defs><marker id="arrow-02-cute-mapping" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9" fill="#236caa"/></marker></defs><rect width="1100" height="545" rx="18" fill="#f7fafc"/><text x="30" y="39" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="24" font-weight="bold" fill="#16324f" text-anchor="start">02  CuTe：坐标、线程、存储与操作</text><text x="30" y="68" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#53687d" text-anchor="start">视图构造 / partition 不会自动搬运数据；copy 和 MMA 才对应实际硬件工作。</text><rect x="30" y="100" width="310" height="120" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="45" y="128" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">逻辑矩阵与坐标</text><text x="45" y="153" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">A[M,K] / B[N,K] / D[M,N]</text><text x="45" y="176" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">shape + stride → 线性偏移</text><text x="45" y="199" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">动态尺寸与编译期布局可混合</text><rect x="395" y="100" width="310" height="120" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="410" y="128" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">Tensor = Engine + Layout</text><text x="410" y="153" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">Engine：访问/存储语境</text><text x="410" y="176" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">Layout：坐标映射</text><text x="410" y="199" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">GMEM / SMEM / RMEM / TMEM</text><rect x="760" y="100" width="310" height="120" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="775" y="128" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">Tiled 操作 / 线程切片</text><text x="775" y="153" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">TiledMMA / TiledCopy</text><text x="775" y="176" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">get_slice(thread_idx)</text><text x="775" y="199" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">partition_A/B/C 或 S/D</text><path d="M340 160 L390 160" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-02-cute-mapping)"/><path d="M705 160 L755 160" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-02-cute-mapping)"/><rect x="30" y="300" width="310" height="130" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="45" y="328" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">地址例：shape=(2,3)</text><text x="45" y="353" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">stride=(3,1)，偏移=3m+n</text><text x="45" y="376" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">第 0 行：0  1  2</text><text x="45" y="399" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">第 1 行：3  4  5</text><rect x="395" y="300" width="310" height="130" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="410" y="328" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">线程和值的映射</text><text x="410" y="353" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">哪些 lane 持有哪些 fragment</text><text x="410" y="376" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">哪些线程发射 / 参与指令</text><text x="410" y="399" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">逻辑布局 ≠ 物理内存连续性</text><rect x="760" y="300" width="310" height="130" rx="10" fill="white" stroke="#a76025" stroke-width="1.6"/><text x="775" y="328" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#a76025" text-anchor="start">Atom / Traits → 指令</text><text x="775" y="353" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">copy：触发实际搬运</text><text x="775" y="376" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">gemm：展开到 MMA 操作</text><text x="775" y="399" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">descriptor：编码硬件访问</text><path d="M915 220 L915 294" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-02-cute-mapping)"/><path d="M705 365 L755 365" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-02-cute-mapping)"/><text x="30" y="490" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="normal" fill="#53687d" text-anchor="start">调试时分别记录：逻辑 shape/stride、线程角色、存储位置、数据生命周期。</text></svg><figcaption>图2：逻辑张量、线程分配与硬件操作之间的关系</figcaption></figure></p>
+<h3 id="布局代数解决什么问题">布局代数解决什么问题</h3>
+<table>
+<thead>
+<tr>
+<th>操作/概念</th>
+<th>要回答的问题</th>
+<th>阅读时的注意点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>composition</code></td>
+<td>两套坐标映射串起来后，最终访问哪里？</td>
+<td>对比定义域和值域，不能按字符串理解</td>
+</tr>
+<tr>
+<td>divide / product</td>
+<td>如何把一个区域分块，或把小布局铺成大区域？</td>
+<td>层次 shape 的每个 mode 有具体含义</td>
+</tr>
+<tr>
+<td><code>local_tile</code></td>
+<td>当前 CTA/工作 tile 对应全局矩阵哪一块？</td>
+<td>tile 坐标与 K tile 的保留维度</td>
+</tr>
+<tr>
+<td><code>partition_A/B/C</code></td>
+<td>当前线程在 MMA 操作里看到哪些输入和结果？</td>
+<td>这是指令需要的映射，未必是连续数组</td>
+</tr>
+<tr>
+<td><code>partition_S/D</code></td>
+<td>当前 copy 线程从哪里读、向哪里写？</td>
+<td>源与目标的元素集合及向量宽度必须匹配</td>
+</tr>
+<tr>
+<td>Swizzle</td>
+<td>SMEM 物理地址如何排列以满足指令/减少冲突？</td>
+<td>改动后必须同步校验 copy 和 MMA descriptor</td>
+</tr>
+</tbody></table>
+<p><code>Layout</code> 不只是传统 row-major/column-major 的包装。它还用于表达线程 ID、lane、value、M/N/K 模式以及组合后的映射；布局代数把这些关系变成可以计算和静态检查的对象。<a href="#S23">S23</a></p>
+<h3 id="从一个-atom-到更大-tile">从一个 Atom 到更大 tile</h3>
+<p>一个 MMA Atom 定义一种指令的逻辑工作：例如 M×N×K 形状、A/B/C 数据类型，以及线程和值如何分布。<code>make_tiled_mma</code> 将 Atom 在线程和值空间中铺开，形成更大的 TiledMMA；<code>get_slice(thread_idx)</code> 再提供单个线程的切片视角。<a href="#S14">S14</a></p>
+<p>这条关系不应理解为“每个线程独立执行一次完整的小 GEMM”。某些指令由一个 warp 协作执行，Hopper WGMMA 涉及 warpgroup；SM100 UMMA 又有不同的发射与参与语义。逻辑计算覆盖范围、指令发射线程和实际参与的数据范围需要分开阅读。</p>
+<h3 id="一次源码调试应记录四张表">一次源码调试应记录四张表</h3>
+<ol>
+<li><strong>逻辑表</strong>：A、B、C/D 各 mode 的含义、shape 和 stride。</li>
+<li><strong>线程表</strong>：CTA、warpgroup、warp、lane 分别负责什么。</li>
+<li><strong>存储表</strong>：当前对象是 GMEM 指针、SMEM 视图、寄存器 fragment、descriptor 还是 TMEM 地址。</li>
+<li><strong>时序表</strong>：谁写入、谁等待、谁读取、何时允许覆盖。</li>
+</ol>
+<p>很多“数值随机错误”来自第三、四张表；很多“编译通过但慢”来自第二、三张表。</p>
+<h2 id="一次-gemm-的完整执行">一次 GEMM 的完整执行</h2>
+<h3 id="先固定数学约定">先固定数学约定</h3>
+<p>标准语义是 <code>D = alpha × A × B + beta × C</code>。本文用数学形状 A[M,K]、B[K,N]、C/D[M,N]；CuTe/CUTLASS 内部常把 B 表成 <strong>[N,K,L] 逻辑模式</strong>，由 stride 指定如何映射到实际存储，这不等于额外生成了一个转置矩阵。批量维度通常记为 L，问题形状为 <code>[M,N,K,L]</code>。<a href="#S03">S03</a><a href="#S04">S04</a></p>
+<p>本文主线选择 <strong>Hopper + TMA + GMMA + cooperative warp specialization</strong> 的已存在实现。示例 49 同时实例化多个 schedule；不要把其默认 Auto 配置与本文选定的 cooperative 路径直接当成同一个具体实例。</p>
+<p><figure><svg xmlns="http://www.w3.org/2000/svg" width="1100" height="835" viewBox="0 0 1100 835" role="img" aria-label="03  一次 GEMM：Host → Kernel → Collective → 指令"><defs><marker id="arrow-03-gemm-execution" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9" fill="#236caa"/></marker></defs><rect width="1100" height="835" rx="18" fill="#f7fafc"/><text x="30" y="39" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="24" font-weight="bold" fill="#16324f" text-anchor="start">03  一次 GEMM：Host → Kernel → Collective → 指令</text><text x="30" y="68" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#53687d" text-anchor="start">代表路径：Hopper TMA + GMMA cooperative；其他 schedule 的分工和启动分支可能不同。</text><rect x="35" y="94" width="800" height="68" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="50" y="122" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">应用</text><text x="50" y="147" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">Arguments：M/N/K/L、A/B/C/D、stride、alpha/beta</text><path d="M430 162 L430 177" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-03-gemm-execution)"/><rect x="35" y="181" width="800" height="68" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="50" y="209" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">Host Adapter</text><text x="50" y="234" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">can_implement → workspace → initialize → Params</text><path d="M430 249 L430 264" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-03-gemm-execution)"/><rect x="35" y="268" width="800" height="68" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="50" y="296" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">启动入口</text><text x="50" y="321" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">run：grid / block / SMEM / cluster → device_kernel</text><path d="M430 336 L430 351" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-03-gemm-execution)"/><rect x="35" y="355" width="800" height="68" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="50" y="383" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">Kernel</text><text x="50" y="408" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">operator()：角色、pipeline、scheduler、工作 tile</text><path d="M430 423 L430 438" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-03-gemm-execution)"/><rect x="35" y="442" width="800" height="68" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="50" y="470" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">Collective mainloop</text><text x="50" y="495" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">load：TMA → SMEM；mma：等待输入 → CuTe GEMM</text><path d="M430 510 L430 525" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-03-gemm-execution)"/><rect x="35" y="529" width="800" height="68" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="50" y="557" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">CuTe / Atom</text><text x="50" y="582" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">gemm → MMA_Atom::call → traits::mma_unpack → fma</text><path d="M430 597 L430 612" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-03-gemm-execution)"/><rect x="35" y="616" width="800" height="68" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="50" y="644" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">架构操作</text><text x="50" y="669" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">内联 PTX：wgmma.mma_async...；异步完成协议</text><path d="M430 684 L430 699" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-03-gemm-execution)"/><rect x="35" y="703" width="800" height="68" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="50" y="731" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">Epilogue / 收尾</text><text x="50" y="756" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">Acc + C → 融合/转换 → D；tail → GPU 完成与检查</text><rect x="870" y="120" width="195" height="110" rx="10" fill="white" stroke="#a76025" stroke-width="1.6"/><text x="885" y="148" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#a76025" text-anchor="start">Host 阶段</text><text x="885" y="173" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">参数检查与准备</text><text x="885" y="196" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">launch 异步提交</text><rect x="870" y="382" width="195" height="150" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="885" y="410" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">GPU 阶段</text><text x="885" y="435" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">生产者搬输入</text><text x="885" y="458" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">消费者发 MMA</text><text x="885" y="481" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">输出与资源回收</text><text x="35" y="816" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="16" font-weight="normal" fill="#53687d" text-anchor="start">数据链：GMEM A/B → SMEM stage → descriptor/MMA → Acc → epilogue → GMEM D</text></svg><figcaption>图3：从 Host 参数到 GPU 执行的完整链路</figcaption></figure></p>
+<h3 id="阶段一应用构造运行时-arguments">阶段一：应用构造运行时 Arguments</h3>
+<p>在示例 49 中，应用分配和初始化 A/B/C/D，构造 stride 和 <code>problem_size</code>，再创建 <code>Gemm::Arguments</code>：<a href="#S07">S07</a></p>
+<pre><code class="language-text">Arguments
+├── mode                 kGemm 等运行模式
+├── problem_shape        M,N,K,L
+├── mainloop             A/B 指针、各自 stride
+├── epilogue             alpha/beta 或 visitor 参数、C/D 指针与 stride
+├── hw_info              device、SM 数等硬件信息
+└── scheduler            当前 scheduler 所需的运行参数（若适用）
+</code></pre>
+<p>数据类型、layout 的静态部分、tile 形状和采用哪套指令通常已经由模板类型固定。运行时仅修改 Arguments，并不能让同一个 kernel 类型任意切换 FP16/FP8、SM90/SM100 或任意 SMEM 布局。</p>
+<h3 id="阶段二host-adapter-检查与准备">阶段二：Host Adapter 检查与准备</h3>
+<p>典型调用顺序是：</p>
+<pre><code class="language-cpp">Gemm op;
+auto bytes = Gemm::get_workspace_size(args);
+// 按 bytes 分配 workspace；生命周期必须覆盖 GPU 使用期。
+check(op.can_implement(args));
+check(op.initialize(args, workspace, stream));
+check(op.run(stream));
+// 使用事件或同步点确认 GPU 完成，再检查运行错误、读取结果。
+</code></pre>
+<p>这是结构示意，<code>check</code> 和分配细节由应用实现。示例 49 在 launch 后调用 <code>cudaDeviceSynchronize()</code> 并做 reference 校验；生产集成通常使用 stream 和 event 组织依赖。<a href="#S07">S07</a></p>
+<p>Adapter 的实现承担以下工作：<a href="#S08">S08</a><a href="#S09">S09</a></p>
+<ul>
+<li><code>can_implement</code>：调用具体 Kernel 的约束检查；覆盖范围依实现而定，不能代替整个 CUDA 环境和内存生命周期检查。</li>
+<li><code>get_workspace_size</code>：统计 kernel、scheduler、归约等所需空间；有些实例可以为零。</li>
+<li><code>initialize</code>：初始化 workspace，调用 <code>GemmKernel::to_underlying_arguments</code> 生成更适合 device 的 <code>Params</code>，设置必要的动态 SMEM 属性。</li>
+<li><code>run</code>：取得 block/grid/shared-memory 配置，按架构与 cluster 形状选择启动路径。</li>
+</ul>
+<p><code>Arguments → Params</code> 不是单纯复制结构。它可能构造 TMA descriptor、准备 scheduler 参数、划分 workspace，以及把高层形状降为设备执行所需表示。查看 <code>sm90_gemm_tma_warpspecialized_cooperative.hpp</code> 的转换函数可看到 mainloop、epilogue、scheduler 各自的参数转换。<a href="#S10">S10</a></p>
+<p>Adapter 有缓存参数的运行重载，也有接收新 Arguments 的运行重载。重复调用前确认自己是否需要重新初始化或更新参数；仅改变外部 <code>args</code> 并不一定改变 Adapter 已缓存的 <code>params_</code>。</p>
+<h3 id="阶段三启动-cuda-kernel">阶段三：启动 CUDA kernel</h3>
+<p><code>run</code> 并非所有架构都使用同一条裸 <code>&lt;&lt;&lt;grid,block&gt;&gt;&gt;</code> 路线。当前实现按架构、静态/动态 cluster、Host Adapter、PDL 等情况分支；Hopper 非 1×1×1 cluster 可通过 <code>ClusterLauncher::launch</code> 启动，SM100 分支还处理 fallback cluster。<a href="#S09">S09</a></p>
+<p>最终的 <code>device_kernel&lt;Operator&gt;</code> 是一个很薄的 CUDA 入口：取得动态 SMEM，构造 Operator，然后调用 <code>op(params, smem)</code>。主逻辑在具体 <code>GemmUniversal</code> 的 <code>operator()</code> 中。<a href="#S11">S11</a></p>
+<p><strong>返回成功不等于 GPU 已完成。</strong> launch 可以异步提交，错误也可能在后续同步点暴露。指针、workspace、输入输出与 stream 依赖都必须保持有效。</p>
+<h3 id="阶段四kernel-组织角色和工作-tile">阶段四：Kernel 组织角色和工作 tile</h3>
+<p>Hopper cooperative Kernel 的核心职责包括：<a href="#S06">S06</a><a href="#S12">S12</a></p>
+<ol>
+<li>从参数取得 problem shape、mainloop/epilogue 参数与 scheduler。</li>
+<li>在 shared storage 中组织数据缓冲、pipeline/barrier 与 scheduler 状态。</li>
+<li>区分 producer 与 consumer warpgroup，以及 producer 内的 mainloop/epilogue 等角色。</li>
+<li>构造对应 Pipeline 与初始 PipelineState。</li>
+<li>由 scheduler 提供工作 tile；不同角色对同一工作采用匹配的坐标与 K 范围。</li>
+<li>producer 调用 <code>collective_mainloop.load</code>，consumer 调用 <code>collective_mainloop.mma</code>；按需求执行 epilogue 的 load/store。</li>
+<li>取得下一工作 tile，最后完成 load/mma/store 的 tail，避免尚未完成的异步访问与提前退出。</li>
+</ol>
+<pre><code class="language-text">device_kernel&lt;Kernel&gt;
+└── Kernel::operator()(Params, shared_memory)
+    ├── 建立角色、Pipeline、PipelineState、TileScheduler
+    ├── producer 路径
+    │   ├── scheduler.initial_work_tile_info / fetch_next_work
+    │   ├── CollectiveMainloop::load_init
+    │   ├── CollectiveMainloop::load
+    │   └── load_tail
+    └── consumer 路径
+        ├── 获取匹配工作 tile
+        ├── CollectiveMainloop::mma / mma_tail
+        ├── scheduler fixup（需要跨工作项归约时）
+        ├── CollectiveEpilogue::store
+        └── store_tail
+</code></pre>
+<p>上图是职责树，省略了特定 schedule 的辅助角色、epilogue load 与分支；完整实现不是每个线程依次跑完这棵树。</p>
+<p>对本文选定的 Hopper cooperative 代表配置，builder 的 <code>AtomLayoutMNK = Layout&lt;Shape&lt;_2,_1,_1&gt;&gt;</code> 形成两组 MMA warpgroup；Kernel 定义一个 load warpgroup 和两个 consumer warpgroup，总计通常为 384 个线程。producer 内不同 warp 再承担 mainloop load、调度或 epilogue load 等角色；具体工作取决于 scheduler 和辅助加载分支。这个数字来自该特化和 TiledMMA 配置，不能推广到其他 SM90 schedule。源码中的 <code>NumMMAThreads = size(TiledMma{})</code> 与 <code>MaxThreadsPerBlock</code> 是最终判断依据。<a href="#S05">S05</a><a href="#S06">S06</a></p>
+<h3 id="阶段五collective-把-ab-送入-smem">阶段五：Collective 把 A/B 送入 SMEM</h3>
+<p>以 <code>sm90_mma_tma_gmma_ss_warpspecialized.hpp</code> 为例，<code>load_init</code> 建立全局 tensor 与相关 tile 视图；<code>load</code> 对输入进行 TMA 分区，计算 cluster multicast mask，然后循环处理 K tile。<a href="#S13">S13</a></p>
+<p>关键顺序是：</p>
+<pre><code class="language-text">producer_acquire(write_state)
+    → 确认该 SMEM stage 可复用，并登记本轮期望事务字节
+    → 取得此 stage 的 TMA barrier
+    → copy(TMA_A.with(barrier, mask), A_tile, A_smem_stage)
+    → copy(TMA_B.with(barrier, mask), B_tile, B_smem_stage)
+    → 推进 write_state，继续下一 K tile
+</code></pre>
+<p>TMA load 本身异步执行。消费者等待的是硬件完成事务后变为就绪的 barrier。**不能机械地在每次 TMA <code>copy</code> 后加一个通用 <code>producer_commit</code>，并假定这一步让数据就绪。**当前 <code>PipelineTmaAsync</code> 的正常 TMA commit 路径依赖事务完成；源码里对应 <code>producer_commit(stage, bytes)</code> 标明正常 TMA 主循环下为 NOP，测试模拟路径另行处理。<a href="#S18">S18</a></p>
+<h3 id="阶段六消费-stage发出-wgmma">阶段六：消费 stage，发出 WGMMA</h3>
+<p><code>mma</code> 侧建立指向 SMEM operand 的 descriptor fragment 和累加器 fragment。每个 K tile 的关键顺序可概括为：<a href="#S13">S13</a></p>
+<pre><code class="language-text">consumer_wait(read_state)          等输入事务完成
+warpgroup fence / arrive           满足 GMMA 的操作数与发射协议
+cute::gemm(tiled_mma, A, B, accum)  发出一组 MMA
+warpgroup_commit_batch()          提交异步 MMA 批次
+warpgroup_wait&lt;...&gt;()              等足够早的 MMA 完成
+consumer_release(release_state)    释放已完成使用的旧 stage
+</code></pre>
+<p>read、write、release 可能是不同状态：计算可以有多批在飞，不能发出 MMA 就立即覆盖它仍在读取的 SMEM。最后 <code>mma_tail</code> 等待剩余 MMA，并释放尚未释放的 stage。</p>
+<p><figure><svg xmlns="http://www.w3.org/2000/svg" width="1100" height="650" viewBox="0 0 1100 650" role="img" aria-label="04  流水线：缓冲状态与工作重叠"><defs><marker id="arrow-04-pipeline" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9" fill="#236caa"/></marker></defs><rect width="1100" height="650" rx="18" fill="#f7fafc"/><text x="30" y="39" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="24" font-weight="bold" fill="#16324f" text-anchor="start">04  流水线：缓冲状态与工作重叠</text><text x="30" y="68" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#53687d" text-anchor="start">时间长度和 stage 数仅用于说明；真实时序需要在目标 GPU 上测量。</text><rect x="30" y="105" width="230" height="94" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="45" y="133" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">可写 / Empty</text><text x="45" y="158" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">旧消费者已释放</text><rect x="300" y="105" width="230" height="94" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="315" y="133" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">写入中 / Loading</text><text x="315" y="158" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">TMA 搬运并计入事务</text><rect x="570" y="105" width="230" height="94" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="585" y="133" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">可读 / Ready</text><text x="585" y="158" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">事务完成且满足可见性</text><rect x="840" y="105" width="230" height="94" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="855" y="133" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">使用中 / Reading</text><text x="855" y="158" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">MMA 仍可能读取 SMEM</text><path d="M260 150 L295 150" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-04-pipeline)"/><path d="M530 150 L565 150" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-04-pipeline)"/><path d="M800 150 L835 150" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-04-pipeline)"/><path d="M955 200 V238 H145 V205" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-04-pipeline)"/><text x="370" y="230" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="16" font-weight="normal" fill="#53687d" text-anchor="start">MMA 完成相关读取 → consumer_release → 允许复用</text><text x="30" y="300" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="19" font-weight="bold" fill="#16324f" text-anchor="start">示意时间线</text><text x="30" y="354" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="17" font-weight="normal" fill="#16324f" text-anchor="start">Producer / TMA</text><text x="30" y="429" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="17" font-weight="normal" fill="#16324f" text-anchor="start">Consumer / MMA</text><text x="30" y="504" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="17" font-weight="normal" fill="#16324f" text-anchor="start">Epilogue</text><rect x="230" y="325" width="119" height="54" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="245" y="353" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">Load K0</text><rect x="360" y="325" width="119" height="54" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="375" y="353" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">Load K1</text><rect x="490" y="325" width="119" height="54" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="505" y="353" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">Load K2</text><rect x="620" y="325" width="119" height="54" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="635" y="353" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">Load K3</text><rect x="360" y="400" width="119" height="54" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="375" y="428" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">MMA K0</text><rect x="490" y="400" width="119" height="54" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="505" y="428" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">MMA K1</text><rect x="620" y="400" width="119" height="54" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="635" y="428" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">MMA K2</text><rect x="750" y="400" width="119" height="54" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="765" y="428" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">MMA K3</text><rect x="880" y="475" width="119" height="54" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="895" y="503" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">Store D</text><path d="M230 565 L1055 565" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-04-pipeline)"/><text x="650.5" y="558.0" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="14" font-weight="normal" fill="#53687d" text-anchor="start">时间推进</text><text x="30" y="610" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="17" font-weight="normal" fill="#53687d" text-anchor="start">关键：index 区分槽位，phase 区分复用轮次；发出异步指令不代表访问已经结束。</text></svg><figcaption>图4：异步流水线的 stage 状态和时间重叠</figcaption></figure></p>
+<p>图中的 stage 数和时间块长度是说明性示意，不代表示例 49 的实测调度。真正的正确性约束是：<strong>写入完成 → 允许读取；读取完成 → 允许再次写入</strong>。<code>PipelineState</code> 的 index 与 phase 一起区分 ring buffer 的不同轮次，单独使用 <code>k % stages</code> 不足以表达完整协议。</p>
+<h3 id="阶段七cute-如何走到-ptx">阶段七：CuTe 如何走到 PTX</h3>
+<p>Hopper 的典型分派路径如下：<a href="#S14">S14</a><a href="#S15">S15</a><a href="#S16">S16</a><a href="#S17">S17</a></p>
+<pre><code class="language-text">cute::gemm(tiled_mma, ...)
+  → algorithm/gemm.hpp 的形状与布局重载
+  → MMA_Atom::call(...)
+  → 对该 MMA_Traits 适用的 mma_unpack(...)
+  → MMA operation 的 fma(...)
+  → cute/arch/mma_sm90_gmma.hpp 中内联 PTX
+  → wgmma.mma_async.sync.aligned....
+</code></pre>
+<p>普通寄存器 MMA 的 generic <code>mma_unpack</code> 会将 fragment recast 成指令要求的寄存器参数并展开到 <code>MMA_Op::fma</code>。Hopper GMMA 有其专用重载，处理 A/B descriptor 与原地累加等语义，不能拿 generic 的“四个寄存器 tensor”接口逐字解释所有架构。</p>
+<p>例如 <code>MMA_64x8x16_F32F16F16_SS</code> 封装中可直接看到：</p>
+<pre><code class="language-text">wgmma.mma_async.sync.aligned.m64n8k16.f32.f16.f16
+</code></pre>
+<p>这个指令只是仓库中已核对的一个代表 Atom；具体 builder 可能为更大 N 选择另一形状，不能据此断言示例 49 所有实例都使用 <code>m64n8k16</code>。</p>
+<p>搬运路径与此并列：<code>cute::copy</code> → Copy Atom/Traits → TMA 操作封装，最终出现 <code>cp.async.bulk.tensor...mbarrier::complete_tx::bytes</code> 等 PTX。<a href="#S19">S19</a></p>
+<h3 id="阶段八ptx-到-gpu-硬件">阶段八：PTX 到 GPU 硬件</h3>
+<p>PTX 是 NVIDIA 的虚拟指令集。通常编译流程由 CUDA 编译器生成/处理 PTX，再经 <code>ptxas</code> 生成目标 GPU 的 SASS；fatbinary 也可包含 PTX，由驱动在需要时 JIT。**GPU 最终执行目标机器指令，源码中的 PTX 封装不是跨厂商硬件接口。**指令合法性和异步完成规则应以对应 PTX ISA 为准。<a href="https://docs.nvidia.com/cuda/parallel-thread-execution/">官方 PTX ISA</a></p>
+<p><figure><svg xmlns="http://www.w3.org/2000/svg" width="1100" height="620" viewBox="0 0 1100 620" role="img" aria-label="05  从软件表示到机器指令"><defs><marker id="arrow-05-lowering-hardware" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9" fill="#236caa"/></marker></defs><rect width="1100" height="620" rx="18" fill="#f7fafc"/><text x="30" y="39" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="24" font-weight="bold" fill="#16324f" text-anchor="start">05  从软件表示到机器指令</text><text x="30" y="68" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#53687d" text-anchor="start">C++ 模板路径；Python DSL / CuTe IR 是另行进入编译栈的入口。</text><rect x="30" y="105" width="310" height="115" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="45" y="133" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">CUTLASS / CuTe</text><text x="45" y="158" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">模板实例、layout、atom</text><text x="45" y="181" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">CUDA C++ + 内联 PTX</text><rect x="395" y="105" width="310" height="115" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="410" y="133" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">CUDA 编译工具链</text><text x="410" y="158" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">编译 / PTX / ptxas</text><text x="410" y="181" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">fatbinary 可含 cubin/PTX</text><rect x="760" y="105" width="310" height="115" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="775" y="133" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">GPU 可执行机器码</text><text x="775" y="158" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">目标 SASS</text><text x="775" y="181" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">或驱动按需 JIT PTX</text><path d="M340 163 L390 163" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-05-lowering-hardware)"/><path d="M705 163 L755 163" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-05-lowering-hardware)"/><rect x="30" y="330" width="310" height="145" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="45" y="358" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">搬运与同步</text><text x="45" y="383" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">TMA / cp.async</text><text x="45" y="406" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">GMEM → SMEM</text><text x="45" y="429" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">mbarrier / cluster 协作</text><rect x="395" y="330" width="310" height="145" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="410" y="358" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">矩阵乘加</text><text x="410" y="383" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">SM80：mma.sync</text><text x="410" y="406" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">SM90：WGMMA / 寄存器 Acc</text><text x="410" y="429" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">SM100：UMMA / TMEM Acc</text><rect x="760" y="330" width="310" height="145" rx="10" fill="white" stroke="#a76025" stroke-width="1.6"/><text x="775" y="358" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#a76025" text-anchor="start">输出与资源</text><text x="775" y="383" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">读取 accumulator</text><text x="775" y="406" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">融合、转换、写回 GMEM</text><text x="775" y="429" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">完成异步访问，再释放资源</text><path d="M915 220 L915 320" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-05-lowering-hardware)"/><path d="M760 287 L190 320" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-05-lowering-hardware)" stroke-dasharray="6 4"/><path d="M880 265 L550 320" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-05-lowering-hardware)" stroke-dasharray="6 4"/><text x="30" y="550" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="17" font-weight="normal" fill="#53687d" text-anchor="start">核对三个层次：源码是否封装了指令；编译产物是否包含目标指令；运行时是否走该路径。</text></svg><figcaption>图5：编译链路与硬件资源对应</figcaption></figure></p>
+<table>
+<thead>
+<tr>
+<th>软件操作</th>
+<th>主要硬件资源/机制</th>
+<th>阅读中要核对的内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>TMA load/multicast</td>
+<td>异步搬运、SMEM、cluster、mbarrier</td>
+<td>descriptor、地址空间、事务字节、接收 mask</td>
+</tr>
+<tr>
+<td>WGMMA</td>
+<td>Tensor Core、warpgroup、SMEM operand、寄存器累加</td>
+<td>参与线程、操作数就绪、批次完成</td>
+</tr>
+<tr>
+<td>SM100 UMMA</td>
+<td>Tensor Core、SMEM/TMEM、异步完成机制</td>
+<td>TMEM 生命周期、1SM/2SM 模式与协调</td>
+</tr>
+<tr>
+<td>epilogue</td>
+<td>寄存器计算、SMEM 重排、全局存储等</td>
+<td>输出映射、融合逻辑、类型转换与尾部</td>
+</tr>
+<tr>
+<td>tile scheduler</td>
+<td>CTA/cluster 工作分配及相关状态</td>
+<td>覆盖、唯一写入、K 拆分和归约</td>
+</tr>
+</tbody></table>
+<h3 id="阶段九epilogue-与最终结果">阶段九：Epilogue 与最终结果</h3>
+<p>累加器中的 <code>Acc</code> 还不是最终 D。epilogue 可以读入 C，计算 alpha/beta、bias、激活、scale 或其他支持的融合表达式，再转换到输出类型并写入 D。有些实现通过 SMEM 重排，再利用 TMA store；有些采用不同的直接存储方式。<a href="#S24">S24</a><a href="#S25">S25</a></p>
+<p>融合通常减少中间结果的 GMEM 写回与再次读取，但也可能增加寄存器、SMEM、barrier 和 epilogue 时间。<code>beta=0</code> 时是否省去 C 的读取，取决于具体 callback/epilogue 对参数和访问需求的判断，不能仅从数学公式推断所有路径都已经优化。</p>
+<h2 id="从-hopper-到-blackwell">从 Hopper 到 Blackwell</h2>
+<h3 id="同一层级下内部机制可以完全不同">同一层级下，内部机制可以完全不同</h3>
+<table>
+<thead>
+<tr>
+<th>代表路径</th>
+<th>常见搬运</th>
+<th>MMA 家族</th>
+<th>累加器位置</th>
+<th>主要协作特征</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Ampere SM80</td>
+<td><code>cp.async</code> 等</td>
+<td><code>mma.sync</code></td>
+<td>寄存器</td>
+<td>warp 级 MMA，SMEM 到寄存器 fragment</td>
+</tr>
+<tr>
+<td>Hopper SM90a</td>
+<td>TMA / 某些路径 cp.async</td>
+<td>WGMMA</td>
+<td>代表路径为寄存器</td>
+<td>warpgroup、producer/consumer、cluster multicast</td>
+</tr>
+<tr>
+<td>Blackwell SM100 系列</td>
+<td>TMA，另有 cp.async/mixed 路径</td>
+<td><code>tcgen05.mma</code> / UMMA</td>
+<td>TMEM</td>
+<td>TMEM 管理、MMA 与输出解耦、可有 1SM/2SM</td>
+</tr>
+<tr>
+<td>Blackwell SM120</td>
+<td>必须查看 SM120 自身实现</td>
+<td>不应直接套用 SM100 UMMA</td>
+<td>按具体路径</td>
+<td>相同产品代际名称不保证相同指令接口</td>
+</tr>
+</tbody></table>
+<p>这些是代表路径，不是每代架构所有 kernel 的穷举表。尤其不要把 <code>Sm100</code> 机械替换成 <code>Sm120</code>，或把 GPU 产品名称直接当作支持某条 PTX 的证明。<a href="#S26">S26</a><a href="#S27">S27</a><a href="#S28">S28</a></p>
+<p><figure><svg xmlns="http://www.w3.org/2000/svg" width="1100" height="590" viewBox="0 0 1100 590" role="img" aria-label="06  Hopper 与 SM100：高层组合相似，内部通路不同"><defs><marker id="arrow-06-generations" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9" fill="#236caa"/></marker></defs><rect width="1100" height="590" rx="18" fill="#f7fafc"/><text x="30" y="39" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="24" font-weight="bold" fill="#16324f" text-anchor="start">06  Hopper 与 SM100：高层组合相似，内部通路不同</text><text x="30" y="68" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#53687d" text-anchor="start">代表数据通路；省略 cache、具体 store 路径及部分异步协议。</text><text x="30" y="110" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="21" font-weight="bold" fill="#16324f" text-anchor="start">Hopper / SM90a</text><text x="30" y="325" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="21" font-weight="bold" fill="#16324f" text-anchor="start">Blackwell / SM100</text><rect x="30" y="140" width="185" height="83" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="45" y="168" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">GMEM A/B</text><text x="45" y="193" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">全局矩阵</text><rect x="285" y="140" width="185" height="83" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="300" y="168" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">SMEM tile</text><text x="300" y="193" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">TMA / 协作缓冲</text><rect x="540" y="140" width="230" height="83" rx="10" fill="white" stroke="#a76025" stroke-width="1.6"/><text x="555" y="168" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#a76025" text-anchor="start">寄存器 Acc</text><text x="555" y="193" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">WGMMA</text><rect x="840" y="140" width="230" height="83" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="855" y="168" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">Epilogue → D</text><text x="855" y="193" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">融合、转换、写回</text><path d="M215 182 L280 182" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-06-generations)"/><text x="255.5" y="175.0" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="14" font-weight="normal" fill="#53687d" text-anchor="start">搬运</text><path d="M470 182 L535 182" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-06-generations)"/><path d="M770 182 L835 182" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-06-generations)"/><rect x="30" y="355" width="185" height="83" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="45" y="383" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">GMEM A/B</text><text x="45" y="408" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">全局矩阵</text><rect x="285" y="355" width="185" height="83" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="300" y="383" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">SMEM tile</text><text x="300" y="408" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">TMA / 协作缓冲</text><rect x="540" y="355" width="230" height="83" rx="10" fill="white" stroke="#a76025" stroke-width="1.6"/><text x="555" y="383" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#a76025" text-anchor="start">TMEM Acc</text><text x="555" y="408" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">tcgen05 / UMMA</text><rect x="840" y="355" width="230" height="83" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="855" y="383" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">Epilogue → D</text><text x="855" y="408" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">融合、转换、写回</text><path d="M215 397 L280 397" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-06-generations)"/><text x="255.5" y="390.0" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="14" font-weight="normal" fill="#53687d" text-anchor="start">搬运</text><path d="M470 397 L535 397" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-06-generations)"/><path d="M770 397 L835 397" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-06-generations)"/><text x="285" y="264" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="17" font-weight="normal" fill="#53687d" text-anchor="start">输入 stage 流水线 + GMMA 完成与 stage 释放</text><text x="285" y="479" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="17" font-weight="normal" fill="#53687d" text-anchor="start">输入 pipeline + accumulator pipeline + TMEM 分配/交接/回收</text><text x="30" y="548" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="17" font-weight="normal" fill="#53687d" text-anchor="start">SM120 必须查其独立实现，不能仅凭 Blackwell 名称套用 SM100 的 TMEM/UMMA 路径。</text></svg><figcaption>图6：Hopper 与 SM100 Blackwell 的数据通路</figcaption></figure></p>
+<h3 id="sm100-必须增加哪几件事">SM100 必须增加哪几件事</h3>
+<p>示例 71 保持相同的高层组装方式：epilogue builder、mainloop builder、<code>GemmUniversal</code>、Adapter，但内部实现增加了 TMEM 和新的协作协议。<a href="#S26">S26</a></p>
+<p>在 <code>sm100_gemm_tma_warpspecialized.hpp</code> 中可看到：<a href="#S27">S27</a></p>
+<ul>
+<li>选择适合 MMA 形态的 <code>TmemAllocator</code>。</li>
+<li>分配 TMEM，并通过 barrier 让相关线程取得分配结果。</li>
+<li>将 accumulator tensor 设置到正确的 TMEM offset。</li>
+<li>以 mainloop pipeline 管理 A/B，以 accumulator pipeline 管理 MMA 与 epilogue 之间的交接。</li>
+<li>让 epilogue 从 accumulator 读取结果并完成输出。</li>
+<li>等待所有相关使用者完成，再释放 TMEM。</li>
+</ul>
+<p>在 <code>sm100_mma_warpspecialized.hpp</code> 中，<code>cute::gemm</code> 仍然是发出 MMA 的上层接口，底层操作变为 <code>mma_sm100_umma.hpp</code> 中的 <code>tcgen05.mma...</code>。TMEM 到寄存器的 copy 操作在 <code>copy_sm100.hpp</code> 中包含 <code>tcgen05.ld...</code>。<a href="#S28">S28</a><a href="#S29">S29</a><a href="#S30">S30</a></p>
+<p>**SM100 的 release 为什么可以紧跟 MMA 发射？**这里的 <code>PipelineTmaUmmaAsync::consumer_release</code> 会调用 <code>umma_arrive</code> 或其 multicast/2SM 变体，把先前 UMMA 的完成通知关联到 empty barrier；<code>umma_arrive</code> 的底层是 <code>tcgen05.commit...mbarrier::arrive...</code>。它不是一个“函数返回就说明全部 MMA 已完成”的阻塞等待。类似地，MMA 角色调用 accumulator pipeline 的 <code>producer_commit</code>，把结果完成与 epilogue 的等待衔接起来。因此，真正不变量是“硬件确认相关访问完成后才允许复用”，不能把 Hopper 的 <code>warpgroup_wait</code> 逐字搬到 SM100，也不能删掉这些看似紧接发射的 release/commit。<a href="#S37">S37</a><a href="#S38">S38</a></p>
+<p>这说明扩展新硬件不一定改变 Device API，但可能需要同时修改 <strong>Atom/Traits、布局、Pipeline、Collective、Kernel、scheduler 和资源管理</strong>。抽象层级被保留，不意味着其实现可不作变化。</p>
+<h3 id="手写-cute-教程为何不能代表生产级调用链">手写 CuTe 教程为何不能代表生产级调用链</h3>
+<p><code>examples/cute/tutorial/blackwell/01_mma_sm100.cu</code> 直接写 Host launcher 与 device kernel，展示 SMEM、UMMA、TMEM 及输出之间的关系。它非常适合检查“某一条 MMA 怎么调用”，但不能从它反推生产级 kernel 一定使用同样的搬运方式、stage 数、角色分工和调度策略。<a href="#S31">S31</a></p>
+<p>阅读顺序可以是：先用这个教程理解 descriptor/TMEM，再回到示例 71 理解工业化组合、流水线和调度。两种入口共享 CuTe 组件，经过的上层不同。</p>
+<h3 id="python-dsl-与-cute-ir另一条入口">Python DSL 与 CuTe IR：另一条入口</h3>
+<p>当前仓库的 <code>python/CuTeDSL/cutlass/cute</code> 有 tensor、layout/algorithm、atom，以及 <code>nvgpu/warp</code>、<code>warpgroup</code>、<code>tcgen05</code> 等硬件相关模块。它用 Python 语法编写并编译 kernel，不能把 Python kernel 函数当成逐元素解释执行。<a href="#S32">S32</a></p>
+<p><code>cutlass_compiler/README.md</code> 则描述 CuTe IR 与 MLIR 路线：Cute dialect → 名为 Base 的上游 dialect 边界 → LLVM/NVVM 等后续降级。**Base 在该目录中是“伪 dialect/目标边界”，不是一个单独的新 dialect。**该栈有 host/device 集成测试，但不能据此推断成熟 C++ Tensor Core GEMM 已整体经过这套工具。<a href="#S33">S33</a></p>
+<pre><code class="language-text">C++ 模板路线：C++ CUTLASS/CuTe → CUDA 编译工具链 → PTX/SASS
+Python 路线：CuTe DSL kernel → DSL 编译栈 → CUDA 工具链 → GPU
+CuTe IR 工程：Cute dialect → Base 边界 → LLVM/NVVM/目标处理
+</code></pre>
+<p>三条路线共享概念，本文没有把它们合并成一条必经调用链，也没有验证它们之间任意版本的完整互操作性。</p>
+<h2 id="调度策略与性能瓶颈">调度策略与性能瓶颈</h2>
+<h3 id="tile-scheduler-怎样改变工作划分">Tile scheduler 怎样改变工作划分</h3>
+<p><figure><svg xmlns="http://www.w3.org/2000/svg" width="1100" height="625" viewBox="0 0 1100 625" role="img" aria-label="07  调度：工作 tile 与 K 工作量怎样分配"><defs><marker id="arrow-07-schedulers" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9" fill="#236caa"/></marker></defs><rect width="1100" height="625" rx="18" fill="#f7fafc"/><text x="30" y="39" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="24" font-weight="bold" fill="#16324f" text-anchor="start">07  调度：工作 tile 与 K 工作量怎样分配</text><text x="30" y="68" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#53687d" text-anchor="start">图示为概念对比，省略具体架构的 scheduler 与归约实现。</text><rect x="30" y="105" width="320" height="370" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="45" y="133" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">常规 data parallel</text><text x="45" y="158" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">CTA0 → tile0 的全部 K</text><text x="45" y="181" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">CTA1 → tile1 的全部 K</text><text x="45" y="204" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">CTA2 → tile2 的全部 K</text><text x="45" y="227" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start"></text><text x="45" y="250" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">输出 tile 多时易于铺满设备</text><text x="45" y="273" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">最后一波可能只剩少量工作</text><rect x="390" y="105" width="320" height="370" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="405" y="133" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">Persistent</text><text x="405" y="158" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">驻留 CTA0：tile0 → tile3</text><text x="405" y="181" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">驻留 CTA1：tile1 → tile4</text><text x="405" y="204" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">驻留 CTA2：tile2 → tile5</text><text x="405" y="227" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start"></text><text x="405" y="250" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">CTA 持续取得后续工作</text><text x="405" y="273" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">收益取决于任务数与协作成本</text><rect x="750" y="105" width="320" height="370" rx="10" fill="white" stroke="#a76025" stroke-width="1.6"/><text x="765" y="133" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#a76025" text-anchor="start">Split-K / Stream-K</text><text x="765" y="158" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">CTA0 → tile0 的一段 K</text><text x="765" y="181" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">CTA1 → tile0 的另一段 K</text><text x="765" y="204" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">部分和 → fixup / reduction</text><text x="765" y="227" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start"></text><text x="765" y="250" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">增加可分配工作量</text><text x="765" y="273" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">付出归约、同步和 workspace</text><text x="30" y="528" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="17" font-weight="normal" fill="#53687d" text-anchor="start">Tile scheduler 管“下一个工作”；kernel schedule 管“角色如何协作”；pipeline 管“何时复用”。</text><text x="30" y="567" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="17" font-weight="normal" fill="#53687d" text-anchor="start">Persistent 不会凭空增加输出 tile；K 拆分后必须在正确的最终归约点执行 epilogue。</text></svg><figcaption>图7：普通 tile 分配、持久化与 K 拆分</figcaption></figure></p>
+<table>
+<thead>
+<tr>
+<th>策略</th>
+<th>基本思想</th>
+<th>常见收益场景</th>
+<th>代价与限制</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>常规 data parallel</td>
+<td>网格工作分配给 CTA，每个负责输出 tile</td>
+<td>输出 tile 多、工作均衡</td>
+<td>最后一波可能利用率不足</td>
+</tr>
+<tr>
+<td>Persistent</td>
+<td>一组驻留 CTA/cluster 在循环中获取更多工作</td>
+<td>管理工作分配、重用协作资源、改善部分尾波行为</td>
+<td>仍受 tile 数和每 tile 工作量限制，不能凭空增加并行度</td>
+</tr>
+<tr>
+<td>Split-K</td>
+<td>多份工作计算同一输出 tile 的不同 K 区间</td>
+<td>M/N 小、K 大，输出 tile 不够多</td>
+<td>额外归约/同步/workspace，改变浮点累加顺序</td>
+</tr>
+<tr>
+<td>Stream-K</td>
+<td>围绕 K 工作量拆分并分配，结合完整 tile 与部分 tile</td>
+<td>减少某些形状的量化和负载不平衡</td>
+<td>scheduler/fixup 复杂，有归约与调度成本</td>
+</tr>
+<tr>
+<td>Grouped GEMM</td>
+<td>同次执行调度多个不同问题</td>
+<td>多个小 GEMM、MoE 等</td>
+<td>元数据、负载估计、组间不平衡成本</td>
+</tr>
+<tr>
+<td>动态持久化/CLC 类</td>
+<td>利用架构和实现提供的动态工作获取</td>
+<td>具体架构下的不均衡或动态分配</td>
+<td>不能假设所有架构或 schedule 都可用</td>
+</tr>
+</tbody></table>
+<p>当前 <code>tile_scheduler.hpp</code> 用 selector 把架构与标签映射到实现。例如 Sm90 的 <code>StreamKScheduler</code> 对应 <code>PersistentTileSchedulerSm90StreamK</code>，Sm100 有自己的 scheduler 家族。<a href="#S20">S20</a></p>
+<p>Persistent 不保证消除所有 tail wave；Stream-K 也不等于简单固定的 <code>split_k_slices</code>。判断是否适用，要同时看输出 tile 数、SM/cluster 数、K tile 数和归约成本。</p>
+<h3 id="一个-tile-的资源账本">一个 tile 的资源账本</h3>
+<p>设 CTA 级 mainloop tile 为 <code>BM×BN×BK</code>，输入元素字节数分别是 sA、sB，stage 数为 S。忽略 padding、swizzle 空洞、缩放因子、barrier 和其他元数据时：</p>
+<pre><code class="language-text">每个 stage 的 A/B 字节 ≈ BM*BK*sA + BN*BK*sB
+mainloop 数据缓冲字节 ≈ S*(BM*BK*sA + BN*BK*sB)
+每个 K tile 的常规 GEMM FLOPs ≈ 2*BM*BN*BK
+</code></pre>
+<p>例如 FP16、<code>128×128×64</code>，每 stage 约 32 KiB；三 stage 的 A/B 缓冲约 96 KiB。这个数只用于解释资源关系，不是示例的最终 <code>SharedStorageSize</code>；epilogue、scheduler、barrier 和具体共享存储复用规则仍会改变总预算。</p>
+<p>该公式按一个 CTA 的代表 tile 估计。2SM MMA、cluster 分配与 multicast 需要重新计算“逻辑 tile”与“每 CTA 实际存储/流量”的对应关系，不能直接套用一个统一系数。</p>
+<p>stage 增多可能更好地隐藏搬运延迟，也可能压低 occupancy、减少驻留 CTA/cluster，甚至让配置不合法。BK 变大减少循环/同步次数，但增大缓冲和尾部浪费。tile 选择是约束优化，不是单调调参。</p>
+<h3 id="建立性能判断的下界">建立性能判断的下界</h3>
+<p>对于批量 L 的普通实数 dense GEMM，常用有效运算量为 <code>2*M*N*K*L</code>；时间 t 秒对应 <code>TFLOP/s = FLOPs/t/1e12</code>。低精度 block-scaled、稀疏、复数或融合操作的额外工作应单独说明，不能混用峰值口径。</p>
+<p>在“各矩阵从外存读取一次、D 写入一次”的理想假设下，可估计：</p>
+<pre><code class="language-text">bytes_min ≈ M*K*sA + K*N*sB + M*N*sD
+若需要读取 C，再加 M*N*sC；批量时按实际复用关系处理 L。
+arithmetic_intensity ≈ FLOPs / bytes_min
+</code></pre>
+<p>这是理论流量下界。实际运行还受 tile 间重复读、L2 命中、对齐、cache 行、workspace、归约和融合影响。用 <code>bytes_min/t</code> 得到的是有效带宽估计，不能直接当作实测 DRAM 流量；后者应查看性能计数器。</p>
+<h3 id="症状证据与修改点">症状、证据与修改点</h3>
+<table>
+<thead>
+<tr>
+<th>性能症状</th>
+<th>先查看什么证据</th>
+<th>可能的修改点</th>
+<th>常见误判</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Tensor Core 利用率低</td>
+<td>是否等待输入、barrier、epilogue，是否工作量不足</td>
+<td>stage、搬运、角色分工、tile 数</td>
+<td>直接归因于 MMA 指令慢</td>
+</tr>
+<tr>
+<td>occupancy 低</td>
+<td>每 CTA 寄存器/SMEM、cluster 驻留限制</td>
+<td>tile、stage、融合复杂度、register 分工</td>
+<td>occupancy 越高必然越快</td>
+</tr>
+<tr>
+<td>小 M/N 长 K 很慢</td>
+<td>输出 tile 数与 SM 数、K 工作量</td>
+<td>Split-K/Stream-K、较小 tile</td>
+<td>仅增大 tile 或只开 persistent</td>
+</tr>
+<tr>
+<td>大矩阵但内存等待多</td>
+<td>DRAM/L2 流量、重用、对齐、SMEM 访问</td>
+<td>raster/swizzle、multicast、copy 布局</td>
+<td>理论带宽公式就是实际流量</td>
+</tr>
+<tr>
+<td>K 很短时效率差</td>
+<td>launch、prologue/tail、epilogue 占比</td>
+<td>更轻 schedule、减少 stage/协作成本</td>
+<td>继续堆深流水线</td>
+</tr>
+<tr>
+<td>规则尺寸快、尾部尺寸慢</td>
+<td>有效 tile 比例、predication、对齐约束</td>
+<td>tile 形状、尾部策略、独立实例</td>
+<td>所有合法输入都应同速</td>
+</tr>
+<tr>
+<td>融合后变慢</td>
+<td>输出阶段时间、SMEM/寄存器、驻留变化</td>
+<td>缩小融合、换 epilogue tile/schedule</td>
+<td>少一次 kernel 就一定更快</td>
+</tr>
+</tbody></table>
+<p>以上是诊断假设。每次只改变可解释的变量，并检查生成代码和实测结果；没有测量时不要把假设写成瓶颈结论。</p>
+<h2 id="修改与扩展的落点">修改与扩展的落点</h2>
+<h3 id="按需求选择最小修改面">按需求选择最小修改面</h3>
+<table>
+<thead>
+<tr>
+<th>需求</th>
+<th>优先修改</th>
+<th>继续下钻的条件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>为固定形状加速</td>
+<td>Builder 参数、实例选择、raster、scheduler 参数</td>
+<td>现有组合无法覆盖关键瓶颈</td>
+</tr>
+<tr>
+<td>bias/激活/scale 融合</td>
+<td>epilogue fusion operation、EVT/callback</td>
+<td>数据依赖无法由支持的 visitor 表达</td>
+</tr>
+<tr>
+<td>新的输入变换/解量化</td>
+<td>mainloop transform、已有 mixed-input 路径</td>
+<td>新 operand 格式/搬运/MMA 协议不匹配</td>
+</tr>
+<tr>
+<td>新存储布局</td>
+<td>Layout/Stride、SMEM swizzle、Copy/TMA descriptor</td>
+<td>指令要求新的 fragment 或 descriptor</td>
+</tr>
+<tr>
+<td>新调度算法</td>
+<td>tile scheduler、workspace、Kernel 衔接</td>
+<td>角色同步、归约和 epilogue 时机也需变化</td>
+</tr>
+<tr>
+<td>新矩阵指令</td>
+<td><code>cute/arch</code> 操作、Traits、Atom、TiledMMA</td>
+<td>配套流水线、存储、Kernel 资源需重写</td>
+</tr>
+<tr>
+<td>新硬件平台</td>
+<td>指令、线程模型、内存模型、同步、launch、编译链</td>
+<td>属于后端重建，见下一章</td>
+</tr>
+</tbody></table>
+<h3 id="例一增加一个-epilogue-融合">例一：增加一个 epilogue 融合</h3>
+<p>假设希望 <code>D = relu(alpha*Acc + beta*C + bias)</code>：</p>
+<ol>
+<li>先查看 <code>epilogue/fusion/operations.hpp</code> 是否已有满足语义的 operation，优先复用其 builder 支持。</li>
+<li>若没有，查看当前架构 callback/visitor 支持的 load、broadcast、compute、store 组合。</li>
+<li>明确 bias 的广播维度、batch stride、计算精度、转换位置与激活顺序。</li>
+<li>设置对应 runtime arguments；自定义 EVT 常是递归嵌套参数结构，预定义 operation 则可能提供平坦命名字段。</li>
+<li>重新计算 epilogue SharedStorage 与 mainloop carveout。</li>
+<li>测试 beta=0/非零、尾部、不同 leading dimension，并测量融合前后的总工作负载时间。</li>
+</ol>
+<p>示例 49 的 <code>CustomEVT</code> 展示的是 <code>alpha*Acc + beta*C</code> 的表达树，可从此理解参数如何与节点树对应；它本身没有实现上述完整 ReLU+bias 方案。<a href="#S04">S04</a><a href="#S07">S07</a><a href="#S25">S25</a></p>
+<h3 id="例二调整-smem-swizzle">例二：调整 SMEM swizzle</h3>
+<p>不能只修改一个 layout 别名就宣告完成。应同时核对：GMEM→SMEM 的覆盖关系、物理跨度/分配大小、对齐与 bank 行为、MMA descriptor 编码、operand major mode，以及 epilogue 是否复用该缓冲。</p>
+<p>验证时使用能暴露错位的模式数据，例如按行/列编码而不是全部填 1。先验证 copy 布局，再验证一个 Atom，再扩大到完整 GEMM，可显著缩小错误范围。</p>
+<h3 id="例三改-tile-scheduler">例三：改 tile scheduler</h3>
+<p>除“选下一个 tile”之外，至少要维持以下协议：所有输出的覆盖、是否允许多个工作项写同一输出、K 部分和的归约、workspace 对齐/初始化、producer/consumer 对工作序列的共识、epilogue 何时运行、结束条件及 tail。</p>
+<p>如果将一个 tile 的 K 维拆给多个 CTA，就必须改变“这个 CTA 的 accumulator 已是最终值”的假设。beta*C、bias、激活等通常只能在适当的最终归约点执行，否则可能重复应用或改变数学语义。</p>
+<h2 id="新增硬件后端的实现路径">新增硬件后端的实现路径</h2>
+<h3 id="首先区分三种移植">首先区分三种“移植”</h3>
+<table>
+<thead>
+<tr>
+<th>目标</th>
+<th>通常可以保留</th>
+<th>主要新增/重写</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>相同 NVIDIA 架构的新形状/类型组合</td>
+<td>Host、Kernel 和大部分组件</td>
+<td>实例、配置、格式/融合；可能新增特化</td>
+</tr>
+<tr>
+<td>新 NVIDIA SM 或新指令家族</td>
+<td>CUDA launch 与高层概念，部分工具</td>
+<td>Arch 操作、traits、布局、pipeline、Collective/Kernel/scheduler 特化</td>
+</tr>
+<tr>
+<td>非 NVIDIA GPU/加速器</td>
+<td>算法分块思路、部分纯 layout algebra、测试规范</td>
+<td>编译目标、执行模型、MMA/copy、内存/同步、资源管理、runtime、调度和调优</td>
+</tr>
+</tbody></table>
+<p>非 NVIDIA 目标不能直接执行 PTX，也通常不能保证 CUDA warp、cluster、TMA、WGMMA 或 TMEM 的语义。一个新的 <code>ArchTag</code> 和几段指令替换无法覆盖这些差异。</p>
+<p><figure><svg xmlns="http://www.w3.org/2000/svg" width="1100" height="775" viewBox="0 0 1100 775" role="img" aria-label="08  新硬件后端：先正确，再组合，最后优化"><defs><marker id="arrow-08-porting-roadmap" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9" fill="#236caa"/></marker></defs><rect width="1100" height="775" rx="18" fill="#f7fafc"/><text x="30" y="39" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="24" font-weight="bold" fill="#16324f" text-anchor="start">08  新硬件后端：先正确，再组合，最后优化</text><text x="30" y="68" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#53687d" text-anchor="start">这是基于源码耦合点提出的工程路线，不是现有的跨厂商插件 API。</text><rect x="35" y="96" width="765" height="68" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="50" y="124" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">M0 硬件契约</text><text x="50" y="149" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">线程、指令、存储、同步、工具链、runtime</text><path d="M410 164 L410 180" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-08-porting-roadmap)"/><rect x="35" y="184" width="765" height="68" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="50" y="212" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">M1 Atom / Traits</text><text x="50" y="237" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">独立 copy/MMA；逐元素映射与精度验证</text><path d="M410 252 L410 268" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-08-porting-roadmap)"/><rect x="35" y="272" width="765" height="68" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="50" y="300" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">M2 单 tile GEMM</text><text x="50" y="325" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">单缓冲、边界与参考结果；最小纵切片</text><path d="M410 340 L410 356" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-08-porting-roadmap)"/><rect x="35" y="360" width="765" height="68" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="50" y="388" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">M3 Pipeline</text><text x="50" y="413" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">多 stage、多轮复用；证明异步完成和可见性</text><path d="M410 428 L410 444" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-08-porting-roadmap)"/><rect x="35" y="448" width="765" height="68" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="50" y="476" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">M4 Kernel / 调度</text><text x="50" y="501" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">全网格、batch、stride、输出覆盖、资源回收</text><path d="M410 516 L410 532" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-08-porting-roadmap)"/><rect x="35" y="536" width="765" height="68" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="50" y="564" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">M5 Host / Runtime</text><text x="50" y="589" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">参数检查、workspace、launch、stream/event</text><path d="M410 604 L410 620" stroke="#236caa" stroke-width="2" fill="none" marker-end="url(#arrow-08-porting-roadmap)"/><rect x="35" y="624" width="765" height="68" rx="10" fill="white" stroke="#236caa" stroke-width="1.6"/><text x="50" y="652" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#236caa" text-anchor="start">M6 性能 / M7 高级能力</text><text x="50" y="677" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">代表形状调优；再加入融合、分 K、grouped</text><rect x="840" y="115" width="225" height="150" rx="10" fill="white" stroke="#137e79" stroke-width="1.6"/><text x="855" y="143" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#137e79" text-anchor="start">可复用的思想</text><text x="855" y="168" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">分块算法与布局代数</text><text x="855" y="191" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">组件分层与测试规范</text><text x="855" y="214" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">不等于直接复用 PTX</text><rect x="840" y="380" width="225" height="174" rx="10" fill="white" stroke="#a76025" stroke-width="1.6"/><text x="855" y="408" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" font-weight="bold" fill="#a76025" text-anchor="start">必须重新核对</text><text x="855" y="433" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">subgroup 参与语义</text><text x="855" y="456" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">地址空间与内存序</text><text x="855" y="479" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">异步完成与 barrier</text><text x="855" y="502" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" font-weight="normal" fill="#16324f" text-anchor="start">资源限额与 launch ABI</text><text x="35" y="751" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="17" font-weight="normal" fill="#53687d" text-anchor="start">验收层级分开记录：能编译 → 功能正确 → 使用矩阵单元 → 具备稳定性能。</text></svg><figcaption>图8：新后端从硬件契约到整机性能的实现路线</figcaption></figure></p>
+<h3 id="第一步写出硬件能力契约">第一步：写出硬件能力契约</h3>
+<p>先把目标芯片的能力变成可验证的表，而不是从复制目录开始：</p>
+<table>
+<thead>
+<tr>
+<th>能力</th>
+<th>必须明确的问题</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>线程执行</td>
+<td>subgroup 大小、参与规则、收敛要求、是否支持跨 subgroup 协作</td>
+</tr>
+<tr>
+<td>矩阵指令</td>
+<td>M/N/K、类型、精度、舍入、operand 布局、累加器位置</td>
+</tr>
+<tr>
+<td>寄存器与本地资源</td>
+<td>寄存器组织、每工作组限额、是否存在独立 accumulator 存储</td>
+</tr>
+<tr>
+<td>内存层级</td>
+<td>全局/共享/本地地址空间、bank、对齐、可寻址粒度</td>
+</tr>
+<tr>
+<td>异步搬运</td>
+<td>copy 发射主体、事务大小、multicast、边界与零填充</td>
+</tr>
+<tr>
+<td>同步/内存序</td>
+<td>barrier 范围、异步完成通知、可见性、phase/generation</td>
+</tr>
+<tr>
+<td>调度/资源</td>
+<td>workgroup/cluster 限制、驻留、动态工作获取</td>
+</tr>
+<tr>
+<td>工具链</td>
+<td>目标编译器、intrinsic/assembly、机器码检查、profiler、sanitizer</td>
+</tr>
+<tr>
+<td>Runtime</td>
+<td>分配、参数 ABI、launch、stream/event、错误上报</td>
+</tr>
+</tbody></table>
+<p><strong>完成标准</strong>：能解释一次最小矩阵指令从输入字节到输出字节的全部映射，以及其前后的同步规则。</p>
+<h3 id="第二步先跑通最小纵切片">第二步：先跑通最小纵切片</h3>
+<p>采用以下顺序建立正确性证据：</p>
+<pre><code class="language-text">标量/向量 copy
+    → 一个 subgroup 的 MMA
+    → 一个 workgroup 的 SMEM copy + MMA
+    → 单缓冲、单输出 tile GEMM
+    → 任意 M/N/K 的边界处理
+    → 多 stage 异步流水线
+    → 全网格调度
+    → 融合、分 K、分组等高级能力
+</code></pre>
+<p>第一版优先用最直观的同步与最小功能集；单缓冲的正确版本可作为后续异步实现的设备参考。不要同时引入新指令、新布局、新流水线和新调度后再定位错误。</p>
+<h3 id="第三步建立指令封装与-traits">第三步：建立指令封装与 Traits</h3>
+<p>NVIDIA 内部新架构适配的常见落点包括：</p>
+<ul>
+<li><code>include/cutlass/arch/arch.h</code>：架构标签。</li>
+<li><code>include/cute/arch/mma_*.hpp</code>、<code>copy_*.hpp</code>：指令封装、操作数接口、目标宏与非法路径处理。</li>
+<li><code>include/cute/atom/mma_traits_*.hpp</code>、<code>copy_traits_*.hpp</code>：线程和值映射、fragment、descriptor 与 unpack。</li>
+<li><code>TiledMMA/TiledCopy</code> 的构造或选择工具：让逻辑 tile 能覆盖新指令。</li>
+</ul>
+<p>对非 NVIDIA 目标，以上是职责参考；更适合建立独立后端边界，避免让通用布局代码不断增加平台宏。边界可抽象为“矩阵操作、搬运操作、同步操作、资源管理、launch runtime”，但这是本文建议的设计，不是当前 CUTLASS 已定义好的五类插件接口。</p>
+<h3 id="第四步重新证明流水线协议">第四步：重新证明流水线协议</h3>
+<p>移植中最危险的是把名字相近的 primitive 当成语义相同。例如目标硬件的 barrier 可能只表示线程到达，而不表示 DMA 完成；异步矩阵指令可能在发射线程继续执行时仍读取共享内存。</p>
+<p>至少证明四件事：</p>
+<ol>
+<li>producer 覆盖某 stage 前，旧消费者已经完成对它的全部读取。</li>
+<li>consumer 读取前，输入传输已完成且对当前作用域可见。</li>
+<li>epilogue 读取 accumulator 前，矩阵操作已经完成且可见。</li>
+<li>workgroup/cluster 退出或资源回收前，相关远端和异步使用者已经结束。</li>
+</ol>
+<p>若目标没有 phase barrier，可用计数/代际协议实现同等逻辑，但必须处理复用时的 ABA 类混淆。若目标没有 cluster，则重新设计 multicast 与跨工作组同步，而不是让原有 cluster 调用变成空操作。</p>
+<h3 id="第五步向上接入-collectivekernel-和-host">第五步：向上接入 Collective、Kernel 和 Host</h3>
+<p>mainloop 需要提供与新存储/异步语义匹配的实现；epilogue 需要从正确的 accumulator 存储读出结果；Kernel 决定角色、shared storage、资源分配和 scheduler 协作。最后才把参数检查、workspace、launch 及错误处理接入 Host API。</p>
+<p>保留接口名字并不自动保留 ABI 或约束。新后端应显式报告不支持的布局、对齐、类型和 schedule，避免悄悄走一个语义不同的路径。</p>
+<h3 id="第六步再讨论性能可移植性">第六步：再讨论性能可移植性</h3>
+<p>“源码可复用”“功能正确”“能用矩阵单元”“接近峰值”是四个不同的完成层级。后端需要自己的 tile/stage/role 搜索空间和性能基线。一个在 SM90 最优的 warpgroup 配置，通常不能直接迁移成目标 subgroup 的最优配置。</p>
+<p>若目标是编译器研究，可以评估 CuTe IR 的布局表示和已有 lowering 边界；但当前 README 展示的 NVIDIA NVVM 路线不会自动产生 AMD 或其他目标的高性能矩阵指令。新增目标需要重写相应硬件操作降级并验证执行/同步语义。<a href="#S33">S33</a></p>
+<h3 id="建议的验收里程碑">建议的验收里程碑</h3>
+<table>
+<thead>
+<tr>
+<th>里程碑</th>
+<th>必须交付的证据</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>M0 硬件模型</td>
+<td>完整能力表、指令布局和同步契约</td>
+</tr>
+<tr>
+<td>M1 Atom</td>
+<td>copy/MMA 独立测试，特殊值、不同输入模式与误差解释</td>
+</tr>
+<tr>
+<td>M2 单 tile</td>
+<td>单缓冲 GEMM 与参考结果一致，边界合法</td>
+</tr>
+<tr>
+<td>M3 Pipeline</td>
+<td>多 stage、多轮复用、长 K 与压力测试，无死锁/竞态</td>
+</tr>
+<tr>
+<td>M4 Kernel</td>
+<td>全网格、batch、尾部、不同 stride，输出覆盖正确</td>
+</tr>
+<tr>
+<td>M5 Host</td>
+<td>参数拒绝、workspace、stream/event、launch 错误处理</td>
+</tr>
+<tr>
+<td>M6 优化</td>
+<td>代表形状集、稳定测量、资源记录、相对基线</td>
+</tr>
+<tr>
+<td>M7 高级功能</td>
+<td>融合、Split-K/Stream-K、grouped 分别具备独立验证</td>
+</tr>
+</tbody></table>
+<p>这些是建议验收条件，不是对特定芯片的工期或性能承诺。</p>
+<h2 id="构建验证与性能实验">构建、验证与性能实验</h2>
+<h3 id="固定快照限定构建范围">固定快照，限定构建范围</h3>
+<p>先记录 commit、是否有本地修改、CUDA 编译器、Host 编译器、GPU/SM、驱动和构建选项。这个快照含新增架构和开发内容，不应从网络上一份旧教程推定它所需的全部工具版本。</p>
+<p>以下命令是<strong>在相应目标开发环境执行的复现实验模板</strong>，不是本次已跑通的 Hopper/Blackwell 构建记录。Windows 下 CUDA 还需要兼容的 Host 编译器和开发环境；下面假设 Ninja 和相关编译器已配置。</p>
+<pre><code class="language-powershell"># Hopper 示例，使用独立构建目录；90a 对应示例所用架构专有能力。
+cmake -S E:/000wsp/01repo/08sutlass/cutlass -B E:/000wsp/build/cutlass-sm90 -G Ninja -DCUTLASS_NVCC_ARCHS=90a -DCUTLASS_ENABLE_EXAMPLES=ON -DCUTLASS_ENABLE_TESTS=OFF
+cmake --build E:/000wsp/build/cutlass-sm90 --target 49_collective_builder
+
+# SM100 示例；仅在支持该目标的工具链与 GPU 上运行。
+cmake -S E:/000wsp/01repo/08sutlass/cutlass -B E:/000wsp/build/cutlass-sm100 -G Ninja -DCUTLASS_NVCC_ARCHS=100a -DCUTLASS_ENABLE_EXAMPLES=ON -DCUTLASS_ENABLE_TESTS=OFF
+cmake --build E:/000wsp/build/cutlass-sm100 --target 71_blackwell_gemm_with_collective_builder
+</code></pre>
+<p>目标名与示例的 CMake 文件一致。示例 71 的 CMake 对允许的架构列表有条件判断；若目标未生成，先核对 <code>CUTLASS_NVCC_ARCHS</code> 与该条件，而不是直接改头文件中的架构宏。<a href="#S34">S34</a><a href="#S35">S35</a></p>
+<h3 id="正确性矩阵">正确性矩阵</h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>至少覆盖什么</th>
+<th>目的</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>形状</td>
+<td>单 tile、多 tile、短/长 K、M/N 尾部</td>
+<td>暴露边界、状态推进和 tail 问题</td>
+</tr>
+<tr>
+<td>参数</td>
+<td>alpha=0/1/非整数，beta=0/1/其他</td>
+<td>暴露 C 读取和融合语义问题</td>
+</tr>
+<tr>
+<td>布局</td>
+<td>实际支持的行/列布局、padding、batch stride</td>
+<td>暴露坐标与字节映射错误</td>
+</tr>
+<tr>
+<td>数值</td>
+<td>随机、有结构数据、大小量级；按类型评估特殊值</td>
+<td>避免全 1 数据掩盖错位</td>
+</tr>
+<tr>
+<td>生命周期</td>
+<td>同 stream 重复、跨 stream 依赖、workspace 复用</td>
+<td>暴露未同步和参数缓存问题</td>
+</tr>
+<tr>
+<td>调度</td>
+<td>支持的 scheduler、K 拆分、group 大小不均衡</td>
+<td>暴露部分和、唯一写入和终止问题</td>
+</tr>
+<tr>
+<td>资源</td>
+<td>不同 stage/tile、cluster、长时间多轮运行</td>
+<td>暴露 buffer 覆盖、死锁和回收错误</td>
+</tr>
+</tbody></table>
+<p>不支持的对齐/形状应由参数检查明确拒绝，而不是要求每个 Tensor Core 路径都支持任意尺寸。浮点校验采用与数据类型、K 长度及累计精度匹配的绝对/相对误差，例如 <code>abs(out-ref) &lt;= atol + rtol*abs(ref)</code>；并记录最大误差、相对误差与失败坐标。Split-K 改变累加顺序时，不宜要求位级完全一致。</p>
+<h3 id="性能测量流程">性能测量流程</h3>
+<ol>
+<li>分离冷启动/编译、Host 准备、设备执行时间；说明测的是单 kernel 还是端到端。</li>
+<li>先做正确性验证，再预热，使用同一 stream 的 CUDA event 或 profiler 计时。</li>
+<li>固定输入形状、类型、布局、alpha/beta、融合逻辑与目标精度。</li>
+<li>多次测量，报告稳定统计值与波动；记录 GPU 功耗/频率/热状态和并发负载。</li>
+<li>用适用的 cuBLAS/cuBLASLt 或已有 kernel 作基线，保持功能与数据类型口径一致。</li>
+<li>保存 tile、cluster、stage、寄存器、SMEM、workspace、生成指令和性能计数器。</li>
+</ol>
+<p>仓库 <code>tools/profiler</code> 支持操作过滤、验证、预热和重复测量。<a href="#S36">S36</a></p>
+<pre><code class="language-powershell"># 从已构建的 profiler 所在目录运行；确保库中已生成匹配实例。
+.\cutlass_profiler.exe --operation=Gemm --m=4096 --n=4096 --k=4096 --A=f16:row --B=f16:column --beta=0 --verification-enabled=true --warmup-iterations=10 --profiling-iterations=50
+</code></pre>
+<p>profiler 输出可能包含多种累加/输出组合，应继续按数据类型、kernel 名等收窄，不能直接把列表中最快的一行与另一个精度口径的基线比较。并非所有模板实例都已包含在默认构建的库里。</p>
+<h3 id="怎样确认实际用了哪条指令">怎样确认实际用了哪条指令</h3>
+<p>保留 <code>-lineinfo</code>、编译器资源报告（例如 <code>-Xptxas=-v</code>），必要时保留 PTX/cubin，再用 <code>cuobjdump</code> 或 <code>nvdisasm</code> 检查。PTX 中的 <code>wgmma</code>、<code>tcgen05</code> 只证明该编译产物包含相关虚拟指令；最终使用的 SASS、是否发生 spill、哪些路径实际执行，要结合二进制和 profiler 判断。</p>
+<p>可在本地搜索以下关键字快速定位封装；这些命令只读源码：</p>
+<pre><code class="language-powershell">rg -n &#39;wgmma.mma_async&#39; include/cute/arch
+rg -n &#39;tcgen05.mma|tcgen05.ld&#39; include/cute/arch
+rg -n &#39;producer_acquire|consumer_wait|consumer_release&#39; include/cutlass/pipeline
+rg -n &#39;to_underlying_arguments|device_kernel|ClusterLauncher&#39; include/cutlass/gemm/device/gemm_universal_adapter.h
+</code></pre>
+<h2 id="推荐阅读路线与问题索引">推荐阅读路线与问题索引</h2>
+<h3 id="路线-a先理解架构">路线 A：先理解架构</h3>
+<p><code>media/docs/cpp/cutlass_3x_design.md</code> → <code>gemm_api_3x.md</code> → 示例 49 的类型定义 → <code>collective_builder.hpp</code> 与 <code>builders/sm90_gmma_builder.inl</code> → <code>dispatch_policy.hpp</code> → 选定 schedule 的 Kernel 特化。</p>
+<p>每读一层，用一句话写出“输入是什么、生成什么、负责哪条正确性约束”。如果这句话需要泛泛地说“进行 GEMM 计算”，说明层次边界还不够清楚。</p>
+<h3 id="路线-b追一次执行">路线 B：追一次执行</h3>
+<p>示例 49 的 <code>run</code> → Adapter 的 <code>initialize/run</code> → <code>device_kernel</code> → cooperative Kernel 的 <code>operator()</code> → Collective 的 <code>load/mma</code> → <code>cute::gemm</code> → <code>MMA_Atom::call</code> → GMMA 的 <code>mma_unpack</code> → <code>fma</code> 内联 PTX。</p>
+<p>与此并行追一次数据：A/B 原始指针 → tensor/stride → 当前 tile → TMA descriptor → SMEM stage → GMMA descriptor → accumulator → epilogue → D。把控制链和数据链分别画出来，再在 barrier 处对齐。</p>
+<h3 id="路线-c面向移植">路线 C：面向移植</h3>
+<p>CuTe <code>01_layout.md</code> → <code>02_layout_algebra.md</code> → <code>03_tensor.md</code> → <code>0t_mma_atom.md</code> → 一个架构的 arch/traits 对照 → 单 tile 教程 → Pipeline → Collective → Kernel/scheduler → Host/runtime → 性能工具。</p>
+<p>SM100 可以用 <code>01_mma_sm100.cu</code> 先学习最小通路，再读示例 71 和生产级 Kernel；新后端则沿用本指南 M0–M7 的验收顺序。</p>
+<h3 id="问题到源码的速查表">问题到源码的速查表</h3>
+<table>
+<thead>
+<tr>
+<th>你现在的问题</th>
+<th>首先跳到</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>哪种参数决定选哪个实现？</td>
+<td>示例 49/71、mainloop builder、dispatch policy</td>
+</tr>
+<tr>
+<td><code>Auto</code> 为什么选了这个 stage/schedule？</td>
+<td>对应架构 builder 的特化及计算函数</td>
+</tr>
+<tr>
+<td>launch 为什么带 cluster？</td>
+<td>Adapter <code>run</code>、ClusterLauncher、Kernel ClusterShape</td>
+</tr>
+<tr>
+<td>为什么模板名字相同但实现不同？</td>
+<td><code>GemmUniversal</code> / <code>CollectiveMma</code> 的偏特化条件</td>
+</tr>
+<tr>
+<td>A/B 实际在哪里？</td>
+<td>tensor Engine、Copy/MMA traits、descriptor 构造</td>
+</tr>
+<tr>
+<td>某 stage 为什么不能覆盖？</td>
+<td>pipeline 与 mma 完成协议、release_state</td>
+</tr>
+<tr>
+<td>为什么换个 tile 编译失败？</td>
+<td>指令形状、alignment、SMEM、schedule 兼容性静态检查</td>
+</tr>
+<tr>
+<td>为什么 alpha/beta/bias 不正确？</td>
+<td>epilogue operation、EVT 参数树、归约完成点</td>
+</tr>
+<tr>
+<td>为什么 SM100 不能直接改为 SM120？</td>
+<td>各架构的 MMA traits、指令家族与 Kernel 实现</td>
+</tr>
+<tr>
+<td>为什么没有自动选择最优 kernel？</td>
+<td>区分单实例 Adapter、实例库和上层选择/搜索工具</td>
+</tr>
+</tbody></table>
+<h3 id="常见误区">常见误区</h3>
+<ul>
+<li><code>Layout</code> 改变视图不等于发生了数据转置或复制。</li>
+<li><code>cute::gemm</code> 不等于调用 cuBLAS；它可以分派到内联硬件 MMA 操作。</li>
+<li><code>__syncthreads()</code> 不能直接替代 TMA、WGMMA、UMMA 的异步完成与内存序协议。</li>
+<li>GMMA descriptor 中装的是访问描述，不是 A/B 矩阵本体。</li>
+<li>SM100 的 TMEM 不是 SMEM 的新名字，也不能按普通寄存器数组随意读写。</li>
+<li>深流水线、大 tile、高 occupancy、更多融合，均不保证单调提升性能。</li>
+<li>高层接口复用不等于底层指令、存储和同步机制可以无修改复用。</li>
+<li>硬件移植先证明功能和同步，再证明性能；不能用编译成功代替运行验证。</li>
+</ul>
+<h2 id="源码证据索引">源码证据索引</h2>
+<p>下表的行号由本地快照自动提取，指向关键入口或代表语句；阅读时应向周围展开上下文。源码链接使用本机绝对路径。移动指南到其他电脑后，可按相对路径在相同提交中定位。在线资料用于核对概念与指令规范，本地快照决定本文描述的具体代码。</p>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>证据与源码入口</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span id="S01">S01</span></td>
+<td>版本声明：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/version.h#L41">include/cutlass/version.h:41</a></td>
+</tr>
+<tr>
+<td><span id="S02">S02</span></td>
+<td>3.x 架构设计：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/media/docs/cpp/cutlass_3x_design.md#L1">media/docs/cpp/cutlass_3x_design.md:1</a></td>
+</tr>
+<tr>
+<td><span id="S03">S03</span></td>
+<td>3.x GEMM API 与层级：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/media/docs/cpp/gemm_api_3x.md#L83">media/docs/cpp/gemm_api_3x.md:83</a></td>
+</tr>
+<tr>
+<td><span id="S04">S04</span></td>
+<td>Hopper Builder 与 EVT 组装：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/examples/49_hopper_gemm_with_collective_builder/49_collective_builder.cu#L291">examples/49_hopper_gemm_with_collective_builder/49_collective_builder.cu:291</a></td>
+</tr>
+<tr>
+<td><span id="S05">S05</span></td>
+<td>SM90 Builder 生成具体 Collective：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/collective/builders/sm90_gmma_builder.inl#L292">include/cutlass/gemm/collective/builders/sm90_gmma_builder.inl:292</a></td>
+</tr>
+<tr>
+<td><span id="S06">S06</span></td>
+<td>Hopper cooperative Kernel 特化：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/kernel/sm90_gemm_tma_warpspecialized_cooperative.hpp#L60">include/cutlass/gemm/kernel/sm90_gemm_tma_warpspecialized_cooperative.hpp:60</a></td>
+</tr>
+<tr>
+<td><span id="S07">S07</span></td>
+<td>应用 Arguments 与调用顺序：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/examples/49_hopper_gemm_with_collective_builder/49_collective_builder.cu#L432">examples/49_hopper_gemm_with_collective_builder/49_collective_builder.cu:432</a></td>
+</tr>
+<tr>
+<td><span id="S08">S08</span></td>
+<td>Adapter 初始化与 Params：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/device/gemm_universal_adapter.h#L313">include/cutlass/gemm/device/gemm_universal_adapter.h:313</a></td>
+</tr>
+<tr>
+<td><span id="S09">S09</span></td>
+<td>Adapter launch 分支：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/device/gemm_universal_adapter.h#L396">include/cutlass/gemm/device/gemm_universal_adapter.h:396</a></td>
+</tr>
+<tr>
+<td><span id="S10">S10</span></td>
+<td>Kernel Arguments 转换：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/kernel/sm90_gemm_tma_warpspecialized_cooperative.hpp#L214">include/cutlass/gemm/kernel/sm90_gemm_tma_warpspecialized_cooperative.hpp:214</a></td>
+</tr>
+<tr>
+<td><span id="S11">S11</span></td>
+<td>CUDA device kernel 入口：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/device_kernel.h#L118">include/cutlass/device_kernel.h:118</a></td>
+</tr>
+<tr>
+<td><span id="S12">S12</span></td>
+<td>Kernel mainloop load 调用：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/kernel/sm90_gemm_tma_warpspecialized_cooperative.hpp#L632">include/cutlass/gemm/kernel/sm90_gemm_tma_warpspecialized_cooperative.hpp:632</a></td>
+</tr>
+<tr>
+<td><span id="S13">S13</span></td>
+<td>Hopper Collective 的 load 与 mma：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/collective/sm90_mma_tma_gmma_ss_warpspecialized.hpp#L286">include/cutlass/gemm/collective/sm90_mma_tma_gmma_ss_warpspecialized.hpp:286</a></td>
+</tr>
+<tr>
+<td><span id="S14">S14</span></td>
+<td>MMA Atom 与 TiledMMA：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cute/atom/mma_atom.hpp#L49">include/cute/atom/mma_atom.hpp:49</a></td>
+</tr>
+<tr>
+<td><span id="S15">S15</span></td>
+<td>CuTe GEMM 调用 Atom：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cute/algorithm/gemm.hpp#L197">include/cute/algorithm/gemm.hpp:197</a></td>
+</tr>
+<tr>
+<td><span id="S16">S16</span></td>
+<td>GMMA 专用 unpack：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cute/atom/mma_traits_sm90_gmma.hpp#L392">include/cute/atom/mma_traits_sm90_gmma.hpp:392</a></td>
+</tr>
+<tr>
+<td><span id="S17">S17</span></td>
+<td>代表 WGMMA 指令封装：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cute/arch/mma_sm90_gmma.hpp#L1071">include/cute/arch/mma_sm90_gmma.hpp:1071</a></td>
+</tr>
+<tr>
+<td><span id="S18">S18</span></td>
+<td>TMA pipeline acquire/commit 协议：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/pipeline/sm90_pipeline.hpp#L512">include/cutlass/pipeline/sm90_pipeline.hpp:512</a></td>
+</tr>
+<tr>
+<td><span id="S19">S19</span></td>
+<td>TMA PTX 搬运封装：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cute/arch/copy_sm90_tma.hpp#L103">include/cute/arch/copy_sm90_tma.hpp:103</a></td>
+</tr>
+<tr>
+<td><span id="S20">S20</span></td>
+<td>Tile scheduler 标签与选择：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/kernel/tile_scheduler.hpp#L49">include/cutlass/gemm/kernel/tile_scheduler.hpp:49</a></td>
+</tr>
+<tr>
+<td><span id="S21">S21</span></td>
+<td>CuTe Layout 教程：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/media/docs/cpp/cute/01_layout.md#L1">media/docs/cpp/cute/01_layout.md:1</a></td>
+</tr>
+<tr>
+<td><span id="S22">S22</span></td>
+<td>CuTe Tensor 教程：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/media/docs/cpp/cute/03_tensor.md#L1">media/docs/cpp/cute/03_tensor.md:1</a></td>
+</tr>
+<tr>
+<td><span id="S23">S23</span></td>
+<td>布局代数：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/media/docs/cpp/cute/02_layout_algebra.md#L1">media/docs/cpp/cute/02_layout_algebra.md:1</a></td>
+</tr>
+<tr>
+<td><span id="S24">S24</span></td>
+<td>Hopper TMA epilogue：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/epilogue/collective/sm90_epilogue_tma_warpspecialized.hpp#L68">include/cutlass/epilogue/collective/sm90_epilogue_tma_warpspecialized.hpp:68</a></td>
+</tr>
+<tr>
+<td><span id="S25">S25</span></td>
+<td>融合 operation 定义：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/epilogue/fusion/operations.hpp#L116">include/cutlass/epilogue/fusion/operations.hpp:116</a></td>
+</tr>
+<tr>
+<td><span id="S26">S26</span></td>
+<td>SM100 Builder 示例：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/examples/71_blackwell_gemm_with_collective_builder/71_blackwell_gemm_with_collective_builder.cu#L221">examples/71_blackwell_gemm_with_collective_builder/71_blackwell_gemm_with_collective_builder.cu:221</a></td>
+</tr>
+<tr>
+<td><span id="S27">S27</span></td>
+<td>SM100 Kernel 与 TMEM 管理：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/kernel/sm100_gemm_tma_warpspecialized.hpp#L178">include/cutlass/gemm/kernel/sm100_gemm_tma_warpspecialized.hpp:178</a></td>
+</tr>
+<tr>
+<td><span id="S28">S28</span></td>
+<td>SM100 Collective MMA：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/collective/sm100_mma_warpspecialized.hpp#L702">include/cutlass/gemm/collective/sm100_mma_warpspecialized.hpp:702</a></td>
+</tr>
+<tr>
+<td><span id="S29">S29</span></td>
+<td>SM100 UMMA PTX 封装：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cute/arch/mma_sm100_umma.hpp#L86">include/cute/arch/mma_sm100_umma.hpp:86</a></td>
+</tr>
+<tr>
+<td><span id="S30">S30</span></td>
+<td>SM100 TMEM load 指令：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cute/arch/copy_sm100.hpp#L628">include/cute/arch/copy_sm100.hpp:628</a></td>
+</tr>
+<tr>
+<td><span id="S31">S31</span></td>
+<td>手写 SM100 教程：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/examples/cute/tutorial/blackwell/01_mma_sm100.cu#L141">examples/cute/tutorial/blackwell/01_mma_sm100.cu:141</a></td>
+</tr>
+<tr>
+<td><span id="S32">S32</span></td>
+<td>Python DSL 概览：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/media/docs/pythonDSL/overview.rst#L6">media/docs/pythonDSL/overview.rst:6</a></td>
+</tr>
+<tr>
+<td><span id="S33">S33</span></td>
+<td>CuTe IR 编译器栈说明：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/cutlass_compiler/README.md#L1">cutlass_compiler/README.md:1</a></td>
+</tr>
+<tr>
+<td><span id="S34">S34</span></td>
+<td>示例 49 构建目标：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/examples/49_hopper_gemm_with_collective_builder/CMakeLists.txt#L31">examples/49_hopper_gemm_with_collective_builder/CMakeLists.txt:31</a></td>
+</tr>
+<tr>
+<td><span id="S35">S35</span></td>
+<td>示例 71 架构条件：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/examples/71_blackwell_gemm_with_collective_builder/CMakeLists.txt#L30">examples/71_blackwell_gemm_with_collective_builder/CMakeLists.txt:30</a></td>
+</tr>
+<tr>
+<td><span id="S36">S36</span></td>
+<td>性能工具参数与用法：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/media/docs/cpp/profiler.md#L258">media/docs/cpp/profiler.md:258</a></td>
+</tr>
+<tr>
+<td><span id="S37">S37</span></td>
+<td>SM100 Pipeline 的完成通知：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/pipeline/sm100_pipeline.hpp#L537">include/cutlass/pipeline/sm100_pipeline.hpp:537</a></td>
+</tr>
+<tr>
+<td><span id="S38">S38</span></td>
+<td>UMMA arrive 的 PTX commit：<a href="file:///E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/arch/barrier.h#L799">include/cutlass/arch/barrier.h:799</a></td>
+</tr>
+</tbody></table>
+<h3 id="在线一手资料">在线一手资料</h3>
+<ul>
+<li><a href="https://docs.nvidia.com/cutlass/latest/media/docs/cpp/cutlass_3x_design.html">NVIDIA CUTLASS 3.0 Design</a>：官方分层与组合设计。</li>
+<li><a href="https://docs.nvidia.com/cutlass/latest/media/docs/cpp/code_organization.html">NVIDIA CUTLASS Code Organization</a>：代码组织与各目录职责。</li>
+<li><a href="https://docs.nvidia.com/cutlass/latest/media/docs/cpp/cute/00_quickstart.html">NVIDIA Getting Started with CuTe</a>：CuTe 入口与概念索引。</li>
+<li><a href="https://docs.nvidia.com/cuda/parallel-thread-execution/">NVIDIA PTX ISA</a>：指令、地址空间、参与规则与异步完成语义；在线版本可能领先于本地工具链。</li>
+</ul>
+<h3 id="术语速查">术语速查</h3>
+<table>
+<thead>
+<tr>
+<th>术语</th>
+<th>本文含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CTA</td>
+<td>CUDA thread block；硬件移植时常对应 workgroup，但语义需核对</td>
+</tr>
+<tr>
+<td>Cluster</td>
+<td>能使用特定协作机制的一组 CTA</td>
+</tr>
+<tr>
+<td>Warpgroup</td>
+<td>Hopper WGMMA 等路径使用的 warp 协作范围</td>
+</tr>
+<tr>
+<td>GMEM / SMEM / RMEM</td>
+<td>全局内存 / 共享内存 / 寄存器存储语境</td>
+</tr>
+<tr>
+<td>TMEM</td>
+<td>SM100 tcgen05 相关的 Tensor Memory，需专门分配和访问</td>
+</tr>
+<tr>
+<td>TMA</td>
+<td>Tensor Memory Accelerator，多维异步 tensor 搬运机制</td>
+</tr>
+<tr>
+<td>MMA / GMMA / UMMA</td>
+<td>矩阵乘加操作及本文涉及的架构指令家族</td>
+</tr>
+<tr>
+<td>Fragment</td>
+<td>按某种线程/指令布局组织的操作数或结果片段</td>
+</tr>
+<tr>
+<td>Descriptor</td>
+<td>编码硬件访问方式的描述信息</td>
+</tr>
+<tr>
+<td>Stage</td>
+<td>可轮转复用的一份流水线缓冲/状态槽</td>
+</tr>
+<tr>
+<td>Epilogue</td>
+<td>累加结束后的融合、转换、重排与写回阶段</td>
+</tr>
+<tr>
+<td>EVT</td>
+<td>Epilogue Visitor Tree，用树状组合表达输出计算与访问</td>
+</tr>
+<tr>
+<td>PDL</td>
+<td>Programmatic Dependent Launch，依赖架构与启动路径的能力</td>
+</tr>
+<tr>
+<td>PTX / SASS</td>
+<td>NVIDIA 虚拟 ISA / 目标 GPU 机器指令表示</td>
+</tr>
+</tbody></table>
+<p>本指南配套 HTML 内嵌全部 SVG，无需联网渲染图表；Markdown 引用同目录 <code>assets/</code> 中的矢量图。所有图为根据本地源码绘制的说明图，不是实测时序或硬件物理版图。</p>
+</main></html>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 880" role="img" aria-labelledby="title desc">
+  <title id="title">SM100 GEMM Host 与 Device 调用树</title>
+  <desc id="desc">从测试入口到 TestAll、Testbed、Adapter、device_kernel，再分出设备侧调度、加载、MMA、epilogue 与 Host 验证。</desc>
+  <defs><style>text{font-family:"Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif;fill:#eaf1fb}.h{font-size:36px;font-weight:700}.m{font-size:22px;font-weight:600}.s{font-size:17px}.muted{fill:#a8b8cd}.node{fill:#173149;stroke:#5c7995;stroke-width:2}.edge{stroke:#7898b7;stroke-width:2.5;fill:none}.cyan{fill:#63d7ea}.green{fill:#91e3b7}.amber{fill:#ffd07b}</style></defs>
+  <rect width="1440" height="880" fill="#0a1727"/>
+  <text x="54" y="72" class="h">调用树：谁把工作交给谁</text>
+  <text x="56" y="113" class="s muted">纵向看层次，横向看 kernel 内五类 warp 的职责。</text>
+  <path class="edge" d="M206 200 V250 H337 V296 H480 V344 H626 V392 H760 V440"/>
+  <rect class="node" x="56" y="154" width="350" height="70" rx="12"/><text x="74" y="195" class="m cyan">TEST(..., 64x128x64_1sm)</text>
+  <rect class="node" x="210" y="250" width="370" height="70" rx="12"/><text x="229" y="291" class="m cyan">TestAll → Testbed3x::run</text>
+  <rect class="node" x="366" y="344" width="420" height="70" rx="12"/><text x="385" y="385" class="m cyan">GemmUniversalAdapter::run</text>
+  <rect class="node" x="546" y="440" width="440" height="70" rx="12"/><text x="565" y="481" class="m green">device_kernel → GemmUniversal</text>
+  <path class="edge" d="M766 510 V542 M139 542 H1270 M139 542 V575 M421 542 V575 M703 542 V575 M985 542 V575 M1270 542 V575"/>
+  <rect class="node" x="48" y="575" width="192" height="122" rx="12"/><text x="65" y="616" class="m green">Sched</text><text x="65" y="651" class="s muted">下一 work tile</text><text x="65" y="679" class="s amber">CLC pipeline</text>
+  <rect class="node" x="282" y="575" width="273" height="122" rx="12"/><text x="299" y="616" class="m green">MainloopLoad</text><text x="299" y="651" class="s muted">A/B: GMEM → SMEM</text><text x="299" y="679" class="s amber">TMA + multicast</text>
+  <rect class="node" x="597" y="575" width="215" height="122" rx="12"/><text x="614" y="616" class="m green">MMA</text><text x="614" y="651" class="s muted">SMEM → TMEM</text><text x="614" y="679" class="s amber">cute::gemm / UMMA</text>
+  <rect class="node" x="854" y="575" width="263" height="122" rx="12"/><text x="871" y="616" class="m green">EpilogueLoad</text><text x="871" y="651" class="s muted">C=void</text><text x="871" y="679" class="s amber">本例跳过 C load</text>
+  <rect class="node" x="1159" y="575" width="235" height="122" rx="12"/><text x="1176" y="616" class="m green">Epilogue</text><text x="1176" y="651" class="s muted">TMEM → D</text><text x="1176" y="679" class="s amber">FP32 + TMA store</text>
+  <path class="edge" d="M986 475 H1416 V752 H898 V778"/>
+  <rect class="node" x="606" y="778" width="584" height="72" rx="12"/><text x="628" y="822" class="m amber">返回 Host → CPU Gemm3x → 相对误差比较</text>
+</svg>

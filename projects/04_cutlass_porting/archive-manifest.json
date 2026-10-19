@@ -1,0 +1,471 @@
+{
+  "project": "04_cutlass_porting",
+  "scope": "Current local project files and locally available project conversations/visualizations",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "bytes": 397,
+      "sha256": "250de6021f00b312d68a5db601787bdfab4ed05cae49a629c71d85d529fbfc65"
+    },
+    {
+      "path": "conversations/2026-10-18T10-32-07-01a14cda-1802-7303-a500-acc64777b621.md",
+      "bytes": 12529,
+      "sha256": "b957b7a597401f4759dadbb88af744ba6d965c149cc9e969b88b6c47dabf7f1e"
+    },
+    {
+      "path": "conversations/2026-10-18T10-32-14-01a14cda-4083-7a40-9004-8aab0dccdd9d.md",
+      "bytes": 13940,
+      "sha256": "ae65d517d4bd3f365fb7ed9cb11cf94cc9b990953354b5a36a970b263f550ee0"
+    },
+    {
+      "path": "conversations/2026-10-18T10-54-42-01a14cee-d4ae-7322-a209-c07d08140dba.md",
+      "bytes": 13784,
+      "sha256": "df060e0a195a499b443f118e711d8b874bda53486111ea9014d22af0c86bd853"
+    },
+    {
+      "path": "conversations/2026-10-18T10-55-23-01a14cef-74ca-7232-8887-9a2a16893efc.md",
+      "bytes": 20670,
+      "sha256": "0df5b7885eaa41f2c8e1cf3ed85340da09e90318365abff35ca4448fe700362b"
+    },
+    {
+      "path": "conversations/2026-10-18T10-55-40-01a14cef-b5dd-7b80-904e-1546db2204ee.md",
+      "bytes": 16159,
+      "sha256": "a10bf26256f582391ef67b79f419e36b178715d40a63911b14454fa1dc3c51eb"
+    },
+    {
+      "path": "conversations/2026-10-18T10-56-02-01a14cf0-0c4f-7510-81ad-b05c243501dd.md",
+      "bytes": 4917,
+      "sha256": "59cee6c248f2a2cb40b1bf323092c44d2e21c7cca7b4a49b2aa989314bd7886b"
+    },
+    {
+      "path": "conversations/2026-10-18T10-56-28-01a14cf0-727a-7fd2-85e3-47d50d426dd9.md",
+      "bytes": 15735,
+      "sha256": "45c1c81f9083c0ebdd7a0acf10ba8321ac87a9e8a77d04bf12915c0cd16ac8b8"
+    },
+    {
+      "path": "conversations/2026-10-18T10-56-51-01a14cf0-cb88-7281-bb4b-38ba737e0fa6.md",
+      "bytes": 12701,
+      "sha256": "8f4ab46949c32072e64d5c0b399a087a16adb1caf8d60dd78f2b9aec1ae8748d"
+    },
+    {
+      "path": "conversations/2026-10-18T11-02-08-01a14cf5-a2a0-7353-99bb-60f6bc295452.md",
+      "bytes": 6863,
+      "sha256": "d543741bafba31a4d6860c6dc4f8b67e42610a7013dc297d13c792b9a17d07f2"
+    },
+    {
+      "path": "conversations/2026-10-18T11-12-05-01a14cfe-b951-74f0-9b66-99772154d268.md",
+      "bytes": 4967,
+      "sha256": "23df11dbc8a33044b6eff919c378837c0702544c80ddc3274c1f49f4967ee284"
+    },
+    {
+      "path": "conversations/2026-10-18T23-18-49-01a14f98-0bd9-7da2-beff-916cb12fbcdd.md",
+      "bytes": 27684,
+      "sha256": "5077874dbd90abaacf52f2b95219561476e8d428642978aa9913dfbecaa29577"
+    },
+    {
+      "path": "conversations/2026-10-19T13-02-14-01a15289-f37c-7381-98f3-761b35ea0b07.md",
+      "bytes": 2187,
+      "sha256": "944b55e2489c270aa636f33500ba8558c023c0891358b21bc0dcb4489aa74275"
+    },
+    {
+      "path": "conversations/index.json",
+      "bytes": 3303,
+      "sha256": "f75ecf8ec763c85b71da9e56b49402d21c05c64dff32348a3eaa21c953497bce"
+    },
+    {
+      "path": "conversations/README.md",
+      "bytes": 2110,
+      "sha256": "8ef6ae0a1787cfbcd7fb4e56c320609129566968f6103cd337c37a43289d4ed5"
+    },
+    {
+      "path": "CUTLASS_架构学习与源码调研指南.md",
+      "bytes": 30069,
+      "sha256": "dc62750dfcdb43a0f427ab161fd7c7b430347ace47cfa514a434f78aa1ad20e8"
+    },
+    {
+      "path": "deliverables/cutlass-guide/assets/01-architecture.svg",
+      "bytes": 7422,
+      "sha256": "6c7c4f86b2352f9f75cc35836048dd473bf1d967a78f55c2b674554c9491b230"
+    },
+    {
+      "path": "deliverables/cutlass-guide/assets/02-cute-mapping.svg",
+      "bytes": 6631,
+      "sha256": "97b8ce52cbcbef2486641a320717dc613d151e2e6191a563a7a303cb9c7446a3"
+    },
+    {
+      "path": "deliverables/cutlass-guide/assets/03-gemm-execution.svg",
+      "bytes": 7273,
+      "sha256": "d74c388dbd78c6b8c53708687a45a6fae752db85066d47901922ae719e6ab930"
+    },
+    {
+      "path": "deliverables/cutlass-guide/assets/04-pipeline.svg",
+      "bytes": 7006,
+      "sha256": "5e19ba18d2efe32728194083f7f464100242559429d55e12a3a8943113e80b81"
+    },
+    {
+      "path": "deliverables/cutlass-guide/assets/05-lowering-hardware.svg",
+      "bytes": 6133,
+      "sha256": "cb858d5d0fa7bde9f25309209f0b56fa5e25ae3ab5e458c31a9412955e693346"
+    },
+    {
+      "path": "deliverables/cutlass-guide/assets/06-generations.svg",
+      "bytes": 6509,
+      "sha256": "c40702ad12872c509ca6b45141e10e0abe0dafe4b9de7f7b64d5c1bb6d0fc24c"
+    },
+    {
+      "path": "deliverables/cutlass-guide/assets/07-schedulers.svg",
+      "bytes": 5534,
+      "sha256": "6831e5042288b932278d6880669582afcce04a983d30a269d4b9d7f47014244f"
+    },
+    {
+      "path": "deliverables/cutlass-guide/assets/08-porting-roadmap.svg",
+      "bytes": 7115,
+      "sha256": "44c9f66ad2d5e510226d6744da369531d7a9651842e2876556d5bd340db207e0"
+    },
+    {
+      "path": "deliverables/cutlass-guide/build_guide.py",
+      "bytes": 22300,
+      "sha256": "e949523f2489d6ccee3bfae4c36dd70ac9f22c0bac7c12a1440ac639339c2f74"
+    },
+    {
+      "path": "deliverables/cutlass-guide/check_artifacts.mjs",
+      "bytes": 1186,
+      "sha256": "18f8c487ab4f7962ce21e261f35b74b9318983550637720432aa283b0fa8c400"
+    },
+    {
+      "path": "deliverables/cutlass-guide/CUTLASS指南与配图.zip",
+      "bytes": 77388,
+      "sha256": "8d7dada9fd2b231c3057e3bf76fd0f6df28ffb7aab105dff1b68eecd28ca7e69"
+    },
+    {
+      "path": "deliverables/cutlass-guide/CUTLASS源码与架构指南.html",
+      "bytes": 135169,
+      "sha256": "55244bcd1b54e2a75a798ddaf5997ae35103a75ef4011d9645c9cef312e5dbb2"
+    },
+    {
+      "path": "deliverables/cutlass-guide/CUTLASS源码与架构指南.md",
+      "bytes": 63327,
+      "sha256": "925424966b92cf7dba86ab5312bc8ef0b5821c4f206d93e508522283405e5c54"
+    },
+    {
+      "path": "deliverables/cutlass-guide/qa/01-architecture.png",
+      "bytes": 114278,
+      "sha256": "3b478cfb81e5758ba2d4f8528b86a0c81196a9a56f14ecea51de74c9bd5550ef"
+    },
+    {
+      "path": "deliverables/cutlass-guide/qa/02-cute-mapping.png",
+      "bytes": 93390,
+      "sha256": "b471cd44aef2fdbb820e1eefb512df6966c27e7a3a351afdc55d46ab264e79ec"
+    },
+    {
+      "path": "deliverables/cutlass-guide/qa/03-gemm-execution.png",
+      "bytes": 109971,
+      "sha256": "ed6a4383ff1baad2fa9a454b21ee094e72b3e60f7d4610103cedcd72dff98b86"
+    },
+    {
+      "path": "deliverables/cutlass-guide/qa/04-pipeline.png",
+      "bytes": 79087,
+      "sha256": "9bdecbe87758ac72cd5ed523ebc60f34c21d13cb59dce670dd50e3692d6f5cee"
+    },
+    {
+      "path": "deliverables/cutlass-guide/qa/05-lowering-hardware.png",
+      "bytes": 84604,
+      "sha256": "07eb4d4f1df9bddbf2317128d87cf5c255db76b28cbd10e5f2d7bdd56e4d8dac"
+    },
+    {
+      "path": "deliverables/cutlass-guide/qa/06-generations.png",
+      "bytes": 88004,
+      "sha256": "26b8b5aecf168677d074f41ddff611963a934276809a138a0b0cddb444a4a3e4"
+    },
+    {
+      "path": "deliverables/cutlass-guide/qa/07-schedulers.png",
+      "bytes": 81988,
+      "sha256": "e14492f6e8bfdab7b67ec99d9c61278239cd7664a3d5774bc90ce3946b9bbb8b"
+    },
+    {
+      "path": "deliverables/cutlass-guide/qa/08-porting-roadmap.png",
+      "bytes": 113862,
+      "sha256": "65f1d8ee63ce1e9ae0d78e378dd0a321744c66bb2c9416a4e14bb3ca68026ae7"
+    },
+    {
+      "path": "deliverables/cutlass-guide/qa/diagrams-contact-sheet.png",
+      "bytes": 528314,
+      "sha256": "fe05b287298630b387702e5c79c384b27f2e2ff10123739f2d93c48a4b9ce8a7"
+    },
+    {
+      "path": "deliverables/cutlass-guide/render.mjs",
+      "bytes": 264,
+      "sha256": "76ab14813302fe904bc471982f2d110ad71bdcb6526d2c2e106ad204778228f6"
+    },
+    {
+      "path": "deliverables/cutlass-guide/source-index.json",
+      "bytes": 9732,
+      "sha256": "e83052961e52f047f1b32154be4d396c935cb5f8f62057e97db13cf5ba62bd83"
+    },
+    {
+      "path": "deliverables/cutlass-guide/validate_guide.py",
+      "bytes": 1889,
+      "sha256": "6feb62c5ebedac4508db09635ede681adadc3559fb921fb9445fac8045236e3a"
+    },
+    {
+      "path": "deliverables/cutlass-guide/validation.json",
+      "bytes": 293,
+      "sha256": "1ac75085c0d440cccb8e47ec6556815e9d3f023651dc5121cce9ef7cec337f97"
+    },
+    {
+      "path": "gemm_minimal/.gitignore",
+      "bytes": 37,
+      "sha256": "34cc0b208c118b392588948f46220c338632b39b9e1c3579b7b3c49db08d4d8b"
+    },
+    {
+      "path": "gemm_minimal/build_local.cmd",
+      "bytes": 444,
+      "sha256": "fd25017e81c67470db42209569c5c2d6893d49f87fcab521819327166a770a13"
+    },
+    {
+      "path": "gemm_minimal/CMakeLists.txt",
+      "bytes": 788,
+      "sha256": "ab0f01d5da67df8dcf5323b8b88d8f9247c8fc52446c8a91cf06eef415f84a2d"
+    },
+    {
+      "path": "gemm_minimal/cute_minimal.exe",
+      "bytes": 304640,
+      "sha256": "2eb13b943b6f59fa3e75f8a205a7bc0149ec772ccdfa457853a6804c398323a8"
+    },
+    {
+      "path": "gemm_minimal/gemm_128x256x64.cu",
+      "bytes": 7650,
+      "sha256": "1feb07bf430f0d5edc5e6e8f96570b99f8f59c787e49928d5d7e605108a957fc"
+    },
+    {
+      "path": "gemm_minimal/README_推导.md",
+      "bytes": 12197,
+      "sha256": "e7f37be34a89a69408f3f6bc73eb593c36d60cedd4e99257d5fbc117eea3389a"
+    },
+    {
+      "path": "README.md",
+      "bytes": 1966,
+      "sha256": "cf13a777a109432ebd96703d1f0b5b34d2802915a0a0d90d565220b3d8af58e3"
+    },
+    {
+      "path": "SM100-GEMM-visual/architecture-preview.png",
+      "bytes": 95891,
+      "sha256": "1c806b1a45343ff956e417da990ffe85cbca0bc5499c62c7880c5bf3219bc987"
+    },
+    {
+      "path": "SM100-GEMM-visual/architecture.svg",
+      "bytes": 4836,
+      "sha256": "70a9a5d0a8f2b30ea6ae32932b442a9735fa670965749f0934b16bc0b797bc3e"
+    },
+    {
+      "path": "SM100-GEMM-visual/call-tree-preview.png",
+      "bytes": 67758,
+      "sha256": "25044872f75d9e50d4d7c5fdacc0c1ff9301585acbd7b0de3cb311293272105c"
+    },
+    {
+      "path": "SM100-GEMM-visual/call-tree.svg",
+      "bytes": 3158,
+      "sha256": "811868e449317e7c61823233dadfa3bb151e3745512baefd96c22e3d895336a4"
+    },
+    {
+      "path": "SM100-GEMM-visual/flow-preview.png",
+      "bytes": 80209,
+      "sha256": "f5b13e678fce935f4bbf1c7b090172d9904b0318b9f784d08c04f433654d6f8c"
+    },
+    {
+      "path": "SM100-GEMM-visual/flow.svg",
+      "bytes": 4256,
+      "sha256": "0697192ae768227b2ac1575b95d733aed404de2a151cbe4fefec533b777165ec"
+    },
+    {
+      "path": "SM100-GEMM-visual/index.html",
+      "bytes": 9779,
+      "sha256": "36ea30c6e862a133c656d50058475e240448deef92c0d467ec669f46364a6a12"
+    },
+    {
+      "path": "SM100-GEMM-visual/mma-atom-architecture-preview.png",
+      "bytes": 105346,
+      "sha256": "1dc9366bc545d153a3ce3772cb158f23b03f920d2ecafb86f979f0fdfdbc7b22"
+    },
+    {
+      "path": "SM100-GEMM-visual/mma-atom-architecture.svg",
+      "bytes": 4112,
+      "sha256": "7098ce81609b8090ee95b579d287942d5ab8ba98076e53bbb09044eea7fcd046"
+    },
+    {
+      "path": "SM100-GEMM-visual/mma-atom-flow-preview.png",
+      "bytes": 84650,
+      "sha256": "09622ec343d2d745cba0ac55eeb1576e5166a0171c60c4a8ae37fd071c0656b6"
+    },
+    {
+      "path": "SM100-GEMM-visual/mma-atom-flow.svg",
+      "bytes": 3682,
+      "sha256": "9aa27d0a6d9aacff3a0528525ac1e72cd29c5fa7a88ff2c963a84f397f6ef116"
+    },
+    {
+      "path": "SM100-GEMM-visual/mma-atom-page-preview.png",
+      "bytes": 605591,
+      "sha256": "656e1ea51fdb9fccba490e6b9eda7a182d5989e254f45e2d5d700455911efa02"
+    },
+    {
+      "path": "SM100-GEMM-visual/mma-atom-tree-preview.png",
+      "bytes": 120248,
+      "sha256": "e97df5c3ecd474fa6693c47dfff123cd97189e8334b1f69f6f0863e1225d3cfd"
+    },
+    {
+      "path": "SM100-GEMM-visual/mma-atom-tree.svg",
+      "bytes": 4166,
+      "sha256": "157d1cdeb0a5ea39bfc4fef6bfcac397372c3145cbf206f7cb3bd9ab79cd3c2d"
+    },
+    {
+      "path": "SM100-GEMM-visual/mma-atom.html",
+      "bytes": 12786,
+      "sha256": "4160278c07748f9069237b697099c7f53f4cbdd23a4805ae2a2fe2e2971c4e0e"
+    },
+    {
+      "path": "SM100-GEMM-visual/page-preview.png",
+      "bytes": 419334,
+      "sha256": "4f9f8837d89e9d60fbcc67e8bba571f77e53066dad8122b65f2f3fba45eb43b2"
+    },
+    {
+      "path": "SM100_f16_GEMM_64x128x64_1SM_调用链指南.md",
+      "bytes": 24771,
+      "sha256": "f243ddfce5ab4d2c2605c5b6e086f8092f2b45deed5dc0a5b53129ce5ecfdf0b"
+    },
+    {
+      "path": "tools/export_project.py",
+      "bytes": 3672,
+      "sha256": "96c216d5cbc02602f59d1d24022cabbae6008800dbbdc1d7048f2290ac8c4e61"
+    },
+    {
+      "path": "tools/sync_project.py",
+      "bytes": 2320,
+      "sha256": "31f417e7ad9205d8c84a12b62225550b9ef277ecbd9c272d06f1bf6c2571fa20"
+    },
+    {
+      "path": "visualizations/01a14cda-1802-7303-a500-acc64777b621/sm100-gemm-visual-guide-standalone.html",
+      "bytes": 121758,
+      "sha256": "0c2c08c15aafb6760cafd41266e67889547352f58a16adb8c72ed2523f3ee70f"
+    },
+    {
+      "path": "visualizations/01a14cda-1802-7303-a500-acc64777b621/sm100-gemm-visual-guide.html",
+      "bytes": 27235,
+      "sha256": "bd68375786d0965c228ec97f0980a4543992bf4627f7b47a79af29c4c291603d"
+    },
+    {
+      "path": "visualizations/01a14cee-d4ae-7322-a209-c07d08140dba/cutlass-atlas.html",
+      "bytes": 17270,
+      "sha256": "c64b2a2c29e6f1d3f2912517b9e01ebf47f25bdb0a32c7ce0429c336b6932f08"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/cutlass-composition.html",
+      "bytes": 11422,
+      "sha256": "ba91685b3969becdb73565ef6bc8cf879909eefc4be20fe3b2a9e749c15250a1"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/cutlass-process.svg",
+      "bytes": 5393,
+      "sha256": "c2c44d2a1b23d0fedd0ac0178b6961daa1ddf34384d8edde389693a6c0df7bf3"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/interaction-check.js",
+      "bytes": 2624,
+      "sha256": "828b1172846693e18cd4f0ce5fb9acbe5a26a0f806d0fa65afc21856f7c34b49"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/01-three-lines.png",
+      "bytes": 128805,
+      "sha256": "827e08d5dc1da9c0ee1d8c45bd2a61494d00efe5aee47520aaf79f84247f2e02"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/01-three-lines.svg",
+      "bytes": 6687,
+      "sha256": "7ba0dfbe99d80cc6a6536a4599cb5d5547bef17a90e80f2667fe5cd92a849465"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/02-computation.png",
+      "bytes": 110222,
+      "sha256": "407f106ef5c29d5a06a020f51fe2be2c2cde5bd1f21b0abfdaa364bf9e5620c6"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/02-computation.svg",
+      "bytes": 10203,
+      "sha256": "1d2632f9afc0e3cddb390beac2e37ea2b52241fbc15b291c4fb8aa955b326291"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/03-cute-mapping.png",
+      "bytes": 130680,
+      "sha256": "0ba56c7d39fc2726aaa08819aa7a1fba00572748304536985c391143646f7c19"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/03-cute-mapping.svg",
+      "bytes": 12894,
+      "sha256": "3e2a5e7d0a5e8441642183ec6ef4de0a9e893d734c9d5b023cb9c4f589e805fe"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/04-composition-tree.png",
+      "bytes": 112016,
+      "sha256": "a17059efb6eb39dd425ca04a6e4d2c3e1203dc6408269455180cc3ca7345da77"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/04-composition-tree.svg",
+      "bytes": 5442,
+      "sha256": "1164260a648e10e8396eca63beac1bc85fd9cfd13939a4fe7eef489687127513"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/05-specialization.png",
+      "bytes": 140778,
+      "sha256": "70924a31559b94c929b568c987c8630553a70a2ca0bb1fe6bf6c69fce4d17d34"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/05-specialization.svg",
+      "bytes": 6503,
+      "sha256": "97698308320588ea037d32ad8fd12df9ff67231826ab37db85b783a52c05c7d9"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/06-review-cards.png",
+      "bytes": 143329,
+      "sha256": "a78e06eae8bbba3882c3ba69b0d770e3eea3da00d1c4621f7bbc0cab0ecc9134"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/06-review-cards.svg",
+      "bytes": 9812,
+      "sha256": "8cfbf38f39ed01bd7710b018b51bb24b6f3ea7f435fe60612fad23d81ee89812"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/build_figures.py",
+      "bytes": 11958,
+      "sha256": "8570e429ed8414ca6f2a75fe7cdaebd32c124f6c6ce40931f0532089a9a97e6f"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/cute-ownership.html",
+      "bytes": 4406,
+      "sha256": "0043ba9de624e2ed0e7e92e02d1ca739b3b72643ffecf77e3faa776f572d06c0"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/cutlass-three-lines-figures.zip",
+      "bytes": 694039,
+      "sha256": "1272acb7709c13318886ca18cda0d0aff56f0dc5c48461a0fb1a3eb34857ddcd"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/manifest.json",
+      "bytes": 356,
+      "sha256": "a34978c9a408f61734f1fa06946bc5bbf9fb5ea1f3df59bbc1a981ef178ea60b"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/overview-preview.png",
+      "bytes": 94750,
+      "sha256": "7ea280308d612984c50e3710ae28407ac01dda521e4253fa59607049fd9e804c"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/validation.json",
+      "bytes": 221,
+      "sha256": "672bc0c8c9a89cc55e52d74a002a2c2b94f7c37800a397f5fcba239eacd49a11"
+    },
+    {
+      "path": "visualizations/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/阅读指南.md",
+      "bytes": 3086,
+      "sha256": "95a7390e800be9e93cc04ec90bfac3a9ec320004aed19f18c1e6eb8f1f1c6a31"
+    }
+  ]
+}

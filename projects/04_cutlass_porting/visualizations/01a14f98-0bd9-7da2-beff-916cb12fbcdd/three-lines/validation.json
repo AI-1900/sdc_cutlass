@@ -1,0 +1,6 @@
+{
+  "status": "passed",
+  "static_images": "6 SVGs rasterized and visually inspected",
+  "interaction": "32 thread/value/layout cases, complete coverage, selection, state restoration",
+  "browser_layout": "not verified"
+}

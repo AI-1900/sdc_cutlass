@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">SM100 1SM GEMM 端到端架构图</title>
+  <desc id="desc">从测试配置经 Host Device API 和 CUDA cluster launch，进入设备侧调度、TMA 加载、UMMA 累加、epilogue 写回，最后与 CPU 参考结果比较。</desc>
+  <defs>
+    <style>
+      text{font-family:"Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif;fill:#eaf1fb} .muted{fill:#a8b8cd} .tiny{font-size:16px} .small{font-size:19px} .medium{font-size:24px;font-weight:600} .big{font-size:37px;font-weight:700} .tag{font-size:17px;font-weight:700;letter-spacing:2px} .line{stroke:#657c98;stroke-width:3;fill:none;marker-end:url(#arrow)} .lane{fill:#102338;stroke:#38506a;stroke-width:2} .node{fill:#1b3650;stroke:#5b7898;stroke-width:2} .cyan{fill:#63d7ea} .amber{fill:#ffd07b} .mint{fill:#91e3b7} .purple{fill:#c2adff}
+    </style>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="#657c98"/></marker>
+  </defs>
+  <rect width="1440" height="900" fill="#0a1727"/>
+  <text x="70" y="75" class="big">一次 SM100 GEMM，从类型配置到正确性比较</text>
+  <text x="70" y="113" class="small muted">FP16 A (RowMajor) × FP16 B (ColumnMajor) → FP32 D (RowMajor) · tile 64×128×64 · cluster 1×4×1 · 1SM</text>
+  <rect class="lane" x="42" y="152" width="1356" height="250" rx="18"/>
+  <text x="70" y="190" class="tag cyan">HOST · 构建与启动</text>
+  <rect class="node" x="70" y="222" width="248" height="132" rx="14"/>
+  <text x="94" y="259" class="medium">测试配置</text>
+  <text x="94" y="291" class="small muted">类型 · 布局 · tile · cluster</text>
+  <text x="94" y="323" class="tiny cyan">f16_f16_void_f32.cu</text>
+  <path class="line" d="M320 288 H365"/>
+  <rect class="node" x="368" y="222" width="248" height="132" rx="14"/>
+  <text x="392" y="259" class="medium">Builder</text>
+  <text x="392" y="291" class="small muted">Auto → 1SM collectives</text>
+  <text x="392" y="323" class="tiny amber">编译期选择</text>
+  <path class="line" d="M618 288 H663"/>
+  <rect class="node" x="666" y="222" width="292" height="132" rx="14"/>
+  <text x="690" y="259" class="medium">TestAll / Testbed</text>
+  <text x="690" y="291" class="small muted">多组 MNKL · 初始化 · 校验</text>
+  <text x="690" y="323" class="tiny cyan">Arguments + workspace</text>
+  <path class="line" d="M960 288 H1005"/>
+  <rect class="node" x="1008" y="222" width="358" height="132" rx="14"/>
+  <text x="1032" y="259" class="medium">GemmUniversalAdapter</text>
+  <text x="1032" y="291" class="small muted">can_implement · initialize · run</text>
+  <text x="1032" y="323" class="tiny amber">CUDA cluster launch</text>
+  <path class="line" d="M1187 355 V435"/>
+  <rect class="lane" x="42" y="437" width="1356" height="300" rx="18"/>
+  <text x="70" y="475" class="tag mint">DEVICE · 一次持久化工作 tile</text>
+  <text x="70" y="507" class="tiny muted">4 个 CTA 组成 1×4×1 cluster；每个 CTA 内不同 warp 各司其职</text>
+  <rect class="node" x="70" y="546" width="238" height="143" rx="14"/>
+  <text x="93" y="583" class="medium">Sched warp</text>
+  <text x="93" y="617" class="small muted">选择下一 work tile</text>
+  <text x="93" y="653" class="tiny purple">CLC pipeline</text>
+  <path class="line" d="M310 618 H355"/>
+  <rect class="node" x="358" y="546" width="274" height="143" rx="14"/>
+  <text x="381" y="583" class="medium">MainloopLoad warp</text>
+  <text x="381" y="617" class="small muted">GMEM A/B → SMEM</text>
+  <text x="381" y="653" class="tiny cyan">TMA · A multicast</text>
+  <path class="line" d="M634 618 H679"/>
+  <rect class="node" x="682" y="546" width="250" height="143" rx="14"/>
+  <text x="705" y="583" class="medium">MMA warp</text>
+  <text x="705" y="617" class="small muted">SMEM A/B → TMEM acc</text>
+  <text x="705" y="653" class="tiny amber">UMMA 1SM</text>
+  <path class="line" d="M934 618 H979"/>
+  <rect class="node" x="982" y="546" width="384" height="143" rx="14"/>
+  <text x="1005" y="583" class="medium">Epilogue warps</text>
+  <text x="1005" y="617" class="small muted">TMEM → FP32 运算 → D</text>
+  <text x="1005" y="653" class="tiny mint">TMA store · C=void 跳过 C load</text>
+  <path class="line" d="M1175 738 V789 H1010"/>
+  <rect class="lane" x="42" y="770" width="1356" height="94" rx="18"/>
+  <text x="74" y="808" class="tag amber">VERIFY · 结果验证</text>
+  <text x="74" y="841" class="small">GPU D 同步回 Host</text>
+  <path class="line" d="M420 820 H515"/>
+  <text x="542" y="825" class="small">CPU Gemm3x 计算参考 D</text>
+  <path class="line" d="M885 820 H955"/>
+  <text x="980" y="825" class="small">相对误差比较 → PASS / FAIL</text>
+</svg>

@@ -1,0 +1,182 @@
+<div id="cutlass-atlas">
+  <style>
+    #cutlass-atlas{color:var(--foreground);font-family:inherit}
+    #cutlass-atlas .space{margin-top:20px}
+    #cutlass-atlas .diagram{padding:16px 0}
+    #cutlass-atlas .node{padding:12px;text-align:center;background:color-mix(in srgb,var(--viz-series-1) 10%,transparent);min-width:0;overflow-wrap:anywhere}
+    #cutlass-atlas .node strong{display:block;font-weight:500}
+    #cutlass-atlas .arrow{text-align:center;color:var(--muted-foreground);padding:5px}
+    #cutlass-atlas .branch{margin-left:18px;padding-left:18px;border-left:1px solid var(--border)}
+    #cutlass-atlas .branch>.node{margin-top:10px}
+    #cutlass-atlas .cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+    #cutlass-atlas .pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+    #cutlass-atlas .matrix{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px}
+    #cutlass-atlas .cell{aspect-ratio:1.6;display:grid;place-items:center;background:var(--muted);color:var(--foreground)}
+    #cutlass-atlas .cell.hot{background:color-mix(in srgb,var(--viz-series-1) 35%,var(--background))}
+    #cutlass-atlas .cell.acc{background:color-mix(in srgb,var(--viz-series-2) 25%,var(--background))}
+    #cutlass-atlas .lane{display:grid;grid-template-columns:84px repeat(4,minmax(0,1fr));gap:4px;align-items:stretch;margin-top:5px}
+    #cutlass-atlas .lane>span{padding:8px 3px;text-align:center;background:var(--muted)}
+    #cutlass-atlas .lane .load{background:color-mix(in srgb,var(--viz-series-1) 18%,transparent)}
+    #cutlass-atlas .lane .math{background:color-mix(in srgb,var(--viz-series-2) 18%,transparent)}
+    #cutlass-atlas .lane .label{background:transparent;text-align:left}
+    #cutlass-atlas details{margin-top:10px}
+    #cutlass-atlas summary{font-weight:500}
+    #cutlass-atlas .card{margin-top:12px}
+    #cutlass-atlas .codepath{overflow-wrap:anywhere}
+    #cutlass-atlas .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px}
+    #cutlass-atlas .swatch{display:inline-block;width:12px;height:12px;margin-right:5px;background:var(--viz-series-1)}
+    #cutlass-atlas .swatch.second{background:var(--viz-series-2)}
+    #cutlass-atlas .call{border-left:2px solid var(--border);padding-left:12px;margin-top:12px}
+    @media(max-width:520px){#cutlass-atlas .cols,#cutlass-atlas .pair{grid-template-columns:1fr}#cutlass-atlas .branch{margin-left:8px;padding-left:10px}#cutlass-atlas .lane{grid-template-columns:64px repeat(4,minmax(0,1fr))}}
+  </style>
+  <h2>CUTLASS · 从矩阵到硬件</h2>
+  <div class="nav nav-pills" role="tablist" aria-label="CUTLASS 知识图谱">
+    <button class="nav-link active" id="ca-tab-1" role="tab" aria-controls="ca-panel-1" aria-selected="true" type="button">Q01 计算流程</button>
+    <button class="nav-link" id="ca-tab-2" role="tab" aria-controls="ca-panel-2" aria-selected="false" type="button">Q02 版本演进</button>
+    <button class="nav-link" id="ca-tab-3" role="tab" aria-controls="ca-panel-3" aria-selected="false" type="button">Q03 技术架构</button>
+    <button class="nav-link" id="ca-tab-4" role="tab" aria-controls="ca-panel-4" aria-selected="false" type="button">Q04 抽象树</button>
+    <button class="nav-link" id="ca-tab-5" role="tab" aria-controls="ca-panel-5" aria-selected="false" type="button">Q05 编译过程</button>
+    <button class="nav-link" id="ca-tab-6" role="tab" aria-controls="ca-panel-6" aria-selected="false" type="button">复习卡片</button>
+  </div>
+
+  <div id="ca-panel-1" role="tabpanel" aria-labelledby="ca-tab-1">
+    <h3 class="space">一个输出 tile，沿 K 维逐块累加</h3>
+    <div class="viz-controls"><button type="button" class="btn" id="ca-prev">上一步</button><span id="ca-stage" class="tabular-nums" aria-live="polite"></span><button type="button" class="btn btn-primary" id="ca-next">下一步</button></div>
+    <div class="cols diagram" role="img" aria-label="A 的一个 K 分块与 B 的对应 K 分块相乘，累加到输出 tile；矩阵由 tile 构成">
+      <div><strong>A · M × K</strong><div class="matrix" id="ca-a"></div><div class="text-small text-muted">高亮：当前 K 列块</div></div>
+      <div><strong>B · K × N</strong><div class="matrix" id="ca-b"></div><div class="text-small text-muted">高亮：当前 K 行块</div></div>
+      <div><strong>Accumulator · M × N</strong><div class="matrix" id="ca-c"></div><div class="text-small text-muted">示意网格：每格代表一个 tile</div></div>
+    </div>
+    <div id="ca-step-detail" aria-live="polite" class="call"></div>
+    <div class="diagram" aria-label="典型分块 GEMM 数据路径">
+      <div class="node"><strong>全局内存 · A / B</strong>合并读取，降低无效访存</div><div class="arrow">↓ 分块搬运</div>
+      <div class="node"><strong>共享内存 · 输入 tile</strong>协作复用；流水线缓冲</div><div class="arrow">↓ 架构相关的操作数路径</div>
+      <div class="node"><strong>MMA · 矩阵乘加</strong>Tensor Core 等计算单元；局部累加</div><div class="arrow">↓ K 维完成</div>
+      <div class="node"><strong>Epilogue → 全局内存 D</strong>缩放、类型转换；可选 bias / 激活融合</div>
+    </div>
+    <div class="text-small text-muted">通用示意：操作数与累加器的位置随架构变化，并非始终都在寄存器中。</div>
+    <h3 class="space">流水线：加载与计算重叠</h3>
+    <div class="lane"><span class="label">时间 →</span><span>t₀</span><span>t₁</span><span>t₂</span><span>t₃</span></div>
+    <div class="lane"><span class="label">数据搬运</span><span class="load">载入 0</span><span class="load">载入 1</span><span class="load">载入 2</span><span>…</span></div>
+    <div class="lane"><span class="label">矩阵计算</span><span>准备</span><span class="math">计算 0</span><span class="math">计算 1</span><span class="math">计算 2</span></div>
+    <div class="text-small text-muted space">逻辑时序示意；格宽不代表实际耗时。缓冲复用需要正确同步。</div>
+  </div>
+
+  <div id="ca-panel-2" role="tabpanel" aria-labelledby="ca-tab-2" hidden>
+    <h3 class="space">2.x → 3.x → 4.x</h3>
+    <div class="diagram">
+      <div class="node"><strong>2.x · 按硬件层次组织</strong>Device → Threadblock → Warp → Thread / Instruction</div>
+      <div class="branch"><div class="node">专用 Iterator / ThreadMap / Layout<br>分块、流水线、Tensor Core 组件化</div></div>
+      <div class="arrow">↓ 新硬件的协作粒度超出固定层次，例如 warpgroup</div>
+      <div class="node"><strong>3.x · 按算法职责重构</strong>Device → Kernel → Collective → Tiled → Atom</div>
+      <div class="branch"><div class="node">CuTe Layout / Tensor 统一映射<br>策略分派 + Mainloop / Epilogue 组合</div></div>
+      <div class="arrow">↓ 延续 C++ 组件体系，并增加编程入口</div>
+      <div class="node"><strong>4.x · C++ 与 CuTe DSL 并存</strong>4.0 引入 Python 原生 CuTe DSL</div>
+      <div class="branch"><div class="node">布局、张量与硬件操作概念延续<br>Python 描述 → 编译后的 GPU 内核</div></div>
+    </div>
+    <div class="pair"><div class="card"><strong>版本辨析</strong><div>CUTLASS 4.x 软件包中仍可以使用 3.x C++ GEMM 模型。</div></div><div class="card"><strong>架构辨析</strong><div>软件版本与 GPU 代际没有一一对应关系。</div></div></div>
+  </div>
+
+  <div id="ca-panel-3" role="tabpanel" aria-labelledby="ca-tab-3" hidden>
+    <h3 class="space">源代码如何抵达 GPU</h3>
+    <div class="diagram" role="img" aria-label="CUTLASS 使用 CuTe 抽象，经过 CUDA 工具链生成 PTX 与机器码，由 GPU 执行">
+      <div class="node"><strong>应用 / 框架</strong>提供矩阵、问题规模与调用参数</div><div class="arrow">↓ 调用</div>
+      <div class="node"><strong>CUTLASS</strong>GEMM 调度 · Mainloop · Epilogue · 启动接口</div><div class="arrow">↓ 使用核心抽象</div>
+      <div class="node"><strong>CuTe</strong>Layout · Tensor · MMA / Copy Atom<br>线程与数据的映射；也可单独写内核</div><div class="arrow">↓ 编译</div>
+      <div class="node"><strong>CUDA 编程平台与工具链</strong>CUDA C++ 路径 / CuTe DSL 编译路径</div><div class="arrow">↓ 低层代码生成</div>
+      <div class="node"><strong>PTX · 虚拟指令集</strong>计算 / 搬运 / 同步指令</div><div class="arrow">↓ 离线编译或驱动 JIT</div>
+      <div class="node"><strong>SASS · 目标 GPU 机器码</strong>由具体 GPU 执行</div><div class="arrow">↓</div>
+      <div class="node"><strong>GPU 硬件</strong>SM · Tensor Core · 寄存器 · 共享内存 · 搬运单元</div>
+    </div>
+    <div class="text-small text-muted">编译链路为概念示意。CUDA 覆盖语言、执行模型、运行时和工具链；程序产物可包含机器码、PTX 或两者。</div>
+  </div>
+
+  <div id="ca-panel-4" role="tabpanel" aria-labelledby="ca-tab-4" hidden>
+    <h3 class="space">五级抽象 · 职责与组合树</h3>
+    <div class="diagram codepath">
+      <div class="node"><strong>Device · 主机端调用</strong>GemmUniversalAdapter<br>参数检查 / 工作空间 / 启动</div>
+      <div class="branch">
+        <div class="node"><strong>Kernel · 全局组织</strong>GemmUniversal<br>输出 tile 调度 / 组合 Mainloop 与 Epilogue</div>
+        <div class="branch">
+          <div class="node"><strong>Collective · 协作与时间编排</strong></div>
+          <div class="pair space"><div class="node"><strong>Mainloop</strong>沿 K 迭代<br>加载 + MMA + 同步</div><div class="node"><strong>Epilogue</strong>输出变换<br>融合 + 写回</div></div>
+          <div class="branch">
+            <div class="node"><strong>Tiled · 线程与数据的空间映射</strong>TiledMma / TiledCopy</div>
+            <div class="branch"><div class="pair space"><div class="node"><strong>Mma_Atom</strong>基本矩阵乘加</div><div class="node"><strong>Copy_Atom</strong>基本搬运操作</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="text-small text-muted">概念组合树：具体实现不要求每个分支都使用完全相同的组件。</div>
+    <div class="pair"><div class="card"><strong>阅读方向 ↓</strong><div>完整调用 → 调度 → 协作流程 → 线程映射 → 基本操作</div></div><div class="card"><strong>组装方向 ↑</strong><div>底层操作与映射 → Collectives → Kernel → Device Adapter</div></div></div>
+    <div class="call">Collective ≠ 固定的 threadblock；Tiled ≠ 固定的 warp；Atom ≠ atomicAdd。</div>
+  </div>
+
+  <div id="ca-panel-5" role="tabpanel" aria-labelledby="ca-tab-5" hidden>
+    <h3 class="space">从通用模板到具体内核</h3>
+    <div class="diagram">
+      <div class="node"><strong>① 声明编译期配置</strong>类型 · Layout · 架构 · Tile · 调度策略</div><div class="arrow">↓ 模板实例化</div>
+      <div class="node"><strong>② 静态选择实现</strong>策略分派 / 模板特化 → 具体 MMA、Copy 与流水线</div><div class="arrow">↓ 静态多态与优化</div>
+      <div class="node"><strong>③ 编译器生成具体代码</strong>内联 · 常量传播 · 静态索引化简 · 固定内层循环展开</div><div class="arrow">↓</div>
+      <div class="node"><strong>④ 生成目标 GPU 内核</strong>PTX / 机器码</div>
+      <div class="arrow">↓ 运行时传入参数</div>
+      <div class="node"><strong>⑤ 执行具体问题</strong>M、N、K · 矩阵指针 · α、β · 可动态的 stride</div>
+    </div>
+    <div class="pair"><div class="card"><strong>编译期 · 决定怎么做</strong><div>内核结构与实现策略；可生成多个候选内核。</div></div><div class="card"><strong>运行时 · 决定做什么</strong><div>选择内核并传入数据与问题规模；M、N、K 不必全静态。</div></div></div>
+    <div class="call">算法优化提供数据复用与重叠；编译期机制降低抽象开销。最终性能仍需测量。</div>
+  </div>
+
+  <div id="ca-panel-6" role="tabpanel" aria-labelledby="ca-tab-6" hidden>
+    <h3 class="space">知识卡片 · 点击展开答案</h3>
+    <div class="pair">
+      <details class="card"><summary>01 · CUTLASS 的核心价值？</summary><div class="space">把高性能 GEMM 拆成可复用组件：分块、数据复用、流水线、指令封装和融合后处理。</div></details>
+      <details class="card"><summary>02 · 3.x 为什么引入 CuTe？</summary><div class="space">用统一的 Layout / Tensor 与布局代数表达线程和数据映射，减少专用迭代器，便于适应新的协作粒度。</div></details>
+      <details class="card"><summary>03 · 4.x 是否替换了 C++？</summary><div class="space">没有。C++ 体系继续存在，4.0 新增 CuTe DSL；Python 描述最终编译为 GPU 内核。</div></details>
+      <details class="card"><summary>04 · CuTe 和 CUTLASS 如何分工？</summary><div class="space">CuTe 描述布局、张量和基本操作；CUTLASS 组合调度、Mainloop、Epilogue 与调用接口。</div></details>
+      <details class="card"><summary>05 · Tiled 与 Collective 的区别？</summary><div class="space">Tiled：线程与数据怎样铺开。Collective：加载、计算、同步怎样在时间上协同。</div></details>
+      <details class="card"><summary>06 · Device 层在 GPU 上执行吗？</summary><div class="space">Device Adapter 是主机侧调用接口；Kernel 才是它所启动的设备内核。Device 表示设备范围的操作。</div></details>
+      <details class="card"><summary>07 · PTX 是最终机器码吗？</summary><div class="space">PTX 是虚拟指令集；还要生成具体 GPU 的机器码，GPU 才执行。</div></details>
+      <details class="card"><summary>08 · 模板为什么能帮助优化？</summary><div class="space">在编译时固定实现策略，帮助内联、常量传播、索引化简和内层循环展开；代价包括编译时间与代码体积。</div></details>
+      <details class="card"><summary>09 · 哪些参数可以运行时传入？</summary><div class="space">矩阵指针、M/N/K、α/β 和部分 stride。Tile 与指令策略通常属于编译期配置。</div></details>
+      <details class="card"><summary>10 · 使用 CUTLASS 就一定最快吗？</summary><div class="space">不一定。需要让 Tile、流水线和调度匹配问题形状与 GPU，再通过性能测试选择。</div></details>
+    </div>
+  </div>
+  <script>
+    (()=>{
+      const root=document.getElementById('cutlass-atlas');
+      let step=0;
+      const descriptions=[
+        'K 块 0：A 的第 0 列块 × B 的第 0 行块，累加到输出 tile。',
+        'K 块 1：复用同一输出累加器，加入第 1 对输入 tile 的乘积。',
+        'K 块 2：继续累加；流水线可提前加载后续输入 tile。',
+        'K 块 3：完成最后一对输入 tile 的计算，得到完整 AB 的累加结果。',
+        'Epilogue：完成 αAB + βC 及所选融合操作，再写回 D。'
+      ];
+      const stages=['K 块 0 / 4','K 块 1 / 4','K 块 2 / 4','K 块 3 / 4','写回输出'];
+      const el=id=>root.querySelector('#'+id);
+      function draw(){
+        ['a','b','c'].forEach(name=>{
+          el('ca-'+name).replaceChildren();
+          for(let row=0;row<4;row++)for(let col=0;col<4;col++){
+            const cell=document.createElement('div');
+            cell.className='cell';
+            if(name==='c')cell.classList.add('acc');
+            else if(step<4&&((name==='a'&&col===step)||(name==='b'&&row===step)))cell.classList.add('hot');
+            cell.textContent=name==='c'?(step===4?'D':'Σ'):name.toUpperCase();
+            el('ca-'+name).appendChild(cell);
+          }
+        });
+        el('ca-stage').textContent=stages[step];
+        el('ca-step-detail').textContent=descriptions[step];
+        el('ca-prev').disabled=step===0;el('ca-next').disabled=step===4;
+      }
+      const save=()=>{if(window.openai&&window.openai.setWidgetState)window.openai.setWidgetState({modelContent:{topic:'CUTLASS 图解',step},privateContent:{step,tab:root.querySelector('[role="tab"][aria-selected="true"]')?.id}}).catch(()=>{});};
+      el('ca-prev').addEventListener('click',()=>{step=Math.max(0,step-1);draw();save();});
+      el('ca-next').addEventListener('click',()=>{step=Math.min(4,step+1);draw();save();});
+      function restore(state){const s=state?.privateContent;if(s&&Number.isInteger(s.step))step=Math.min(4,Math.max(0,s.step));if(s?.tab){const t=el(s.tab);if(t){root.querySelectorAll('[role="tab"]').forEach(x=>{const on=x===t;x.setAttribute('aria-selected',String(on));x.classList.toggle('active',on);el(x.getAttribute('aria-controls')).hidden=!on;});}}draw();}
+      root.querySelectorAll('[role="tab"]').forEach(t=>t.addEventListener('click',()=>setTimeout(save,0)));
+      window.addEventListener('openai:set_globals',e=>{if(e.detail?.globals?.widgetState)restore(e.detail.globals.widgetState);});
+      restore(window.openai?.widgetState);
+    })();
+  </script>
+</div>

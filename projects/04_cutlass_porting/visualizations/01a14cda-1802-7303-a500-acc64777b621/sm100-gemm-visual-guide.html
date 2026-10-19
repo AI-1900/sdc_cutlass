@@ -1,0 +1,234 @@
+<div id="sm100-visual-guide">
+  <style>
+    #sm100-visual-guide { color: var(--foreground); }
+    #sm100-visual-guide .guide-head { margin-bottom: 14px; }
+    #sm100-visual-guide .guide-sub { color: var(--muted-foreground); margin-top: 4px; }
+    #sm100-visual-guide .nav { margin-bottom: 18px; }
+    #sm100-visual-guide .diagram { width: 100%; height: auto; display: block; }
+    #sm100-visual-guide .diagram text { fill: var(--foreground); font-family: inherit; font-size: 12px; }
+    #sm100-visual-guide .diagram .small { fill: var(--muted-foreground); font-size: 11px; }
+    #sm100-visual-guide .diagram .node { fill: color-mix(in srgb, var(--viz-series-1) 10%, var(--card)); stroke: color-mix(in srgb, var(--viz-series-1) 48%, var(--border)); stroke-width: 1.4; }
+    #sm100-visual-guide .diagram .node2 { fill: color-mix(in srgb, var(--viz-series-2) 10%, var(--card)); stroke: color-mix(in srgb, var(--viz-series-2) 48%, var(--border)); stroke-width: 1.4; }
+    #sm100-visual-guide .diagram .node3 { fill: color-mix(in srgb, var(--viz-series-3) 10%, var(--card)); stroke: color-mix(in srgb, var(--viz-series-3) 48%, var(--border)); stroke-width: 1.4; }
+    #sm100-visual-guide .diagram .node4 { fill: color-mix(in srgb, var(--viz-series-4) 10%, var(--card)); stroke: color-mix(in srgb, var(--viz-series-4) 48%, var(--border)); stroke-width: 1.4; }
+    #sm100-visual-guide .diagram .node5 { fill: color-mix(in srgb, var(--viz-series-5) 10%, var(--card)); stroke: color-mix(in srgb, var(--viz-series-5) 48%, var(--border)); stroke-width: 1.4; }
+    #sm100-visual-guide .diagram .neutral { fill: var(--muted); stroke: var(--border); stroke-width: 1.2; }
+    #sm100-visual-guide .diagram .line { stroke: var(--muted-foreground); stroke-width: 1.5; fill: none; }
+    #sm100-visual-guide .diagram .strong { stroke: var(--viz-series-1); stroke-width: 2; fill: none; }
+    #sm100-visual-guide .diagram .dash { stroke-dasharray: 5 4; }
+    #sm100-visual-guide .diagram .lane { fill: color-mix(in srgb, var(--muted) 55%, transparent); }
+    #sm100-visual-guide .diagram .stage1 { fill: color-mix(in srgb, var(--viz-series-1) 18%, var(--card)); }
+    #sm100-visual-guide .diagram .stage2 { fill: color-mix(in srgb, var(--viz-series-2) 18%, var(--card)); }
+    #sm100-visual-guide .diagram .stage3 { fill: color-mix(in srgb, var(--viz-series-3) 18%, var(--card)); }
+    #sm100-visual-guide .diagram .stage4 { fill: color-mix(in srgb, var(--viz-series-4) 18%, var(--card)); }
+    #sm100-visual-guide .diagram .stage5 { fill: color-mix(in srgb, var(--viz-series-5) 18%, var(--card)); }
+    #sm100-visual-guide .legend { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted-foreground); margin-top: 10px; }
+    #sm100-visual-guide .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    #sm100-visual-guide .swatch { width: 12px; height: 12px; border-radius: 2px; }
+    #sm100-visual-guide .cards { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+    #sm100-visual-guide .cards .card { min-width: 0; }
+    #sm100-visual-guide .card h3 { margin-bottom: 8px; }
+    #sm100-visual-guide .card p { margin: 5px 0; }
+    #sm100-visual-guide .formula { text-align: center; padding: 14px 10px; background: var(--muted); border-radius: 8px; margin: 12px 0 18px; }
+    #sm100-visual-guide .formula code { color: var(--foreground); }
+    #sm100-visual-guide .metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin: 14px 0; }
+    #sm100-visual-guide .metric { text-align: center; }
+    #sm100-visual-guide .metric .viz-stat-value { margin: 4px 0; }
+    #sm100-visual-guide .path-note { margin-top: 12px; color: var(--muted-foreground); }
+    @media (max-width: 720px) {
+      #sm100-visual-guide .cards { grid-template-columns: 1fr; }
+      #sm100-visual-guide .metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
+  </style>
+
+  <div class="guide-head">
+    <h1>SM100 CuTe GEMM 可视指南</h1>
+    <div class="guide-sub">从 Host 测例入口到 <code>tcgen05.mma</code>、TMEM 与结果校验</div>
+  </div>
+
+  <div class="nav nav-pills" role="tablist" aria-label="视图">
+    <button class="nav-link active" id="tab-flow" role="tab" aria-controls="panel-flow" aria-selected="true" type="button">总流程</button>
+    <button class="nav-link" id="tab-tree" role="tab" aria-controls="panel-tree" aria-selected="false" type="button">调用树</button>
+    <button class="nav-link" id="tab-arch" role="tab" aria-controls="panel-arch" aria-selected="false" type="button">分层架构</button>
+    <button class="nav-link" id="tab-memory" role="tab" aria-controls="panel-memory" aria-selected="false" type="button">内存与时序</button>
+    <button class="nav-link" id="tab-cards" role="tab" aria-controls="panel-cards" aria-selected="false" type="button">知识卡片</button>
+  </div>
+
+  <section id="panel-flow" role="tabpanel" aria-labelledby="tab-flow">
+    <div class="formula"><code>D(M,N) = α · A(M,K) · B(N,K)ᵀ + β · C(M,N)</code></div>
+    <svg class="diagram" viewBox="0 0 960 650" role="img" aria-labelledby="flow-title flow-desc">
+      <title id="flow-title">SM100 GEMM 从 Host 到 Device 的总流程</title>
+      <desc id="flow-desc">Host 完成参数、数据、布局和启动，Device 完成分块、复制、MMA、epilogue，最后回到 Host 验证。</desc>
+      <defs><marker id="arr-flow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--muted-foreground)"/></marker></defs>
+      <rect x="26" y="22" width="908" height="132" rx="12" class="node"/>
+      <text x="48" y="50" font-weight="500">Host：测试准备</text>
+      <rect x="48" y="70" width="152" height="58" rx="8" class="neutral"/><text x="124" y="93" text-anchor="middle">检查 SM100a</text><text x="124" y="112" text-anchor="middle" class="small">解析 M / N / K</text>
+      <rect x="229" y="70" width="152" height="58" rx="8" class="neutral"/><text x="305" y="93" text-anchor="middle">构造 Layout</text><text x="305" y="112" text-anchor="middle" class="small">A/B/C/D tensor view</text>
+      <rect x="410" y="70" width="152" height="58" rx="8" class="neutral"/><text x="486" y="93" text-anchor="middle">初始化数据</text><text x="486" y="112" text-anchor="middle" class="small">Host → Device</text>
+      <rect x="591" y="70" width="152" height="58" rx="8" class="neutral"/><text x="667" y="93" text-anchor="middle">构造 TiledMMA</text><text x="667" y="112" text-anchor="middle" class="small">128×256×16</text>
+      <rect x="772" y="70" width="140" height="58" rx="8" class="neutral"/><text x="842" y="93" text-anchor="middle">Cluster Launch</text><text x="842" y="112" text-anchor="middle" class="small">grid 4×4; block 128</text>
+      <path d="M200 99 H229 M381 99 H410 M562 99 H591 M743 99 H772" class="line" marker-end="url(#arr-flow)"/>
+
+      <path d="M842 128 V184" class="strong" marker-end="url(#arr-flow)"/>
+      <rect x="26" y="186" width="908" height="330" rx="12" class="node2"/>
+      <text x="48" y="216" font-weight="500">Device：gemm_device</text>
+
+      <rect x="50" y="240" width="860" height="70" rx="8" class="stage1"/>
+      <text x="70" y="264" font-weight="500">① Prologue</text><text x="70" y="287">blockIdx → MMA tile → partition A/B/C/D → SMEM descriptor → 分配 TMEM</text>
+
+      <rect x="50" y="328" width="860" height="120" rx="8" class="stage2"/>
+      <text x="70" y="352" font-weight="500">② Mainloop：默认循环 4 个 K64 tile</text>
+      <rect x="72" y="370" width="176" height="52" rx="7" class="neutral"/><text x="160" y="391" text-anchor="middle">128 threads copy</text><text x="160" y="409" text-anchor="middle" class="small">A/B：GMEM → SMEM</text>
+      <rect x="285" y="370" width="154" height="52" rx="7" class="neutral"/><text x="362" y="401" text-anchor="middle">__syncthreads</text>
+      <rect x="476" y="370" width="188" height="52" rx="7" class="neutral"/><text x="570" y="391" text-anchor="middle">4 × cute::gemm</text><text x="570" y="409" text-anchor="middle" class="small">tcgen05.mma → TMEM</text>
+      <rect x="701" y="370" width="184" height="52" rx="7" class="neutral"/><text x="793" y="391" text-anchor="middle">umma_arrive + wait</text><text x="793" y="409" text-anchor="middle" class="small">确认可复用 SMEM</text>
+      <path d="M248 396 H285 M439 396 H476 M664 396 H701" class="line" marker-end="url(#arr-flow)"/>
+
+      <rect x="50" y="466" width="860" height="34" rx="8" class="stage3"/>
+      <text x="480" y="488" text-anchor="middle"><tspan font-weight="500">③ Epilogue：</tspan> TMEM → RMEM；C GMEM → RMEM；axpby；RMEM → D GMEM；释放 TMEM</text>
+
+      <path d="M480 516 V558" class="strong" marker-end="url(#arr-flow)"/>
+      <rect x="126" y="560" width="708" height="66" rx="12" class="node3"/>
+      <text x="480" y="584" text-anchor="middle" font-weight="500">Host：结果验证</text>
+      <text x="480" y="608" text-anchor="middle">Device → Host D　→　CPU reference_gemm　→　mollified relative error　→　成功 / 失败</text>
+    </svg>
+  </section>
+
+  <section id="panel-tree" role="tabpanel" aria-labelledby="tab-tree" hidden>
+    <svg class="diagram" viewBox="0 0 960 760" role="img" aria-labelledby="tree-title tree-desc">
+      <title id="tree-title">Host 与 Device 调用树</title>
+      <desc id="tree-desc">左侧是 Host 启动调用树，右侧是 Device 内从 gemm 到 PTX 的调用树。</desc>
+      <defs><marker id="arr-tree" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--muted-foreground)"/></marker></defs>
+      <text x="230" y="28" text-anchor="middle" font-weight="500">Host 调用树</text>
+      <text x="720" y="28" text-anchor="middle" font-weight="500">Device / kernel 调用树</text>
+      <line x1="480" y1="12" x2="480" y2="742" class="line dash"/>
+
+      <rect x="120" y="52" width="220" height="46" rx="8" class="node"/><text x="230" y="80" text-anchor="middle">main() · line 486</text>
+      <path d="M230 98 V120" class="line" marker-end="url(#arr-tree)"/>
+      <rect x="94" y="122" width="272" height="54" rx="8" class="neutral"/><text x="230" y="144" text-anchor="middle">设备检查 + M/N/K + Layout</text><text x="230" y="162" text-anchor="middle" class="small">Host/Device vector + initialize</text>
+      <path d="M230 176 V198" class="line" marker-end="url(#arr-tree)"/>
+      <rect x="72" y="200" width="316" height="52" rx="8" class="node2"/><text x="230" y="222" text-anchor="middle">gemm_host_f16xf16_f32_f32_tnt</text><text x="230" y="240" text-anchor="middle" class="small">line 338</text>
+
+      <path d="M230 252 V280 H88 V298" class="line" marker-end="url(#arr-tree)"/>
+      <path d="M230 280 H230 V298" class="line" marker-end="url(#arr-tree)"/>
+      <path d="M230 280 H372 V298" class="line" marker-end="url(#arr-tree)"/>
+      <rect x="26" y="300" width="124" height="60" rx="8" class="neutral"/><text x="88" y="324" text-anchor="middle">make_tensor</text><text x="88" y="343" text-anchor="middle" class="small">GMEM views</text>
+      <rect x="168" y="300" width="124" height="60" rx="8" class="neutral"/><text x="230" y="324" text-anchor="middle">make_tiled_mma</text><text x="230" y="343" text-anchor="middle" class="small">MMA Atom</text>
+      <rect x="310" y="300" width="124" height="60" rx="8" class="neutral"/><text x="372" y="324" text-anchor="middle">SMEM layout</text><text x="372" y="343" text-anchor="middle" class="small">partition + swizzle</text>
+      <path d="M230 360 V392" class="line" marker-end="url(#arr-tree)"/>
+      <rect x="90" y="394" width="280" height="54" rx="8" class="node3"/><text x="230" y="417" text-anchor="middle">launch_kernel_on_cluster</text><text x="230" y="435" text-anchor="middle" class="small">ClusterLaunchParams</text>
+      <path d="M230 448 V480" class="line" marker-end="url(#arr-tree)"/>
+      <rect x="88" y="482" width="284" height="58" rx="8" class="neutral"/><text x="230" y="506" text-anchor="middle">D Device → Host</text><text x="230" y="525" text-anchor="middle" class="small">reference_gemm + relative error</text>
+
+      <rect x="610" y="52" width="220" height="46" rx="8" class="node"/><text x="720" y="80" text-anchor="middle">gemm_device() · line 141</text>
+      <path d="M720 98 V120" class="line" marker-end="url(#arr-tree)"/>
+      <rect x="574" y="122" width="292" height="54" rx="8" class="neutral"/><text x="720" y="144" text-anchor="middle">local_tile + partition_A/B/C</text><text x="720" y="162" text-anchor="middle" class="small">当前 CTA 的 MMA tile views</text>
+      <path d="M720 176 V198" class="line" marker-end="url(#arr-tree)"/>
+      <rect x="574" y="200" width="292" height="52" rx="8" class="neutral"/><text x="720" y="222" text-anchor="middle">fragment + TMEM allocate</text><text x="720" y="240" text-anchor="middle" class="small">A/B descriptors + accumulator view</text>
+      <path d="M720 252 V274" class="line" marker-end="url(#arr-tree)"/>
+      <rect x="574" y="276" width="292" height="52" rx="8" class="node2"/><text x="720" y="298" text-anchor="middle">cooperative_copy&lt;128&gt;</text><text x="720" y="316" text-anchor="middle" class="small">GMEM → SMEM</text>
+      <path d="M720 328 V350" class="line" marker-end="url(#arr-tree)"/>
+      <rect x="594" y="352" width="252" height="46" rx="8" class="node3"/><text x="720" y="380" text-anchor="middle">cute::gemm · line 289</text>
+      <path d="M720 398 V420" class="line" marker-end="url(#arr-tree)"/>
+      <rect x="594" y="422" width="252" height="46" rx="8" class="neutral"/><text x="720" y="450" text-anchor="middle">MMA_Atom::call</text>
+      <path d="M720 468 V490" class="line" marker-end="url(#arr-tree)"/>
+      <rect x="570" y="492" width="300" height="52" rx="8" class="neutral"/><text x="720" y="514" text-anchor="middle">MMA_Traits::mma_unpack</text><text x="720" y="532" text-anchor="middle" class="small">desc A/B + TMEM C + instruction desc</text>
+      <path d="M720 544 V566" class="line" marker-end="url(#arr-tree)"/>
+      <rect x="548" y="568" width="344" height="52" rx="8" class="node4"/><text x="720" y="590" text-anchor="middle">SM100_MMA_F16BF16_SS::fma</text><text x="720" y="608" text-anchor="middle" class="small">elect_one_sync</text>
+      <path d="M720 620 V642" class="strong" marker-end="url(#arr-tree)"/>
+      <rect x="548" y="644" width="344" height="58" rx="8" class="node5"/><text x="720" y="669" text-anchor="middle" font-weight="500">tcgen05.mma.cta_group::1.kind::f16</text><text x="720" y="688" text-anchor="middle" class="small">SMEM A/B → TMEM accumulator</text>
+      <text x="720" y="732" text-anchor="middle" class="small">Epilogue：make_tmem_copy → tcgen05.ld → axpby → D</text>
+    </svg>
+  </section>
+
+  <section id="panel-arch" role="tabpanel" aria-labelledby="tab-arch" hidden>
+    <svg class="diagram" viewBox="0 0 960 690" role="img" aria-labelledby="arch-title arch-desc">
+      <title id="arch-title">CUTLASS 和 CuTe 分层架构</title>
+      <desc id="arch-desc">从应用到 PTX 的七层架构，以及教程代码直接触达的层次。</desc>
+      <defs><marker id="arr-arch" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--muted-foreground)"/></marker></defs>
+      <text x="480" y="30" text-anchor="middle" font-weight="500">CUTLASS 分层与本教程位置</text>
+      <rect x="230" y="54" width="500" height="62" rx="10" class="node"/><text x="480" y="80" text-anchor="middle" font-weight="500">应用 / 测试层</text><text x="480" y="101" text-anchor="middle" class="small">main：参数、数据、reference、结果校验</text>
+      <path d="M480 116 V140" class="line" marker-end="url(#arr-arch)"/>
+      <rect x="230" y="142" width="500" height="62" rx="10" class="neutral"/><text x="480" y="168" text-anchor="middle" font-weight="500">Device Adapter</text><text x="480" y="189" text-anchor="middle" class="small">生产级 GemmUniversalAdapter；本教程没有使用</text>
+      <path d="M480 204 V228" class="line" marker-end="url(#arr-arch)"/>
+      <rect x="230" y="230" width="500" height="62" rx="10" class="node2"/><text x="480" y="256" text-anchor="middle" font-weight="500">Kernel 层</text><text x="480" y="277" text-anchor="middle" class="small">gemm_device：CTA/cluster 坐标、SharedStorage、资源生命周期</text>
+      <path d="M480 292 V316" class="line" marker-end="url(#arr-arch)"/>
+      <rect x="230" y="318" width="500" height="62" rx="10" class="neutral"/><text x="480" y="344" text-anchor="middle" font-weight="500">Collective Mainloop / Epilogue</text><text x="480" y="365" text-anchor="middle" class="small">生产级 pipeline；本教程在 kernel 内手工实现单缓冲流程</text>
+      <path d="M480 380 V404" class="line" marker-end="url(#arr-arch)"/>
+      <rect x="230" y="406" width="500" height="62" rx="10" class="node3"/><text x="480" y="432" text-anchor="middle" font-weight="500">CuTe Tensor / Layout / Algorithm</text><text x="480" y="453" text-anchor="middle" class="small">local_tile、partition、copy、gemm、axpby</text>
+      <path d="M480 468 V492" class="line" marker-end="url(#arr-arch)"/>
+      <rect x="230" y="494" width="500" height="62" rx="10" class="node4"/><text x="480" y="520" text-anchor="middle" font-weight="500">MMA Atom / Copy Atom + Traits</text><text x="480" y="541" text-anchor="middle" class="small">指令 shape、fragment 类型、thread/value 映射、descriptor 解包</text>
+      <path d="M480 556 V580" class="line" marker-end="url(#arr-arch)"/>
+      <rect x="230" y="582" width="500" height="62" rx="10" class="node5"/><text x="480" y="608" text-anchor="middle" font-weight="500">Architecture wrapper / PTX</text><text x="480" y="629" text-anchor="middle" class="small">tcgen05.mma · tcgen05.ld · tcgen05.alloc · mbarrier</text>
+
+      <path d="M118 85 H215 V261 H230" class="strong dash" marker-end="url(#arr-arch)"/>
+      <path d="M118 85 H192 V437 H230" class="strong dash" marker-end="url(#arr-arch)"/>
+      <rect x="24" y="52" width="150" height="66" rx="10" class="node"/><text x="99" y="78" text-anchor="middle" font-weight="500">教程 Host wrapper</text><text x="99" y="99" text-anchor="middle" class="small">直接构造并 launch</text>
+
+      <path d="M842 349 H748 V437 H730" class="strong dash" marker-end="url(#arr-arch)"/>
+      <path d="M842 349 H770 V613 H730" class="strong dash" marker-end="url(#arr-arch)"/>
+      <rect x="786" y="316" width="150" height="66" rx="10" class="node2"/><text x="861" y="342" text-anchor="middle" font-weight="500">教程 kernel</text><text x="861" y="363" text-anchor="middle" class="small">手写 mainloop/epi</text>
+    </svg>
+  </section>
+
+  <section id="panel-memory" role="tabpanel" aria-labelledby="tab-memory" hidden>
+    <div class="metrics">
+      <div class="card viz-stat metric"><div class="text-muted">MMA 指令</div><div class="viz-stat-value">128×256×16</div><div class="text-small text-muted">FP16×FP16→FP32</div></div>
+      <div class="card viz-stat metric"><div class="text-muted">CTA tile</div><div class="viz-stat-value">128×256×64</div><div class="text-small text-muted">4 条 K16 MMA</div></div>
+      <div class="card viz-stat metric"><div class="text-muted">默认 Grid</div><div class="viz-stat-value">4×4</div><div class="text-small text-muted">16 CTA</div></div>
+      <div class="card viz-stat metric"><div class="text-muted">每 CTA MMA</div><div class="viz-stat-value">16</div><div class="text-small text-muted">4 K tile × 4</div></div>
+    </div>
+    <svg class="diagram" viewBox="0 0 960 600" role="img" aria-labelledby="memory-title memory-desc">
+      <title id="memory-title">SM100 GEMM 内存数据流和时序</title>
+      <desc id="memory-desc">A/B 从全局内存进入共享内存，再由 MMA 写入 TMEM；epilogue 将 TMEM 和 C 读到寄存器，运算后写 D。</desc>
+      <defs><marker id="arr-mem" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--muted-foreground)"/></marker></defs>
+      <text x="480" y="28" text-anchor="middle" font-weight="500">数据路径</text>
+      <rect x="30" y="56" width="190" height="92" rx="10" class="node"/><text x="125" y="82" text-anchor="middle" font-weight="500">GMEM</text><text x="125" y="105" text-anchor="middle">A[128×64]</text><text x="125" y="125" text-anchor="middle">B[256×64]</text>
+      <rect x="286" y="56" width="190" height="92" rx="10" class="node2"/><text x="381" y="82" text-anchor="middle" font-weight="500">SMEM</text><text x="381" y="105" text-anchor="middle">A 16 KiB</text><text x="381" y="125" text-anchor="middle">B 32 KiB · swizzled</text>
+      <rect x="542" y="56" width="190" height="92" rx="10" class="node3"/><text x="637" y="82" text-anchor="middle" font-weight="500">TMEM</text><text x="637" y="105" text-anchor="middle">FP32 accumulator</text><text x="637" y="125" text-anchor="middle">128×256 output tile</text>
+      <rect x="788" y="56" width="142" height="92" rx="10" class="node4"/><text x="859" y="82" text-anchor="middle" font-weight="500">RMEM</text><text x="859" y="105" text-anchor="middle">Acc + C</text><text x="859" y="125" text-anchor="middle">每线程分片</text>
+      <path d="M220 102 H286" class="line" marker-end="url(#arr-mem)"/><text x="253" y="90" text-anchor="middle" class="small">copy</text>
+      <path d="M476 102 H542" class="strong" marker-end="url(#arr-mem)"/><text x="509" y="90" text-anchor="middle" class="small">mma</text>
+      <path d="M732 102 H788" class="strong" marker-end="url(#arr-mem)"/><text x="760" y="90" text-anchor="middle" class="small">ld</text>
+      <rect x="788" y="176" width="142" height="64" rx="10" class="node"/><text x="859" y="201" text-anchor="middle">C in GMEM</text><text x="859" y="221" text-anchor="middle" class="small">普通 load</text>
+      <path d="M859 176 V148" class="line" marker-end="url(#arr-mem)"/>
+      <rect x="542" y="176" width="190" height="64" rx="10" class="node5"/><text x="637" y="201" text-anchor="middle">axpby in RMEM</text><text x="637" y="221" text-anchor="middle" class="small">α·Acc + β·C</text>
+      <path d="M788 128 C760 150 744 181 732 203" class="line" marker-end="url(#arr-mem)"/>
+      <rect x="286" y="176" width="190" height="64" rx="10" class="node"/><text x="381" y="201" text-anchor="middle">D in GMEM</text><text x="381" y="221" text-anchor="middle" class="small">普通 store</text>
+      <path d="M542 208 H476" class="line" marker-end="url(#arr-mem)"/>
+
+      <text x="480" y="292" text-anchor="middle" font-weight="500">一个 CTA 的时间线</text>
+      <text x="24" y="340" class="small">128 threads</text><rect x="120" y="316" width="810" height="40" rx="6" class="lane"/>
+      <text x="24" y="402" class="small">warp 0</text><rect x="120" y="378" width="810" height="40" rx="6" class="lane"/>
+      <text x="24" y="464" class="small">elected lane</text><rect x="120" y="440" width="810" height="40" rx="6" class="lane"/>
+      <text x="24" y="526" class="small">barrier</text><rect x="120" y="502" width="810" height="40" rx="6" class="lane"/>
+
+      <rect x="126" y="321" width="160" height="30" rx="5" class="stage1"/><text x="206" y="341" text-anchor="middle">copy A/B</text>
+      <rect x="294" y="321" width="82" height="30" rx="5" class="stage2"/><text x="335" y="341" text-anchor="middle">sync</text>
+      <rect x="690" y="321" width="232" height="30" rx="5" class="stage4"/><text x="806" y="341" text-anchor="middle">TMEM load + axpby + store</text>
+      <rect x="388" y="383" width="220" height="30" rx="5" class="stage3"/><text x="498" y="403" text-anchor="middle">4 × gemm wrapper</text>
+      <rect x="402" y="445" width="190" height="30" rx="5" class="stage5"/><text x="497" y="465" text-anchor="middle">4 × tcgen05.mma</text>
+      <rect x="610" y="445" width="72" height="30" rx="5" class="stage2"/><text x="646" y="465" text-anchor="middle">arrive</text>
+      <rect x="610" y="507" width="72" height="30" rx="5" class="stage2"/><text x="646" y="527" text-anchor="middle">wait</text>
+      <path d="M286 336 H294 M376 336 H388 M608 398 H610 M682 460 H690" class="line" marker-end="url(#arr-mem)"/>
+      <text x="480" y="578" text-anchor="middle" class="small">这组 copy → MMA → wait 对默认 K=256 重复 4 次；图中展开其中一次。</text>
+    </svg>
+  </section>
+
+  <section id="panel-cards" role="tabpanel" aria-labelledby="tab-cards" hidden>
+    <div class="cards">
+      <article class="card"><h3>Tensor / Layout</h3><p><code>Tensor = pointer/engine + layout</code></p><p class="text-muted">它是视图，不拥有内存。Layout 把逻辑坐标映射为地址偏移。</p></article>
+      <article class="card"><h3>MMA Atom</h3><p><code>128×256×16</code></p><p class="text-muted">一条 SM100 UMMA 的类型、shape、fragment 和线程/值映射。</p></article>
+      <article class="card"><h3>TiledMMA / ThrMMA</h3><p><code>Atom → tile → CTA slice</code></p><p class="text-muted">TiledMMA 组合 Atom；ThrMMA 表示当前 peer CTA 在 MMA 中的切片。</p></article>
+      <article class="card"><h3>A/B fragment</h3><p><code>UMMA::smem_desc&lt;K&gt;</code></p><p class="text-muted">寄存器里保存的是 descriptor；矩阵 payload 仍在 SMEM。</p></article>
+      <article class="card"><h3>Accumulator</h3><p><code>UMMA::tmem_frg_1sm&lt;float&gt;</code></p><p class="text-muted">SM100 MMA 累加结果位于 TMEM，epilogue 再分片读入 RMEM。</p></article>
+      <article class="card"><h3>首次覆盖 / 后续累加</h3><p><code>ScaleOut::Zero → One</code></p><p class="text-muted">第一条 MMA 忽略旧 TMEM accumulator，后续指令继续累加。</p></article>
+      <article class="card"><h3>两种同步</h3><p><code>__syncthreads</code> + <code>mbarrier</code></p><p class="text-muted">前者等普通线程写完 SMEM；后者等异步 UMMA 真正完成。</p></article>
+      <article class="card"><h3>线程角色</h3><p><code>128 threads / warp 0 / one lane</code></p><p class="text-muted">全 CTA 搬运和 epilogue；warp 0 进入 MMA；elected lane 发射 PTX。</p></article>
+      <article class="card"><h3>边界限制</h3><p><code>M%128=0, N%256=0, K%64=0</code></p><p class="text-muted">示例没有 residue tile 或 predication，不规则尺寸会提前返回。</p></article>
+      <article class="card"><h3>Host 同步点</h3><p><code>device_D → host_D</code></p><p class="text-muted">kernel launch 异步；D 拷回 Host 前必须等待结果完成。</p></article>
+      <article class="card"><h3>本例在分层中的位置</h3><p><code>CuTe primitive tutorial</code></p><p class="text-muted">直接写 kernel/mainloop/epilogue，没有使用生产级 Device Adapter 和 Collective。</p></article>
+      <article class="card"><h3>最短记忆路径</h3><p><code>GMEM → SMEM → TMEM → RMEM → GMEM</code></p><p class="text-muted">A/B 走前半段；Accumulator 与 C 在 RMEM 汇合，最终写 D。</p></article>
+    </div>
+  </section>
+</div>

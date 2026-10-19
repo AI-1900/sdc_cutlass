@@ -1,0 +1,268 @@
+[
+  {
+    "id": "S01",
+    "title": "版本声明",
+    "path": "include/cutlass/version.h",
+    "line": 41,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/version.h"
+  },
+  {
+    "id": "S02",
+    "title": "3.x 架构设计",
+    "path": "media/docs/cpp/cutlass_3x_design.md",
+    "line": 1,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/media/docs/cpp/cutlass_3x_design.md"
+  },
+  {
+    "id": "S03",
+    "title": "3.x GEMM API 与层级",
+    "path": "media/docs/cpp/gemm_api_3x.md",
+    "line": 83,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/media/docs/cpp/gemm_api_3x.md"
+  },
+  {
+    "id": "S04",
+    "title": "Hopper Builder 与 EVT 组装",
+    "path": "examples/49_hopper_gemm_with_collective_builder/49_collective_builder.cu",
+    "line": 291,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/examples/49_hopper_gemm_with_collective_builder/49_collective_builder.cu"
+  },
+  {
+    "id": "S05",
+    "title": "SM90 Builder 生成具体 Collective",
+    "path": "include/cutlass/gemm/collective/builders/sm90_gmma_builder.inl",
+    "line": 292,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/collective/builders/sm90_gmma_builder.inl"
+  },
+  {
+    "id": "S06",
+    "title": "Hopper cooperative Kernel 特化",
+    "path": "include/cutlass/gemm/kernel/sm90_gemm_tma_warpspecialized_cooperative.hpp",
+    "line": 60,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/kernel/sm90_gemm_tma_warpspecialized_cooperative.hpp"
+  },
+  {
+    "id": "S07",
+    "title": "应用 Arguments 与调用顺序",
+    "path": "examples/49_hopper_gemm_with_collective_builder/49_collective_builder.cu",
+    "line": 432,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/examples/49_hopper_gemm_with_collective_builder/49_collective_builder.cu"
+  },
+  {
+    "id": "S08",
+    "title": "Adapter 初始化与 Params",
+    "path": "include/cutlass/gemm/device/gemm_universal_adapter.h",
+    "line": 313,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/device/gemm_universal_adapter.h"
+  },
+  {
+    "id": "S09",
+    "title": "Adapter launch 分支",
+    "path": "include/cutlass/gemm/device/gemm_universal_adapter.h",
+    "line": 396,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/device/gemm_universal_adapter.h"
+  },
+  {
+    "id": "S10",
+    "title": "Kernel Arguments 转换",
+    "path": "include/cutlass/gemm/kernel/sm90_gemm_tma_warpspecialized_cooperative.hpp",
+    "line": 214,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/kernel/sm90_gemm_tma_warpspecialized_cooperative.hpp"
+  },
+  {
+    "id": "S11",
+    "title": "CUDA device kernel 入口",
+    "path": "include/cutlass/device_kernel.h",
+    "line": 118,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/device_kernel.h"
+  },
+  {
+    "id": "S12",
+    "title": "Kernel mainloop load 调用",
+    "path": "include/cutlass/gemm/kernel/sm90_gemm_tma_warpspecialized_cooperative.hpp",
+    "line": 632,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/kernel/sm90_gemm_tma_warpspecialized_cooperative.hpp"
+  },
+  {
+    "id": "S13",
+    "title": "Hopper Collective 的 load 与 mma",
+    "path": "include/cutlass/gemm/collective/sm90_mma_tma_gmma_ss_warpspecialized.hpp",
+    "line": 286,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/collective/sm90_mma_tma_gmma_ss_warpspecialized.hpp"
+  },
+  {
+    "id": "S14",
+    "title": "MMA Atom 与 TiledMMA",
+    "path": "include/cute/atom/mma_atom.hpp",
+    "line": 49,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cute/atom/mma_atom.hpp"
+  },
+  {
+    "id": "S15",
+    "title": "CuTe GEMM 调用 Atom",
+    "path": "include/cute/algorithm/gemm.hpp",
+    "line": 197,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cute/algorithm/gemm.hpp"
+  },
+  {
+    "id": "S16",
+    "title": "GMMA 专用 unpack",
+    "path": "include/cute/atom/mma_traits_sm90_gmma.hpp",
+    "line": 392,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cute/atom/mma_traits_sm90_gmma.hpp"
+  },
+  {
+    "id": "S17",
+    "title": "代表 WGMMA 指令封装",
+    "path": "include/cute/arch/mma_sm90_gmma.hpp",
+    "line": 1071,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cute/arch/mma_sm90_gmma.hpp"
+  },
+  {
+    "id": "S18",
+    "title": "TMA pipeline acquire/commit 协议",
+    "path": "include/cutlass/pipeline/sm90_pipeline.hpp",
+    "line": 512,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/pipeline/sm90_pipeline.hpp"
+  },
+  {
+    "id": "S19",
+    "title": "TMA PTX 搬运封装",
+    "path": "include/cute/arch/copy_sm90_tma.hpp",
+    "line": 103,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cute/arch/copy_sm90_tma.hpp"
+  },
+  {
+    "id": "S20",
+    "title": "Tile scheduler 标签与选择",
+    "path": "include/cutlass/gemm/kernel/tile_scheduler.hpp",
+    "line": 49,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/kernel/tile_scheduler.hpp"
+  },
+  {
+    "id": "S21",
+    "title": "CuTe Layout 教程",
+    "path": "media/docs/cpp/cute/01_layout.md",
+    "line": 1,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/media/docs/cpp/cute/01_layout.md"
+  },
+  {
+    "id": "S22",
+    "title": "CuTe Tensor 教程",
+    "path": "media/docs/cpp/cute/03_tensor.md",
+    "line": 1,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/media/docs/cpp/cute/03_tensor.md"
+  },
+  {
+    "id": "S23",
+    "title": "布局代数",
+    "path": "media/docs/cpp/cute/02_layout_algebra.md",
+    "line": 1,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/media/docs/cpp/cute/02_layout_algebra.md"
+  },
+  {
+    "id": "S24",
+    "title": "Hopper TMA epilogue",
+    "path": "include/cutlass/epilogue/collective/sm90_epilogue_tma_warpspecialized.hpp",
+    "line": 68,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/epilogue/collective/sm90_epilogue_tma_warpspecialized.hpp"
+  },
+  {
+    "id": "S25",
+    "title": "融合 operation 定义",
+    "path": "include/cutlass/epilogue/fusion/operations.hpp",
+    "line": 116,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/epilogue/fusion/operations.hpp"
+  },
+  {
+    "id": "S26",
+    "title": "SM100 Builder 示例",
+    "path": "examples/71_blackwell_gemm_with_collective_builder/71_blackwell_gemm_with_collective_builder.cu",
+    "line": 221,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/examples/71_blackwell_gemm_with_collective_builder/71_blackwell_gemm_with_collective_builder.cu"
+  },
+  {
+    "id": "S27",
+    "title": "SM100 Kernel 与 TMEM 管理",
+    "path": "include/cutlass/gemm/kernel/sm100_gemm_tma_warpspecialized.hpp",
+    "line": 178,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/kernel/sm100_gemm_tma_warpspecialized.hpp"
+  },
+  {
+    "id": "S28",
+    "title": "SM100 Collective MMA",
+    "path": "include/cutlass/gemm/collective/sm100_mma_warpspecialized.hpp",
+    "line": 702,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/gemm/collective/sm100_mma_warpspecialized.hpp"
+  },
+  {
+    "id": "S29",
+    "title": "SM100 UMMA PTX 封装",
+    "path": "include/cute/arch/mma_sm100_umma.hpp",
+    "line": 86,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cute/arch/mma_sm100_umma.hpp"
+  },
+  {
+    "id": "S30",
+    "title": "SM100 TMEM load 指令",
+    "path": "include/cute/arch/copy_sm100.hpp",
+    "line": 628,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cute/arch/copy_sm100.hpp"
+  },
+  {
+    "id": "S31",
+    "title": "手写 SM100 教程",
+    "path": "examples/cute/tutorial/blackwell/01_mma_sm100.cu",
+    "line": 141,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/examples/cute/tutorial/blackwell/01_mma_sm100.cu"
+  },
+  {
+    "id": "S32",
+    "title": "Python DSL 概览",
+    "path": "media/docs/pythonDSL/overview.rst",
+    "line": 6,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/media/docs/pythonDSL/overview.rst"
+  },
+  {
+    "id": "S33",
+    "title": "CuTe IR 编译器栈说明",
+    "path": "cutlass_compiler/README.md",
+    "line": 1,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/cutlass_compiler/README.md"
+  },
+  {
+    "id": "S34",
+    "title": "示例 49 构建目标",
+    "path": "examples/49_hopper_gemm_with_collective_builder/CMakeLists.txt",
+    "line": 31,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/examples/49_hopper_gemm_with_collective_builder/CMakeLists.txt"
+  },
+  {
+    "id": "S35",
+    "title": "示例 71 架构条件",
+    "path": "examples/71_blackwell_gemm_with_collective_builder/CMakeLists.txt",
+    "line": 30,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/examples/71_blackwell_gemm_with_collective_builder/CMakeLists.txt"
+  },
+  {
+    "id": "S36",
+    "title": "性能工具参数与用法",
+    "path": "media/docs/cpp/profiler.md",
+    "line": 258,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/media/docs/cpp/profiler.md"
+  },
+  {
+    "id": "S37",
+    "title": "SM100 Pipeline 的完成通知",
+    "path": "include/cutlass/pipeline/sm100_pipeline.hpp",
+    "line": 537,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/pipeline/sm100_pipeline.hpp"
+  },
+  {
+    "id": "S38",
+    "title": "UMMA arrive 的 PTX commit",
+    "path": "include/cutlass/arch/barrier.h",
+    "line": 799,
+    "absolute": "E:/000wsp/01repo/08sutlass/cutlass/include/cutlass/arch/barrier.h"
+  }
+]

@@ -1,0 +1,11 @@
+{
+  "source_anchors": 38,
+  "svg_figures": 8,
+  "internal_links": 86,
+  "broken_links": 0,
+  "embedded_html_figures": 8,
+  "xml_parse": "pass",
+  "zip_integrity": "pass",
+  "browser_layout_check": "not performed; file URL blocked",
+  "gpu_execution": "not performed for SM90/SM100"
+}
