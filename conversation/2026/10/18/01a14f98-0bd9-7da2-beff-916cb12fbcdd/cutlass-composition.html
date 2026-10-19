@@ -1,0 +1,108 @@
+<div id="cc-flow">
+<style>
+#cc-flow{color:var(--foreground)}
+#cc-flow .flow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:18px 0}
+#cc-flow .node{padding:12px;background:color-mix(in srgb,var(--viz-series-1) 10%,transparent);flex:1;min-width:130px;text-align:center}
+#cc-flow .branch{border-left:1px solid var(--border);padding-left:18px;margin:14px 0 14px 10px}
+#cc-flow .pair{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:18px}
+#cc-flow .matrix{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:12px}
+#cc-flow .cell{padding:12px 2px;text-align:center;background:var(--muted);color:var(--foreground)}
+#cc-flow .cell.chosen{background:color-mix(in srgb,var(--viz-series-1) 30%,var(--background))}
+#cc-flow .cell.active{outline:2px solid var(--foreground);outline-offset:-2px}
+#cc-flow .lane{display:grid;grid-template-columns:85px repeat(4,minmax(0,1fr));gap:4px;margin:8px 0}
+#cc-flow .lane span{padding:10px 2px;text-align:center;background:var(--muted)}
+#cc-flow .lane .load{background:color-mix(in srgb,var(--viz-series-1) 18%,transparent)}
+#cc-flow .lane .mma{background:color-mix(in srgb,var(--viz-series-2) 18%,transparent)}
+#cc-flow details{margin:16px 0}
+#cc-flow pre{white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:540px){#cc-flow .pair{grid-template-columns:1fr}#cc-flow .flow{flex-direction:column;align-items:stretch}#cc-flow .lane{grid-template-columns:65px repeat(4,minmax(0,1fr))}}
+</style>
+<h2>从部件组合到 GPU 执行</h2>
+<div class="nav nav-pills" role="tablist" aria-label="GEMM 可视化">
+<button type="button" class="nav-link active" id="cc-t1" role="tab" aria-controls="cc-p1" aria-selected="true">架构树</button>
+<button type="button" class="nav-link" id="cc-t2" role="tab" aria-controls="cc-p2" aria-selected="false">线程与数据</button>
+<button type="button" class="nav-link" id="cc-t3" role="tab" aria-controls="cc-p3" aria-selected="false">执行时序</button>
+<button type="button" class="nav-link" id="cc-t4" role="tab" aria-controls="cc-p4" aria-selected="false">编译与卡片</button>
+</div>
+<div id="cc-p1" role="tabpanel" aria-labelledby="cc-t1">
+<div class="flow" role="img" aria-label="配置经 Builder 生成 Mainloop 和 Epilogue，组合为 Kernel，由 Adapter 启动">
+<div class="node">架构 · 类型 · 布局<br>Tile · Stage · Schedule</div><span>→</span><div class="node">Builder<br>模板特化选择</div><span>→</span><div class="node">Mainloop + Epilogue<br>组合为 Kernel</div><span>→</span><div class="node">Device Adapter<br>参数与启动</div>
+</div>
+<div class="branch"><strong>Device · 主机调用</strong>
+<div class="branch"><strong>Kernel · 调度与资源</strong>
+<div class="branch"><strong>CollectiveMainloop · K 循环与协作</strong>
+<div class="branch">TiledCopy → Copy Atom → 搬运指令</div>
+<div class="branch">TiledMMA → MMA Atom / Traits → MMA 指令</div>
+<div class="branch">Pipeline → 就绪等待 / 完成通知 / 缓冲复用</div>
+</div>
+<div class="branch"><strong>CollectiveEpilogue · 输出处理</strong>
+<div class="branch">读取累加结果 → α·Acc + β·C → 可选融合 → D</div>
+</div>
+<div class="branch">Tile Scheduler · 下一个工作 tile</div>
+</div></div>
+</div>
+<div id="cc-p2" role="tabpanel" aria-labelledby="cc-t2" hidden>
+<div class="viz-controls"><label class="form-label">线程 <select class="form-select" id="cc-thread"><option value="0">T0</option><option value="1">T1</option><option value="2">T2</option><option value="3">T3</option></select></label><label class="form-label">线程内元素 <select class="form-select" id="cc-value"><option value="0">v0</option><option value="1">v1</option><option value="2">v2</option><option value="3">v3</option></select></label></div>
+<div class="pair">
+<div><h3>逻辑矩阵 · 4×4</h3><div class="matrix" id="cc-logical" role="img" aria-label="每格显示负责该元素的线程；高亮为选中线程，描边为选中元素"></div></div>
+<div><h3>行主序内存 · 偏移 0—15</h3><div class="matrix" id="cc-memory" role="img" aria-label="行主序元素的线性偏移，每行四个"></div></div>
+</div>
+<div class="flow" role="img" aria-label="线程和线程内元素映射为矩阵坐标，再映射为内存偏移"><div class="node">(thread, value)</div><span>→</span><div class="node">(m, n)</div><span>→</span><div class="node">offset = 4m + n</div></div>
+<div id="cc-detail" aria-live="polite"></div>
+<div class="text-small text-muted">教学映射：4 个线程，每线程 4 个元素；真实 MMA 映射由目标指令 Traits 约束。</div>
+</div>
+<div id="cc-p3" role="tabpanel" aria-labelledby="cc-t3" hidden>
+<h3>一个输出 tile · 沿 K 分块累加</h3>
+<div class="viz-controls"><button type="button" class="btn" id="cc-prev">上一步</button><span id="cc-klabel" aria-live="polite"></span><button type="button" class="btn btn-primary" id="cc-next">下一步</button></div>
+<div class="flow"><div class="node" id="cc-a">A 的 K 分块</div><span>×</span><div class="node" id="cc-b">B 的 K 分块</div><span>→</span><div class="node" id="cc-acc">累加器</div></div>
+<div class="lane"><span>时间 →</span><span>t0</span><span>t1</span><span>t2</span><span>t3</span></div>
+<div class="lane"><span>加载</span><span class="load">tile 0</span><span class="load">tile 1</span><span class="load">tile 2</span><span>尾部</span></div>
+<div class="lane"><span>MMA</span><span>等待</span><span class="mma">tile 0</span><span class="mma">tile 1</span><span class="mma">tile 2</span></div>
+<div class="flow" role="img" aria-label="缓冲区生命周期"><div class="node">Producer acquire</div><span>→</span><div class="node">加载 / 就绪通知</div><span>→</span><div class="node">Consumer wait / MMA</div><span>→</span><div class="node">消费完成 / 释放复用</div></div>
+<div class="text-small text-muted">逻辑示意，格宽不代表耗时；异步 MMA 的完成与释放协议依目标架构而定。</div>
+</div>
+<div id="cc-p4" role="tabpanel" aria-labelledby="cc-t4" hidden>
+<div class="flow" role="img" aria-label="C++ 模板类型特化经 CUDA 编译器成为 PTX 再到目标机器码"><div class="node">C++ 配置类型</div><span>→</span><div class="node">特化 / 内联<br>布局索引化简</div><span>→</span><div class="node">PTX</div><span>→</span><div class="node">目标 SASS<br>寄存器分配与调度</div></div>
+<div class="pair"><div><h3>编译期</h3><div>Arch / 元素类型 / Layout 类型<br>Tile / Cluster / Pipeline 策略<br>Atom / 融合操作类型</div></div><div><h3>运行时</h3><div>矩阵地址 / M,N,K,L<br>动态 stride / α,β<br>workspace / stream</div></div></div>
+<hr>
+<details><summary>卡片 1 · 为什么先分块？</summary>同一输入被多个乘加复用；将复用限制在可容纳的 tile 中，匹配共享内存、累加存储与矩阵指令。</details>
+<details><summary>卡片 2 · Layout 与 Tensor 有何不同？</summary>Layout 描述坐标到索引的映射。Tensor 在此基础上结合数据引擎，形成可索引的数据视图；视图不等于数据拷贝。</details>
+<details><summary>卡片 3 · CuTe 怎样连接线程与数据？</summary>用线程/值映射给出每个线程持有的元素，再与数据布局组合，得到相应地址或 fragment 位置。</details>
+<details><summary>卡片 4 · partition 会搬运数据吗？</summary>partition 构造参与者的数据视图；copy、MMA 等操作才发出相应指令。</details>
+<details><summary>卡片 5 · Collective 与 Tiled 各管什么？</summary>Collective 组织 K 循环、同步和协作；Tiled 在空间上铺开 Atom 并划分线程与元素。</details>
+<details><summary>卡片 6 · Atom 是 atomicAdd 吗？</summary>Atom 表示基本 Copy/MMA 操作及其参与线程和操作数约定，与内存原子加不是同一概念。</details>
+<details><summary>卡片 7 · Auto 会自动测出最快内核吗？</summary>Builder 的 Auto 按规则选择支持的配置；性能仍需按 GPU、形状和融合需求实测。</details>
+<details><summary>卡片 8 · 模板抽象为何能变成直接指令？</summary>静态类型选定实现，常量参与索引计算和内联，架构操作封装给出 PTX；最终机器码由 CUDA 工具链生成。</details>
+<details><summary>卡片 9 · 同一个 kernel 能处理不同尺寸吗？</summary>可以，M/N/K 常是运行时输入；tile 与指令策略通常固定。支持范围由对齐、边界处理等约束决定。</details>
+<details><summary>卡片 10 · 高性能是否由模板保证？</summary>模板提供专用代码的表达和生成手段；tile、资源占用、访存、流水线和工作量必须共同匹配。</details>
+</div>
+<script>
+(()=>{
+const root=document.getElementById('cc-flow');
+const q=id=>root.querySelector('#'+id);
+let state={thread:0,value:0,k:0,tab:0};
+const map=(t,v)=>({m:t%2+2*(v%2),n:Math.floor(t/2)+2*Math.floor(v/2)});
+const restore=s=>{const p=s?.privateContent;if(!p)return;for(const key of ['thread','value','k','tab'])if(Number.isInteger(p[key])&&p[key]>=0&&p[key]<=3)state[key]=p[key];};
+restore(window.openai?.widgetState);
+function render(){
+ q('cc-thread').value=state.thread;q('cc-value').value=state.value;
+ const selected=map(state.thread,state.value);const cells=Array.from({length:16},()=>null);
+ for(let t=0;t<4;t++)for(let v=0;v<4;v++){const c=map(t,v);cells[c.m*4+c.n]={t,v,...c};}
+ q('cc-logical').innerHTML=cells.map(c=>'<div class="cell'+(c.t===state.thread?' chosen':'')+(c.t===state.thread&&c.v===state.value?' active':'')+'" aria-label="坐标 '+c.m+','+c.n+'，线程 '+c.t+'，值 '+c.v+'">T'+c.t+' · v'+c.v+'</div>').join('');
+ q('cc-memory').innerHTML=cells.map((c,i)=>'<div class="cell'+(c.t===state.thread?' chosen':'')+(c.t===state.thread&&c.v===state.value?' active':'')+'">'+i+'</div>').join('');
+ q('cc-detail').textContent='T'+state.thread+' / v'+state.value+' → ('+selected.m+', '+selected.n+') → 偏移 '+(selected.m*4+selected.n);
+ q('cc-klabel').textContent=state.k<3?'K 分块 '+state.k+' / 2':'Epilogue';
+ q('cc-a').textContent=state.k<3?'A[:, K'+state.k+']':'α × Acc';q('cc-b').textContent=state.k<3?'B[K'+state.k+', :]':'β × C';q('cc-acc').textContent=state.k<3?'Acc += A块 × B块':'写回 D';
+ q('cc-prev').disabled=state.k===0;q('cc-next').disabled=state.k===3;
+ root.querySelectorAll('[role="tab"]').forEach((b,i)=>{const on=i===state.tab;b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));q(b.getAttribute('aria-controls')).hidden=!on;});
+}
+function save(){window.openai?.setWidgetState?.({modelContent:{thread:state.thread,value:state.value,k:state.k,tab:state.tab},privateContent:state})?.catch(()=>{});}
+q('cc-thread').addEventListener('change',e=>{state.thread=Number(e.target.value);render();save();});
+q('cc-value').addEventListener('change',e=>{state.value=Number(e.target.value);render();save();});
+q('cc-prev').addEventListener('click',()=>{state.k=Math.max(0,state.k-1);render();save();});
+q('cc-next').addEventListener('click',()=>{state.k=Math.min(3,state.k+1);render();save();});
+root.querySelectorAll('[role="tab"]').forEach((b,i)=>b.addEventListener('click',()=>{state.tab=i;render();save();}));
+window.addEventListener('openai:set_globals',e=>{restore(e.detail?.globals?.widgetState);render();});render();
+})();
+</script>
+</div>

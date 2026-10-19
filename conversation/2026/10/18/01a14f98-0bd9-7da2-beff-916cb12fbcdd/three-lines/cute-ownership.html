@@ -1,0 +1,50 @@
+<div id="cl-owner">
+<style>
+#cl-owner{color:var(--foreground)}
+#cl-owner .views{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:18px 0}
+#cl-owner .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+#cl-owner .element{display:grid;place-items:center;min-height:44px;background:var(--muted);color:var(--foreground)}
+#cl-owner .element.owned{background:color-mix(in srgb,var(--viz-series-1) 26%,var(--background))}
+#cl-owner .element.picked{outline:2px solid var(--foreground);outline-offset:-2px}
+#cl-owner .mapping{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:16px 0}
+#cl-owner .mapping span{flex:1;min-width:100px;text-align:center;padding:8px 0}
+#cl-owner .mapping b{font-weight:400}
+@media(max-width:520px){#cl-owner .views{grid-template-columns:1fr}}
+</style>
+<h3>CuTe：逻辑分工与存储布局</h3>
+<div class="viz-controls">
+<label class="form-label">线程<select class="form-select" id="cl-t"><option value="0">T0</option><option value="1" selected>T1</option><option value="2">T2</option><option value="3">T3</option></select></label>
+<label class="form-label">线程内元素<select class="form-select" id="cl-v"><option value="0">v0</option><option value="1">v1</option><option value="2" selected>v2</option><option value="3">v3</option></select></label>
+<label class="form-label">存储布局<select class="form-select" id="cl-layout"><option value="row">行主序</option><option value="col">列主序</option></select></label>
+</div>
+<div class="views">
+<div><h3>逻辑矩阵 · 行 m / 列 n</h3><div id="cl-matrix" class="grid" role="img" aria-label="4×4 逻辑矩阵，格内显示负责该元素的线程"></div></div>
+<div><h3>内存 · 偏移 0 至 15</h3><div id="cl-offsets" class="grid" role="img" aria-label="内存按偏移从左到右、从上到下排列；格内显示负责该元素的线程"></div></div>
+</div>
+<div class="mapping" role="img" aria-label="选中线程和值映射到矩阵坐标，再到内存偏移"><span id="cl-from"></span><b>→</b><span id="cl-coord"></span><b>→</b><span id="cl-offset"></span></div>
+<div id="cl-detail" aria-live="polite"></div>
+<div class="text-small text-muted">高亮＝同一线程负责的元素；描边＝选中元素。4 线程教学映射，非真实 MMA 指令布局。</div>
+<script>
+(()=>{
+ const root=document.getElementById('cl-owner');
+ const q=id=>root.querySelector('#'+id);
+ let state={t:1,v:2,layout:'row'};
+ function restore(s){const p=s?.privateContent;if(!p||p.kind!=='cute-ownership')return;if(Number.isInteger(p.t)&&p.t>=0&&p.t<4)state.t=p.t;if(Number.isInteger(p.v)&&p.v>=0&&p.v<4)state.v=p.v;if(['row','col'].includes(p.layout))state.layout=p.layout;}
+ restore(window.openai?.widgetState);
+ const coord=(t,v)=>({m:t%2+2*(v%2),n:Math.floor(t/2)+2*Math.floor(v/2)});
+ function render(){
+  q('cl-t').value=state.t;q('cl-v').value=state.v;q('cl-layout').value=state.layout;
+  const logical=Array(16),memory=Array(16);
+  for(let t=0;t<4;t++)for(let v=0;v<4;v++){const {m,n}=coord(t,v);const offset=state.layout==='row'?4*m+n:m+4*n;const item={t,v,m,n,offset};logical[m*4+n]=item;memory[offset]=item;}
+  const cell=c=>'<div class="element'+(c.t===state.t?' owned':'')+(c.t===state.t&&c.v===state.v?' picked':'')+'" data-tooltip="坐标 ('+c.m+','+c.n+') · v'+c.v+' · 偏移 '+c.offset+'" aria-label="线程 T'+c.t+'，元素 v'+c.v+'，坐标 '+c.m+','+c.n+'，偏移 '+c.offset+'">T'+c.t+'</div>';
+  q('cl-matrix').innerHTML=logical.map(cell).join('');q('cl-offsets').innerHTML=memory.map(cell).join('');
+  const c=coord(state.t,state.v),offset=state.layout==='row'?4*c.m+c.n:c.m+4*c.n;
+  q('cl-from').textContent='T'+state.t+' / v'+state.v;q('cl-coord').textContent='坐标 ('+c.m+', '+c.n+')';q('cl-offset').textContent='偏移 '+offset;
+  q('cl-detail').textContent=state.layout==='row'?'行主序：offset = 4m + n':'列主序：offset = m + 4n';
+ }
+ function save(){window.openai?.setWidgetState?.({modelContent:{mapping:'4 threads × 4 values',...state},privateContent:{kind:'cute-ownership',...state}})?.catch(()=>{});}
+ for(const [id,key] of [['cl-t','t'],['cl-v','v'],['cl-layout','layout']])q(id).addEventListener('change',e=>{state[key]=key==='layout'?e.target.value:Number(e.target.value);render();save();});
+ window.addEventListener('openai:set_globals',e=>{restore(e.detail?.globals?.widgetState);render();});render();
+})();
+</script>
+</div>

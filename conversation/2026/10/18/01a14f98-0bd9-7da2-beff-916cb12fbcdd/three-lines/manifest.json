@@ -1,0 +1,13 @@
+{
+  "source_commit": "ffa119a1",
+  "figures": [
+    "01-three-lines.svg",
+    "02-computation.svg",
+    "03-cute-mapping.svg",
+    "04-composition-tree.svg",
+    "05-specialization.svg",
+    "06-review-cards.svg"
+  ],
+  "mapping": "m=t%2+2*(v%2); n=t//2+2*(v//2)",
+  "scope": "C++ 3.x API conceptual diagrams; no GPU performance measurements"
+}

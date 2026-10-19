@@ -1,0 +1,136 @@
+{
+  "source": "visualizations/2026/10",
+  "days": {
+    "03": 0,
+    "11": 0,
+    "18": 25,
+    "19": 0
+  },
+  "files": [
+    {
+      "path": "2026/10/18/01a14cda-1802-7303-a500-acc64777b621/sm100-gemm-visual-guide-standalone.html",
+      "bytes": 121758,
+      "sha256": "0c2c08c15aafb6760cafd41266e67889547352f58a16adb8c72ed2523f3ee70f"
+    },
+    {
+      "path": "2026/10/18/01a14cda-1802-7303-a500-acc64777b621/sm100-gemm-visual-guide.html",
+      "bytes": 27235,
+      "sha256": "bd68375786d0965c228ec97f0980a4543992bf4627f7b47a79af29c4c291603d"
+    },
+    {
+      "path": "2026/10/18/01a14cee-d4ae-7322-a209-c07d08140dba/cutlass-atlas.html",
+      "bytes": 17270,
+      "sha256": "c64b2a2c29e6f1d3f2912517b9e01ebf47f25bdb0a32c7ce0429c336b6932f08"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/cutlass-composition.html",
+      "bytes": 11422,
+      "sha256": "ba91685b3969becdb73565ef6bc8cf879909eefc4be20fe3b2a9e749c15250a1"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/cutlass-process.svg",
+      "bytes": 5393,
+      "sha256": "c2c44d2a1b23d0fedd0ac0178b6961daa1ddf34384d8edde389693a6c0df7bf3"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/interaction-check.js",
+      "bytes": 2624,
+      "sha256": "828b1172846693e18cd4f0ce5fb9acbe5a26a0f806d0fa65afc21856f7c34b49"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/01-three-lines.png",
+      "bytes": 128805,
+      "sha256": "827e08d5dc1da9c0ee1d8c45bd2a61494d00efe5aee47520aaf79f84247f2e02"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/01-three-lines.svg",
+      "bytes": 6687,
+      "sha256": "7ba0dfbe99d80cc6a6536a4599cb5d5547bef17a90e80f2667fe5cd92a849465"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/02-computation.png",
+      "bytes": 110222,
+      "sha256": "407f106ef5c29d5a06a020f51fe2be2c2cde5bd1f21b0abfdaa364bf9e5620c6"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/02-computation.svg",
+      "bytes": 10203,
+      "sha256": "1d2632f9afc0e3cddb390beac2e37ea2b52241fbc15b291c4fb8aa955b326291"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/03-cute-mapping.png",
+      "bytes": 130680,
+      "sha256": "0ba56c7d39fc2726aaa08819aa7a1fba00572748304536985c391143646f7c19"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/03-cute-mapping.svg",
+      "bytes": 12894,
+      "sha256": "3e2a5e7d0a5e8441642183ec6ef4de0a9e893d734c9d5b023cb9c4f589e805fe"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/04-composition-tree.png",
+      "bytes": 112016,
+      "sha256": "a17059efb6eb39dd425ca04a6e4d2c3e1203dc6408269455180cc3ca7345da77"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/04-composition-tree.svg",
+      "bytes": 5442,
+      "sha256": "1164260a648e10e8396eca63beac1bc85fd9cfd13939a4fe7eef489687127513"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/05-specialization.png",
+      "bytes": 140778,
+      "sha256": "70924a31559b94c929b568c987c8630553a70a2ca0bb1fe6bf6c69fce4d17d34"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/05-specialization.svg",
+      "bytes": 6503,
+      "sha256": "97698308320588ea037d32ad8fd12df9ff67231826ab37db85b783a52c05c7d9"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/06-review-cards.png",
+      "bytes": 143329,
+      "sha256": "a78e06eae8bbba3882c3ba69b0d770e3eea3da00d1c4621f7bbc0cab0ecc9134"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/06-review-cards.svg",
+      "bytes": 9812,
+      "sha256": "8cfbf38f39ed01bd7710b018b51bb24b6f3ea7f435fe60612fad23d81ee89812"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/build_figures.py",
+      "bytes": 11958,
+      "sha256": "8570e429ed8414ca6f2a75fe7cdaebd32c124f6c6ce40931f0532089a9a97e6f"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/cute-ownership.html",
+      "bytes": 4406,
+      "sha256": "0043ba9de624e2ed0e7e92e02d1ca739b3b72643ffecf77e3faa776f572d06c0"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/cutlass-three-lines-figures.zip",
+      "bytes": 694039,
+      "sha256": "1272acb7709c13318886ca18cda0d0aff56f0dc5c48461a0fb1a3eb34857ddcd"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/manifest.json",
+      "bytes": 356,
+      "sha256": "a34978c9a408f61734f1fa06946bc5bbf9fb5ea1f3df59bbc1a981ef178ea60b"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/overview-preview.png",
+      "bytes": 94750,
+      "sha256": "7ea280308d612984c50e3710ae28407ac01dda521e4253fa59607049fd9e804c"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/validation.json",
+      "bytes": 221,
+      "sha256": "672bc0c8c9a89cc55e52d74a002a2c2b94f7c37800a397f5fcba239eacd49a11"
+    },
+    {
+      "path": "2026/10/18/01a14f98-0bd9-7da2-beff-916cb12fbcdd/three-lines/阅读指南.md",
+      "bytes": 3086,
+      "sha256": "95a7390e800be9e93cc04ec90bfac3a9ec320004aed19f18c1e6eb8f1f1c6a31"
+    }
+  ]
+}
