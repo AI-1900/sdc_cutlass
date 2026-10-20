@@ -1,0 +1,130 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="26.0.0">
+  <diagram id="02-collective-handoff" name="02-collective-handoff">
+    <mxGraphModel dx="1900" dy="1660" grid="1" gridSize="10" page="1" pageWidth="1900" pageHeight="1660">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Kernel 如何组织两个 Collective" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=30;fontColor=#172e47;fillColor=#edf1f5;strokeColor=#64758b;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="30" y="18" width="1840" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="同一 launch 内的角色协作；箭头表示数据/同步依赖，时间向下，实际运行允许重叠" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#172e47;fillColor=#edf1f5;strokeColor=#64758b;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="30" y="85" width="1840" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="common" value="Kernel 的共同上下文：ProblemShape + CTA tile 坐标 + SharedStorage + TMEM base&#10;MainloopPipeline 管 A/B；AccumulatorPipeline 管累加器所有权；EpiStorePipeline 管输出缓冲" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=23;fontColor=#172e47;fillColor=#edf1f5;strokeColor=#64758b;" vertex="1" parent="1">
+          <mxGeometry x="30" y="160" width="1840" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="head0" value="Sched / warp 1" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#172e47;fillColor=#edf1f5;strokeColor=#64758b;" vertex="1" parent="1">
+          <mxGeometry x="30" y="300" width="320" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="head1" value="Load / warp 2" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#172e47;fillColor=#edf1f5;strokeColor=#64758b;" vertex="1" parent="1">
+          <mxGeometry x="410" y="300" width="320" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="head2" value="MMA / warp 0" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#172e47;fillColor=#edf1f5;strokeColor=#64758b;" vertex="1" parent="1">
+          <mxGeometry x="790" y="300" width="320" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="head3" value="EpiLoad / warp 3" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#172e47;fillColor=#edf1f5;strokeColor=#64758b;" vertex="1" parent="1">
+          <mxGeometry x="1170" y="300" width="320" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="head4" value="Epilogue / warp ≥4" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#172e47;fillColor=#edf1f5;strokeColor=#64758b;" vertex="1" parent="1">
+          <mxGeometry x="1550" y="300" width="320" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="sched" value="获取下一工作 tile&#10;CLC 或调度实现&#10;输出统一 MNKL 坐标" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#172e47;fillColor=#fff2df;strokeColor=#c58428;" vertex="1" parent="1">
+          <mxGeometry x="30" y="415" width="320" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="load" value="producer_acquire&#10;A/B TMA → SMEM stage&#10;绑定异步完成 barrier" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#172e47;fillColor=#eaf2ff;strokeColor=#3b72b7;" vertex="1" parent="1">
+          <mxGeometry x="410" y="415" width="320" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="mma" value="consumer_wait(A/B)&#10;读取 SMEM descriptor&#10;cute::gemm → UMMA" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#172e47;fillColor=#eaf2ff;strokeColor=#3b72b7;" vertex="1" parent="1">
+          <mxGeometry x="790" y="415" width="320" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="cload" value="按需加载 C / 辅助输入&#10;独立 load pipeline&#10;本例 C=void：无 C load" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=19;fontColor=#172e47;fillColor=#f0eafa;strokeColor=#8060af;" vertex="1" parent="1">
+          <mxGeometry x="1170" y="415" width="320" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="cwait" value="获得同一 tile 坐标&#10;以及 accumulator 视图&#10;按需等待 C / 辅助输入" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#172e47;fillColor=#f0eafa;strokeColor=#8060af;" vertex="1" parent="1">
+          <mxGeometry x="1550" y="415" width="320" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="releaseab" value="A/B stage 所有权归还&#10;经 UMMA 同步语义&#10;才允许下一次覆盖" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#172e47;fillColor=#eaf2ff;strokeColor=#3b72b7;" vertex="1" parent="1">
+          <mxGeometry x="410" y="650" width="320" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="acc" value="TMEM accumulator&#10;首个 Atom：覆盖&#10;后续 Atom：累加" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#172e47;fillColor=#e7f5ef;strokeColor=#26806b;" vertex="1" parent="1">
+          <mxGeometry x="790" y="650" width="320" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="waitacc" value="acc.consumer_wait&#10;等异步 MMA 可读&#10;TMEM → 寄存器" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#172e47;fillColor=#e7f5ef;strokeColor=#26806b;" vertex="1" parent="1">
+          <mxGeometry x="1550" y="650" width="320" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="commit" value="mma 返回到 kernel&#10;acc.producer_commit&#10;发布对应 stage 完成" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#172e47;fillColor=#e7f5ef;strokeColor=#26806b;" vertex="1" parent="1">
+          <mxGeometry x="790" y="880" width="320" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="racc" value="读完所需 TMEM 数据&#10;fence + consumer_release&#10;累加器 stage 可复用" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#172e47;fillColor=#e7f5ef;strokeColor=#26806b;" vertex="1" parent="1">
+          <mxGeometry x="1550" y="880" width="320" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="fusion" value="visit：缩放 / 融合&#10;RMEM → SMEM D&#10;fence → TMA store" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#172e47;fillColor=#f0eafa;strokeColor=#8060af;" vertex="1" parent="1">
+          <mxGeometry x="1550" y="1120" width="320" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="next" value="持续处理后续输出 tile&#10;A/B stage、accumulator stage、scheduler stage 各自推进&#10;不同角色可以重叠；不把局部顺序当全局时间线" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#172e47;fillColor=#fff2df;strokeColor=#c58428;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1120" width="1080" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="tail" value="退出：load_tail / accumulator drain / epilogue store_tail / TMEM deallocation 同步 → free&#10;核心交接契约 = 相同工作 tile + 相同 TMEM 视图 + ready/empty 协议 + 异步可见性。&#10;SDC200 必须为每一条完成/复用依赖提供等价语义；仅替换 fma builtin 不足以完成移植。" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=23;fontColor=#172e47;fillColor=#fceaea;strokeColor=#b94c50;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1380" width="1840" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="edge0" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="sched" target="load">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge1" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="load" target="mma">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge2" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="mma" target="acc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge3" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="mma" target="releaseab">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge4" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="acc" target="commit">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge5" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="cload" target="cwait">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge6" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="cwait" target="waitacc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge7" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="waitacc" target="racc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge8" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="racc" target="fusion">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge9" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="fusion" target="tail">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge10" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="next" target="tail">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge11" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;exitX=1;exitY=0.5;entryX=0;entryY=0.5;exitPerimeter=0;entryPerimeter=0;" edge="1" parent="1" source="commit" target="waitacc">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1135" y="952.5" />
+              <mxPoint x="1135" y="715" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="label11" value="ready" style="text;html=0;fontFamily=Microsoft YaHei;fontSize=16;align=center;verticalAlign=middle;fillColor=#f8fafc;strokeColor=none;fontColor=#60748a;" vertex="1" parent="1">
+          <mxGeometry x="1230" y="700" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="edge12" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;exitX=0;exitY=0.5;entryX=0.5;entryY=1;exitPerimeter=0;entryPerimeter=0;" edge="1" parent="1" source="racc" target="acc">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1505" y="952.5" />
+              <mxPoint x="1505" y="815" />
+              <mxPoint x="950" y="815" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="label12" value="empty / 可复用" style="text;html=0;fontFamily=Microsoft YaHei;fontSize=16;align=center;verticalAlign=middle;fillColor=#f8fafc;strokeColor=none;fontColor=#60748a;" vertex="1" parent="1">
+          <mxGeometry x="1190" y="800" width="180" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

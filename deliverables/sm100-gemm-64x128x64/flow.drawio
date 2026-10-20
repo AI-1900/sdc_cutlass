@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mxfile host="app.diagrams.net">
+  <diagram id="sm100-flow" name="SM100 GEMM">
+    <mxGraphModel pageWidth="1600" pageHeight="1350" page="1">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="edge0" edge="1" parent="1" source="epi" target="main" style="edgeStyle=none;endArrow=block;strokeColor=#52647A;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge1" edge="1" parent="1" source="main" target="kernel" style="edgeStyle=none;endArrow=block;strokeColor=#52647A;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge2" edge="1" parent="1" source="gmem" target="smem" style="edgeStyle=none;endArrow=block;strokeColor=#52647A;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge3" edge="1" parent="1" source="smem" target="mma" style="edgeStyle=none;endArrow=block;strokeColor=#52647A;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge4" edge="1" parent="1" source="mma" target="tmem" style="edgeStyle=none;endArrow=block;strokeColor=#52647A;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge5" edge="1" parent="1" source="tmem" target="epirun" style="edgeStyle=none;endArrow=block;strokeColor=#52647A;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge6" edge="1" parent="1" source="epirun" target="out" style="edgeStyle=none;endArrow=block;strokeColor=#52647A;strokeWidth=2;exitX=0;exitY=0.5;entryX=1;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge7" edge="1" parent="1" source="out" target="check" style="edgeStyle=none;endArrow=block;strokeColor=#52647A;strokeWidth=2;exitX=0;exitY=0.5;entryX=1;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge8" edge="1" parent="1" source="sharedA" target="c0" style="edgeStyle=none;endArrow=block;strokeColor=#52647A;strokeWidth=2;exitX=0.15;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge9" edge="1" parent="1" source="sharedA" target="c1" style="edgeStyle=none;endArrow=block;strokeColor=#52647A;strokeWidth=2;exitX=0.38;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge10" edge="1" parent="1" source="sharedA" target="c2" style="edgeStyle=none;endArrow=block;strokeColor=#52647A;strokeWidth=2;exitX=0.62;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge11" edge="1" parent="1" source="sharedA" target="c3" style="edgeStyle=none;endArrow=block;strokeColor=#52647A;strokeWidth=2;exitX=0.85;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="epi" parent="1" vertex="1" value="Epilogue Builder&#xA;FP32 线性组合 → CollectiveEpilogue&#xA;SharedStorage 用于主循环 SMEM 预算" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#17283D;align=center;verticalAlign=middle;rounded=0;fillColor=#E8F0FE;strokeColor=#9AABBE;">
+          <mxGeometry as="geometry" x="55" y="115" width="440" height="115" />
+        </mxCell>
+        <mxCell id="main" parent="1" vertex="1" value="Mainloop Builder&#xA;FP16 A/B + FP32 Acc + Auto&#xA;64×128×64，cluster 1×4×1" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#17283D;align=center;verticalAlign=middle;rounded=0;fillColor=#E8F0FE;strokeColor=#9AABBE;">
+          <mxGeometry as="geometry" x="580" y="115" width="440" height="115" />
+        </mxCell>
+        <mxCell id="kernel" parent="1" vertex="1" value="GemmUniversal → Adapter&#xA;问题形状 (M,N,K,L)&#xA;TestAll 提供运行时尺寸与参数" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#17283D;align=center;verticalAlign=middle;rounded=0;fillColor=#E8F0FE;strokeColor=#9AABBE;">
+          <mxGeometry as="geometry" x="1105" y="115" width="440" height="115" />
+        </mxCell>
+        <mxCell id="gmem" parent="1" vertex="1" value="A / B 全局内存&#xA;FP16，均为 K 连续" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#17283D;align=center;verticalAlign=middle;rounded=0;fillColor=#E6F4EA;strokeColor=#9AABBE;">
+          <mxGeometry as="geometry" x="55" y="390" width="300" height="105" />
+        </mxCell>
+        <mxCell id="smem" parent="1" vertex="1" value="TMA → SMEM stage&#xA;A 可向四个 CTA multicast" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#17283D;align=center;verticalAlign=middle;rounded=0;fillColor=#E6F4EA;strokeColor=#9AABBE;">
+          <mxGeometry as="geometry" x="450" y="390" width="300" height="105" />
+        </mxCell>
+        <mxCell id="mma" parent="1" vertex="1" value="UMMA / tcgen05.mma&#xA;Atom：64×128×16&#xA;每个完整 TileK 包含 4 次" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#17283D;align=center;verticalAlign=middle;rounded=0;fillColor=#E6F4EA;strokeColor=#9AABBE;">
+          <mxGeometry as="geometry" x="845" y="390" width="300" height="105" />
+        </mxCell>
+        <mxCell id="tmem" parent="1" vertex="1" value="TMEM 累加器&#xA;FP32，cta_group::1" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#17283D;align=center;verticalAlign=middle;rounded=0;fillColor=#FFF3D6;strokeColor=#9AABBE;">
+          <mxGeometry as="geometry" x="1240" y="390" width="305" height="105" />
+        </mxCell>
+        <mxCell id="epirun" parent="1" vertex="1" value="TMEM load → 寄存器&#xA;alpha × Acc&#xA;→ epilogue SMEM" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#17283D;align=center;verticalAlign=middle;rounded=0;fillColor=#FFF3D6;strokeColor=#9AABBE;">
+          <mxGeometry as="geometry" x="1240" y="590" width="305" height="105" />
+        </mxCell>
+        <mxCell id="out" parent="1" vertex="1" value="TMA store → D&#xA;FP32 行主序输出" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#17283D;align=center;verticalAlign=middle;rounded=0;fillColor=#FFF3D6;strokeColor=#9AABBE;">
+          <mxGeometry as="geometry" x="845" y="590" width="300" height="105" />
+        </mxCell>
+        <mxCell id="check" parent="1" vertex="1" value="同步、参考 GEMM、比较&#xA;TestAll → bool&#xA;EXPECT_TRUE(pass)" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#17283D;align=center;verticalAlign=middle;rounded=0;fillColor=#F0E8FA;strokeColor=#9AABBE;">
+          <mxGeometry as="geometry" x="450" y="590" width="300" height="105" />
+        </mxCell>
+        <mxCell id="void" parent="1" vertex="1" value="C = void：无 C 输入&#xA;默认 alpha=1、beta=0&#xA;D = A × B" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#17283D;align=center;verticalAlign=middle;rounded=0;fillColor=#F0E8FA;strokeColor=#9AABBE;">
+          <mxGeometry as="geometry" x="55" y="590" width="300" height="105" />
+        </mxCell>
+        <mxCell id="sharedA" parent="1" vertex="1" value="同一 A tile [64,64]&#xA;沿 N 方向 multicast 给 4 个 CTA" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#17283D;align=center;verticalAlign=middle;rounded=0;fillColor=#E8F0FE;strokeColor=#9AABBE;">
+          <mxGeometry as="geometry" x="535" y="885" width="530" height="95" />
+        </mxCell>
+        <mxCell id="c0" parent="1" vertex="1" value="CTA 0：1SM MMA&#xA;B：N 偏移 [0,128)&#xA;D：64×128" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#17283D;align=center;verticalAlign=middle;rounded=0;fillColor=#E6F4EA;strokeColor=#9AABBE;">
+          <mxGeometry as="geometry" x="55" y="1080" width="335" height="115" />
+        </mxCell>
+        <mxCell id="c1" parent="1" vertex="1" value="CTA 1：1SM MMA&#xA;B：N 偏移 [128,256)&#xA;D：64×128" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#17283D;align=center;verticalAlign=middle;rounded=0;fillColor=#E6F4EA;strokeColor=#9AABBE;">
+          <mxGeometry as="geometry" x="440" y="1080" width="335" height="115" />
+        </mxCell>
+        <mxCell id="c2" parent="1" vertex="1" value="CTA 2：1SM MMA&#xA;B：N 偏移 [256,384)&#xA;D：64×128" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#17283D;align=center;verticalAlign=middle;rounded=0;fillColor=#E6F4EA;strokeColor=#9AABBE;">
+          <mxGeometry as="geometry" x="825" y="1080" width="335" height="115" />
+        </mxCell>
+        <mxCell id="c3" parent="1" vertex="1" value="CTA 3：1SM MMA&#xA;B：N 偏移 [384,512)&#xA;D：64×128" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#17283D;align=center;verticalAlign=middle;rounded=0;fillColor=#E6F4EA;strokeColor=#9AABBE;">
+          <mxGeometry as="geometry" x="1210" y="1080" width="335" height="115" />
+        </mxCell>
+        <mxCell id="title" parent="1" vertex="1" value="SM100 GEMM：64×128×64 / cluster 1×4×1 / 1SM" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=30;fontColor=#17283D;align=center;verticalAlign=middle;text;strokeColor=none;fillColor=none;">
+          <mxGeometry as="geometry" x="55" y="20" width="1490" height="60" />
+        </mxCell>
+        <mxCell id="l1" parent="1" vertex="1" value="① 编译期组合：Builder 生成类型，using 不启动 GPU" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=22;fontColor=#17283D;align=center;verticalAlign=middle;text;strokeColor=none;fillColor=none;">
+          <mxGeometry as="geometry" x="55" y="78" width="1490" height="30" />
+        </mxCell>
+        <mxCell id="l2" parent="1" vertex="1" value="② 运行时数据链：搬运、MMA 与输出由流水线重叠组织" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=25;fontColor=#17283D;align=center;verticalAlign=middle;text;strokeColor=none;fillColor=none;">
+          <mxGeometry as="geometry" x="55" y="315" width="1490" height="45" />
+        </mxCell>
+        <mxCell id="l3" parent="1" vertex="1" value="③ 一个逻辑 cluster：4 个 CTA 沿 N 排列，完整输出覆盖 64×512" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=25;fontColor=#17283D;align=center;verticalAlign=middle;text;strokeColor=none;fillColor=none;">
+          <mxGeometry as="geometry" x="55" y="790" width="1490" height="45" />
+        </mxCell>
+        <mxCell id="note" parent="1" vertex="1" value="静态源码示意；未重新编译或运行 GPU。1SM 是 MMA 协作粒度，cluster 仍有 4 个 CTA。" style="whiteSpace=wrap;html=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#17283D;align=center;verticalAlign=middle;text;strokeColor=none;fillColor=none;">
+          <mxGeometry as="geometry" x="55" y="1260" width="1490" height="60" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

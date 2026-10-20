@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="26.0.0">
+  <diagram id="03-concept-cards" name="03-concept-cards">
+    <mxGraphModel dx="1800" dy="1390" grid="1" gridSize="10" page="1" pageWidth="1800" pageHeight="1390">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="九张卡片理解完整流程" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=30;fontColor=#172e47;fillColor=#edf1f5;strokeColor=#64758b;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="30" y="18" width="1740" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="蓝色：类型与输入计算   绿色：组织与交接   紫色：输出   橙色：测试与移植" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#172e47;fillColor=#edf1f5;strokeColor=#64758b;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="30" y="85" width="1740" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="card0" value="01 运行期问题&#10;&#10;Shape&lt;int,int,int,int&gt;&#10;数值为 (M,N,K,L)&#10;L 是 batch 数&#10;与 tile / cluster 分开" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#172e47;fillColor=#eaf2ff;strokeColor=#3b72b7;" vertex="1" parent="1">
+          <mxGeometry x="30" y="165" width="560" height="335" as="geometry" />
+        </mxCell>
+        <mxCell id="card1" value="02 Builder 产出类型&#10;&#10;Epilogue 先确定输出侧资源&#10;Mainloop 再选 MMA / copy / stage&#10;CollectiveOp 是类型&#10;此时没有启动计算" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#172e47;fillColor=#eaf2ff;strokeColor=#3b72b7;" vertex="1" parent="1">
+          <mxGeometry x="620" y="165" width="560" height="335" as="geometry" />
+        </mxCell>
+        <mxCell id="card2" value="03 Mainloop&#10;&#10;load 角色：A/B → SMEM&#10;MMA 角色：K 循环 → TMEM&#10;首项覆盖、后续累加&#10;C=void 不会取消内部累加" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#172e47;fillColor=#eaf2ff;strokeColor=#3b72b7;" vertex="1" parent="1">
+          <mxGeometry x="1210" y="165" width="560" height="335" as="geometry" />
+        </mxCell>
+        <mxCell id="card3" value="04 Kernel 编排器&#10;&#10;共享存储 + 参数聚合&#10;warp 角色 + scheduler&#10;分配 TMEM + 构造两 Collective&#10;共同维护 tile 与退出协议" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#172e47;fillColor=#e7f5ef;strokeColor=#26806b;" vertex="1" parent="1">
+          <mxGeometry x="30" y="550" width="560" height="335" as="geometry" />
+        </mxCell>
+        <mxCell id="card4" value="05 Collective 交接&#10;&#10;同一输出 tile 坐标&#10;同一 TMEM accumulator 视图&#10;producer_commit → consumer_wait&#10;读完 release → 允许复用" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#172e47;fillColor=#e7f5ef;strokeColor=#26806b;" vertex="1" parent="1">
+          <mxGeometry x="620" y="550" width="560" height="335" as="geometry" />
+        </mxCell>
+        <mxCell id="card5" value="06 Epilogue&#10;&#10;TMEM → 寄存器 → fusion&#10;输出转换 → SMEM → GMEM D&#10;本例 D = alpha × Acc&#10;store_tail 确保输出缓冲排空" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#172e47;fillColor=#f0eafa;strokeColor=#8060af;" vertex="1" parent="1">
+          <mxGeometry x="1210" y="550" width="560" height="335" as="geometry" />
+        </mxCell>
+        <mxCell id="card6" value="07 Adapter / launch&#10;&#10;Args → Params 转换入口&#10;workspace / SMEM / grid / cluster&#10;真正入口 device_kernel&lt;Kernel&gt;&#10;run 成功后仍需同步与比较" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#172e47;fillColor=#e7f5ef;strokeColor=#26806b;" vertex="1" parent="1">
+          <mxGeometry x="30" y="935" width="560" height="335" as="geometry" />
+        </mxCell>
+        <mxCell id="card7" value="08 TestAll / EXPECT_TRUE&#10;&#10;固定 Gemm 的布局类型&#10;枚举尺寸、raster、swizzle 等&#10;多布局需多个 Gemm 实例&#10;不支持可能返回 true：须计 skip" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#172e47;fillColor=#fff2df;strokeColor=#c58428;" vertex="1" parent="1">
+          <mxGeometry x="620" y="935" width="560" height="335" as="geometry" />
+        </mxCell>
+        <mxCell id="card8" value="09 SDC200 适配&#10;&#10;优先保留上层抽象契约&#10;重做 ISA / ABI / 异步完成&#10;核验 TMEM / TMA / cluster / CLC&#10;Atom → 单 CTA → 流水线 → 集成" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#172e47;fillColor=#fff2df;strokeColor=#c58428;" vertex="1" parent="1">
+          <mxGeometry x="1210" y="935" width="560" height="335" as="geometry" />
+        </mxCell>
+        <mxCell id="foot" value="源码核对与图稿验证已做；编译、设备运行、数值、机器码、性能未在本轮验证。" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=19;fontColor=#172e47;fillColor=#edf1f5;strokeColor=#64758b;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1320" width="1740" height="45" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

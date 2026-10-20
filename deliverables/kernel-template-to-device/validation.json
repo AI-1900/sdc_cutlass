@@ -1,0 +1,16 @@
+{
+  "png_size": [
+    3060,
+    3240
+  ],
+  "editable_vertices": 52,
+  "editable_edges": 13,
+  "drawio_xml_and_parent_edge_references": "passed",
+  "text_bounds": "passed in generation",
+  "png_visual_review": "passed",
+  "same_scene_model": true,
+  "compiled": false,
+  "device_run": false,
+  "machine_code_checked": false,
+  "cross_computer_sync": false
+}

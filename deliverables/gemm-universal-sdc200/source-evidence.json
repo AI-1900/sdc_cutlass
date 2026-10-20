@@ -1,0 +1,357 @@
+{
+  "generated": "2026-10-20T17:05:56.946473+08:00",
+  "sm100_head": "f94ec46f4f63f96003d6cfdf2014731e7672c281",
+  "sdc_head": "dc45f979ae336a235da1676b311f35efeb30149a",
+  "sources": {
+    "CMakeLists.txt": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\CMakeLists.txt",
+      "sha256": "a65efed17011f233563163154cec3d8cc9f849cd34674b78c935686b7014bcdb",
+      "lines": 1215
+    },
+    "include/cute/config.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\config.hpp",
+      "sha256": "582bc6c3c98087630938627fed1de854529baf8b216c4e946d1701fc45902be0",
+      "lines": 215
+    },
+    "include/cute/arch/config.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\arch\\config.hpp",
+      "sha256": "47dbe891dabdbfda797e4c1efc5cbdfbd84975eed1be5cf6ce606a7af545458a",
+      "lines": 216
+    },
+    "include/cutlass/arch/arch.h": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\arch\\arch.h",
+      "sha256": "7519d330f68934b1315a70fef2f5f1dda75a4ace0c0a8d2f24acf5f7d21bc631",
+      "lines": 129
+    },
+    "include/cutlass/arch/mma_sm100.h": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\arch\\mma_sm100.h",
+      "sha256": "01ccc3c0b97a172b94e507b344937c0887c7f20ead88d98407dfef3b98e195c5",
+      "lines": 120
+    },
+    "include/cutlass/gemm/gemm_enumerated_types.h": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\gemm\\gemm_enumerated_types.h",
+      "sha256": "0f43e12fe13d82477f1e91e8c8b569313db38b406ff851be2a8e473a6176d021",
+      "lines": 80
+    },
+    "include/cute/int_tuple.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\int_tuple.hpp",
+      "sha256": "fb282ccefc4735370b28e669fecb138b6fe0c71cf797707d1d57d94c504898ba",
+      "lines": 917
+    },
+    "include/cute/layout.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\layout.hpp",
+      "sha256": "2d24445df258e9575f493c61e8b4c1f78588ec4787ff14361d77283603dd6394",
+      "lines": 2039
+    },
+    "include/cute/tensor_impl.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\tensor_impl.hpp",
+      "sha256": "257771a6ffc9d71b0c12f2f0f456d2fe655848b8f6d2101d1cde2aad8157c640",
+      "lines": 1224
+    },
+    "include/cute/swizzle.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\swizzle.hpp",
+      "sha256": "0d1f36a71abe34cfe0e8d25e8077b3aeb3574d6df5a6a0a1ed5bc2730ac3c045",
+      "lines": 561
+    },
+    "include/cutlass/gemm/collective/collective_builder.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\gemm\\collective\\collective_builder.hpp",
+      "sha256": "4114de68b62da1c97c6b035b0c4b30d7c51340dafad2158abdb075ad27102ffd",
+      "lines": 66
+    },
+    "include/cutlass/gemm/collective/builders/sm100_umma_builder.inl": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\gemm\\collective\\builders\\sm100_umma_builder.inl",
+      "sha256": "d1ca4ad8f22d15734afb5e699b40f20d885947644a3c18b7005156ed3a5f665c",
+      "lines": 350
+    },
+    "include/cutlass/gemm/collective/builders/sm100_common.inl": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\gemm\\collective\\builders\\sm100_common.inl",
+      "sha256": "fb9479bef89e9d7038ac686b3d1893753e353fc7ed465dec4ac56fedbf5800aa",
+      "lines": 1014
+    },
+    "include/cutlass/gemm/collective/builders/sm100_pipeline_carveout.inl": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\gemm\\collective\\builders\\sm100_pipeline_carveout.inl",
+      "sha256": "42d89d67c717b7d232cee1d0890b754d2a404c6a96760dbd97e5400264f4881b",
+      "lines": 123
+    },
+    "include/cutlass/gemm/dispatch_policy.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\gemm\\dispatch_policy.hpp",
+      "sha256": "fcce5fffb3118b15fea5aa59e39bea15ddd18c28c858b434ced889045968117c",
+      "lines": 1590
+    },
+    "include/cutlass/gemm/collective/sm100_mma_warpspecialized.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\gemm\\collective\\sm100_mma_warpspecialized.hpp",
+      "sha256": "5d47ce4d6fd43757cb648c15adb13cafe9fb0f6e5d549d6eec11a241a7b8b7d3",
+      "lines": 729
+    },
+    "include/cute/algorithm/gemm.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\algorithm\\gemm.hpp",
+      "sha256": "0e415840b7c9d864d887750e16a9fcb3a67c7d1c2703d02028adbc21e48e62a9",
+      "lines": 555
+    },
+    "include/cute/atom/mma_atom.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\atom\\mma_atom.hpp",
+      "sha256": "636cec9c6e6853ab0d80affc6accaeed55baffd6322110e73aa4ab5ed4f7eea4",
+      "lines": 706
+    },
+    "include/cute/atom/mma_traits_sm100.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\atom\\mma_traits_sm100.hpp",
+      "sha256": "b86efd64dd9e017733fa26e7e5e23d1ccb4827e91a54d74c603ec1684c7fba51",
+      "lines": 4036
+    },
+    "include/cute/atom/mma_traits_sm100_frag.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\atom\\mma_traits_sm100_frag.hpp",
+      "sha256": "dcf3445335b9a4fd9d19c52f27f340e7b598c93a29da6ce76e49c88fdc7574f2",
+      "lines": 640
+    },
+    "include/cute/arch/mma_sm100_umma.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\arch\\mma_sm100_umma.hpp",
+      "sha256": "026604118a59b875bcd3bffc86067b17418a670ff803e4689f19d9989e8eb459",
+      "lines": 2120
+    },
+    "include/cute/arch/mma_sm100_desc.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\arch\\mma_sm100_desc.hpp",
+      "sha256": "5a1d2aaee811cc1beafa538204194d2fb28a69c9b3a66027e1d0bb0f5ff2f9e2",
+      "lines": 1089
+    },
+    "include/cute/arch/tmem_allocator_sm100.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\arch\\tmem_allocator_sm100.hpp",
+      "sha256": "8aa658e79ac89e1290c2b43358bae5390f790fbb30a7f9075b4a316bc3c41bf2",
+      "lines": 252
+    },
+    "include/cutlass/detail/sm100_tmem_helper.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\detail\\sm100_tmem_helper.hpp",
+      "sha256": "973ba7ccf06a4e805d6c692fe6d2ef80bc1729eaf28a714f5ccb54ed41ff9e6a",
+      "lines": 76
+    },
+    "include/cute/atom/copy_atom.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\atom\\copy_atom.hpp",
+      "sha256": "7d3340217e800515e8bcc7e1a2e405563e690bfc64f292038de2df9e09e6c03c",
+      "lines": 691
+    },
+    "include/cute/atom/copy_traits_sm100.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\atom\\copy_traits_sm100.hpp",
+      "sha256": "4aff4fa8fc8e764ff35aeedb2b8120dee1946b7fe1eb41073d713527963eac58",
+      "lines": 3897
+    },
+    "include/cute/arch/copy_sm100.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\arch\\copy_sm100.hpp",
+      "sha256": "0fe82cbfc7c5a5e4629e16efa992d18801f1c136acb5fb63401f396e5965b305",
+      "lines": 7784
+    },
+    "include/cute/atom/copy_traits_sm100_tma.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\atom\\copy_traits_sm100_tma.hpp",
+      "sha256": "f6ba6aae9e5406e6ed2bdb377476c83ebdb818a8f841b7229ab9967cfd69513d",
+      "lines": 830
+    },
+    "include/cute/atom/copy_traits_sm90_tma.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\atom\\copy_traits_sm90_tma.hpp",
+      "sha256": "c95981c211c25489da17c365228a7107e18cced36ecd99833b415e4aaa04f4ec",
+      "lines": 1625
+    },
+    "include/cute/arch/copy_sm90_desc.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\arch\\copy_sm90_desc.hpp",
+      "sha256": "98d58023bbcaa873c6bb54e7e85c6e1ec9c4877a68377ba4722a68ae9c3be184",
+      "lines": 475
+    },
+    "include/cute/arch/copy_sm90_tma.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\arch\\copy_sm90_tma.hpp",
+      "sha256": "78d928e2551e698a46fe7f282792613cc9ca6dc679a00a8914e918de618b19e7",
+      "lines": 1496
+    },
+    "include/cute/arch/copy_sm100_tma.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\arch\\copy_sm100_tma.hpp",
+      "sha256": "5a53f2ff20d4fbee5b0aaeae52e708e5801e3d0da4ad9f750ea1932a5b3374d3",
+      "lines": 767
+    },
+    "include/cutlass/pipeline/sm100_pipeline.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\pipeline\\sm100_pipeline.hpp",
+      "sha256": "da9852dc2f490c83c9980d9ecf2263b026329bbcb0d71be0903244e001473ca7",
+      "lines": 1340
+    },
+    "include/cutlass/pipeline/sm90_pipeline.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\pipeline\\sm90_pipeline.hpp",
+      "sha256": "67b1c16b4bb071668082ed5697cd2e21c50a6b37eb509aa187f21a5c3100ec3c",
+      "lines": 1388
+    },
+    "include/cutlass/arch/barrier.h": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\arch\\barrier.h",
+      "sha256": "6e769508bf60aa311216c18ce5d8934c68a928c0296d22b45802cd48551ea96c",
+      "lines": 952
+    },
+    "include/cute/arch/cluster_sm90.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\arch\\cluster_sm90.hpp",
+      "sha256": "8a87201007e1ed1c652df73896897ae11c919ff342b6cfc7bf29366f6ebced7b",
+      "lines": 246
+    },
+    "include/cute/arch/cluster_sm100.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cute\\arch\\cluster_sm100.hpp",
+      "sha256": "fd92172a34d21e7e6bfc3b9cfb1109fa99a2c650f72dac2bed32cbedfb4ec0f4",
+      "lines": 108
+    },
+    "include/cutlass/arch/reg_reconfig.h": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\arch\\reg_reconfig.h",
+      "sha256": "4c999fcd88c30decd43ae44bc17496d05465a78d9ce7b8441d83381da21f55d6",
+      "lines": 89
+    },
+    "include/cutlass/epilogue/collective/collective_builder.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\epilogue\\collective\\collective_builder.hpp",
+      "sha256": "6bc1b7415e6618eb9ec63bc3e23c7f0cc58b2e4a83aa904d156a4a9bb111aaf3",
+      "lines": 126
+    },
+    "include/cutlass/epilogue/collective/builders/sm100_builder.inl": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\epilogue\\collective\\builders\\sm100_builder.inl",
+      "sha256": "515184b4fe1ddb911e1c8e4eff1aea550e50561931c6bd10ae33ba37551ba13d",
+      "lines": 1840
+    },
+    "include/cutlass/epilogue/dispatch_policy.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\epilogue\\dispatch_policy.hpp",
+      "sha256": "3ae5bf38440a08929a5dcf800942ea907831afd9bb6ec5257f1e3dcb6019d334",
+      "lines": 344
+    },
+    "include/cutlass/epilogue/collective/sm100_epilogue_tma_warpspecialized.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\epilogue\\collective\\sm100_epilogue_tma_warpspecialized.hpp",
+      "sha256": "edf0f073c6685fca1b99a5e224d376f76be71392033fd612fdb94f7f0aed4244",
+      "lines": 1299
+    },
+    "include/cutlass/epilogue/fusion/sm100_callbacks_tma_warpspecialized.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\epilogue\\fusion\\sm100_callbacks_tma_warpspecialized.hpp",
+      "sha256": "6a63bb92ecb23515b1a5007b4c50a370aff469f18524faab0bb656e515c0e5f0",
+      "lines": 1322
+    },
+    "include/cutlass/epilogue/fusion/operations.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\epilogue\\fusion\\operations.hpp",
+      "sha256": "cff76a8ec17a778f2924d0b64d8686b084395d24b2bb8c98a31fb34b9a94784d",
+      "lines": 645
+    },
+    "include/cutlass/numeric_conversion.h": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\numeric_conversion.h",
+      "sha256": "420eb15de2acc42fa0103fe2ee269d531a14abb93a23c77c0e64d38155a03920",
+      "lines": 8073
+    },
+    "include/cutlass/gemm/kernel/gemm_universal_decl.h": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\gemm\\kernel\\gemm_universal_decl.h",
+      "sha256": "50d479f6021e71cd65e760a6975616326956af8a67a1d1cfb7040056f7cadffc",
+      "lines": 61
+    },
+    "include/cutlass/gemm/kernel/gemm_universal.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\gemm\\kernel\\gemm_universal.hpp",
+      "sha256": "60742bda76007adf430c13914d91c8fe37caf8bf31fba9251541dbdb0ace77cb",
+      "lines": 81
+    },
+    "include/cutlass/gemm/kernel/sm100_gemm_tma_warpspecialized.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\gemm\\kernel\\sm100_gemm_tma_warpspecialized.hpp",
+      "sha256": "847f884a93c82329fc0b3869473943361185baa47d7d3a10f3357c5dbe9e1c58",
+      "lines": 963
+    },
+    "include/cutlass/gemm/kernel/tile_scheduler.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\gemm\\kernel\\tile_scheduler.hpp",
+      "sha256": "acc90548b9e2b19f944764ced57e1459d5c2ed7e118d6a1af476add26c3d5e73",
+      "lines": 423
+    },
+    "include/cutlass/gemm/kernel/sm100_tile_scheduler.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\gemm\\kernel\\sm100_tile_scheduler.hpp",
+      "sha256": "4c6c339133cae649a465ceceff9fce3f52ffa2872f0589a456525360685a8fe9",
+      "lines": 826
+    },
+    "include/cutlass/gemm/device/gemm_universal_adapter.h": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\gemm\\device\\gemm_universal_adapter.h",
+      "sha256": "0350f6e22eb15ad18715fd365950bcf6153eab3b86f6d2839fc3b4309cc463bb",
+      "lines": 796
+    },
+    "include/cutlass/device_kernel.h": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\device_kernel.h",
+      "sha256": "1975f6b0567dd4cfd3a10cdd7d4b037c934b1b799220d331cad76e570eef1332",
+      "lines": 129
+    },
+    "include/cutlass/kernel_launch.h": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\kernel_launch.h",
+      "sha256": "afaf33839606ceab510d33f82ff6c565bdefe818c3c5efb936cb1da62f2a2391",
+      "lines": 142
+    },
+    "include/cutlass/cluster_launch.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\cluster_launch.hpp",
+      "sha256": "9c469ab9068cc75ca421ab82b077ad87d804784481a42f8314fafa73fb0f0052",
+      "lines": 394
+    },
+    "include/cutlass/kernel_hardware_info.h": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\kernel_hardware_info.h",
+      "sha256": "fc78eb46bde1e03290ce90e33725bc7f60ea001e373ec5921f14174d9ae529c8",
+      "lines": 147
+    },
+    "tools/util/include/cutlass/util/device_memory.h": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\tools\\util\\include\\cutlass\\util\\device_memory.h",
+      "sha256": "69e47c52c0236735d008f3f49c72a2b1564476a67867cb0dc81145c814cc9a96",
+      "lines": 375
+    },
+    "tools/util/include/cutlass/util/host_tensor.h": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\tools\\util\\include\\cutlass\\util\\host_tensor.h",
+      "sha256": "78216864631e6c5720d696863d076a8b4f115e18ecc76b4031bda3ef75148820",
+      "lines": 541
+    },
+    "test/unit/gemm/device/gemm_testbed_3x.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\test\\unit\\gemm\\device\\gemm_testbed_3x.hpp",
+      "sha256": "1d1315d40f54ac0fa7ca93a73517c969de1fa45df237b9dbdd3be91915792ac1",
+      "lines": 3991
+    },
+    "test/unit/gemm/device/sm100_tensorop_gemm/f16_f16_void_f32.cu": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\test\\unit\\gemm\\device\\sm100_tensorop_gemm\\f16_f16_void_f32.cu",
+      "sha256": "cff557a763403307a662cf6b4d1b5e7d2d5842319dd2fa5cead4bc7cd4ece983",
+      "lines": 695
+    },
+    "tools/util/include/cutlass/util/reference/host/gett.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\tools\\util\\include\\cutlass\\util\\reference\\host\\gett.hpp",
+      "sha256": "fb3823050bd3ed47b49587417896cacd871a189be60b9f176e7b4409c684e2d2",
+      "lines": 916
+    },
+    "tools/util/include/cutlass/util/reference/host/tensor_compare.h": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\tools\\util\\include\\cutlass\\util\\reference\\host\\tensor_compare.h",
+      "sha256": "16b36d62f8164fab81a1e42a55c331bd9a25ae80dd05f7c24af436a789ba7835",
+      "lines": 616
+    },
+    "test/unit/gemm/device/sm100_tensorop_gemm/CMakeLists.txt": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\test\\unit\\gemm\\device\\sm100_tensorop_gemm\\CMakeLists.txt",
+      "sha256": "921a0bcf9319f2c34e9cda668d52db8a74de54c8ef39c5778831805deb9a0af0",
+      "lines": 73
+    },
+    "include/cutlass/gemm/kernel/sm100_tile_scheduler_stream_k.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\gemm\\kernel\\sm100_tile_scheduler_stream_k.hpp",
+      "sha256": "31655341e689e4a28098089013980fa6a436f53b1d652773fbb5bd456f20867b",
+      "lines": 1012
+    },
+    "include/cutlass/arch/config.h": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\arch\\config.h",
+      "sha256": "1baf70cb9b5c0feba43b78e5791f0befca0a38de0806e15f66ef1c46d95cb6e9",
+      "lines": 230
+    },
+    "include/cutlass/cuda_host_adapter.hpp": {
+      "path": "D:\\000_SDC\\001TASK\\02_Research\\cutlass\\include\\cutlass\\cuda_host_adapter.hpp",
+      "sha256": "aa93df7f8c8c21f860b5d0563fd1346bf8dd295263516933b9594d85921d869d",
+      "lines": 429
+    },
+    "D:/lvz/sdc/sccnext-main/sccnext-main/clang/lib/Headers/sdc/sdc_builtins.h": {
+      "path": "D:\\lvz\\sdc\\sccnext-main\\sccnext-main\\clang\\lib\\Headers\\sdc\\sdc_builtins.h",
+      "sha256": "f111af67573d27cc49af47f541b9be9fed30e15a141f019e884ea2f166e0eb01",
+      "lines": 3347
+    },
+    "D:\\lvz\\sdc\\cutlass\\include\\cute\\arch\\mma_sdc200_umma.hpp": {
+      "path": "D:\\lvz\\sdc\\cutlass\\include\\cute\\arch\\mma_sdc200_umma.hpp",
+      "sha256": "23cf5dccfb57fe1a126d10e30f65c2e4fba3faa03056a12b1650143c9a6a1553",
+      "lines": 416
+    },
+    "D:\\lvz\\sdc\\cutlass\\include\\cute\\arch\\mma_sdc200_desc.hpp": {
+      "path": "D:\\lvz\\sdc\\cutlass\\include\\cute\\arch\\mma_sdc200_desc.hpp",
+      "sha256": "1ddb7ed5901a669cab2a1321e9a464f8e206eb3d688ce33d20c4fb0a01af4d8e",
+      "lines": 1160
+    },
+    "D:\\lvz\\sdc\\cutlass\\include\\cute\\arch\\cluster_sdc200.hpp": {
+      "path": "D:\\lvz\\sdc\\cutlass\\include\\cute\\arch\\cluster_sdc200.hpp",
+      "sha256": "160500b0d1b0ab60802952c1444159019efb67c77f3c65237f562a07a50d3146",
+      "lines": 316
+    },
+    "D:\\lvz\\sdc\\sccnext-main\\sccnext-main\\clang\\lib\\Headers\\sdc\\sdc_builtins.h": {
+      "path": "D:\\lvz\\sdc\\sccnext-main\\sccnext-main\\clang\\lib\\Headers\\sdc\\sdc_builtins.h",
+      "sha256": "f111af67573d27cc49af47f541b9be9fed30e15a141f019e884ea2f166e0eb01",
+      "lines": 3347
+    }
+  }
+}

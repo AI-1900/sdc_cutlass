@@ -1,0 +1,259 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net">
+  <diagram id="kernel-template-to-device" name="模板组合与 kernel 生成">
+    <mxGraphModel grid="1" page="1" pageWidth="2040" pageHeight="2160">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="从测例模板，到一个真正启动的 GPU kernel" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=42;fontColor=#19344d;fontStyle=1;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="45" y="25" width="1950" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="先组合类型，再编译生成代码，最后启动入口；两个 Collective 在同一个 kernel 内协作。" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=24;fontColor=#19344d;fontStyle=0;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="45" y="100" width="1950" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="phase1" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fillColor=#f3f7ff;strokeColor=#c6d6ee;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="165" width="1980" height="580" as="geometry" />
+        </mxCell>
+        <mxCell id="p1title" value="① 编译期：测例用模板组合出 GemmKernel 类型" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=30;fontColor=#19344d;fontStyle=1;fillColor=none;strokeColor=none;" vertex="1" parent="phase1">
+          <mxGeometry x="30" y="20" width="1900" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="config" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fillColor=#e6efff;strokeColor=#487ab8;strokeWidth=1;" vertex="1" parent="phase1">
+          <mxGeometry x="40" y="120" width="420" height="215" as="geometry" />
+        </mxCell>
+        <mxCell id="configtitle" value="测例中的编译期配置" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=25;fontColor=#19344d;fontStyle=1;fillColor=none;strokeColor=none;" vertex="1" parent="config">
+          <mxGeometry x="20" y="14" width="380" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="configbody" value="元素类型 / 矩阵布局 / 对齐&#10;tile / cluster / schedule&#10;通过 CollectiveBuilder 选择实现" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=23;fontColor=#19344d;fontStyle=0;fillColor=none;strokeColor=none;" vertex="1" parent="config">
+          <mxGeometry x="20" y="65" width="380" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="mltype" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fillColor=#e6efff;strokeColor=#487ab8;strokeWidth=1;" vertex="1" parent="phase1">
+          <mxGeometry x="530" y="90" width="500" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="mltypetitle" value="CollectiveMainloop 类型" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=25;fontColor=#19344d;fontStyle=1;fillColor=none;strokeColor=none;" vertex="1" parent="mltype">
+          <mxGeometry x="20" y="14" width="460" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="mltypebody" value="输入搬运 + MMA + 累加器布局" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=23;fontColor=#19344d;fontStyle=0;fillColor=none;strokeColor=none;" vertex="1" parent="mltype">
+          <mxGeometry x="20" y="65" width="460" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="eptype" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fillColor=#efe9fb;strokeColor=#8b69b5;strokeWidth=1;" vertex="1" parent="phase1">
+          <mxGeometry x="530" y="290" width="500" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="eptypetitle" value="CollectiveEpilogue 类型" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=25;fontColor=#19344d;fontStyle=1;fillColor=none;strokeColor=none;" vertex="1" parent="eptype">
+          <mxGeometry x="20" y="14" width="460" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="eptypebody" value="输出融合 + 类型转换 + 存储" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=23;fontColor=#19344d;fontStyle=0;fillColor=none;strokeColor=none;" vertex="1" parent="eptype">
+          <mxGeometry x="20" y="65" width="460" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="kerneltype" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fillColor=#e4f5ec;strokeColor=#3e9772;strokeWidth=1;" vertex="1" parent="phase1">
+          <mxGeometry x="1110" y="120" width="820" height="275" as="geometry" />
+        </mxCell>
+        <mxCell id="kerneltypetitle" value="组合得到 GemmKernel 类型" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=25;fontColor=#19344d;fontStyle=1;fillColor=none;strokeColor=none;" vertex="1" parent="kerneltype">
+          <mxGeometry x="20" y="14" width="780" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="kerneltypebody" value="using GemmKernel = GemmUniversal&lt;&#10;    Shape&lt;int,int,int,int&gt;,&#10;    CollectiveMainloop,&#10;    CollectiveEpilogue&gt;;" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=24;fontColor=#19344d;fontStyle=0;fillColor=none;strokeColor=none;" vertex="1" parent="kerneltype">
+          <mxGeometry x="20" y="65" width="780" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="adaptertype" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fillColor=#e4f5ec;strokeColor=#3e9772;strokeWidth=1;" vertex="1" parent="phase1">
+          <mxGeometry x="1110" y="450" width="820" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="adaptertypetext" value="GemmUniversalAdapter&lt;GemmKernel&gt;&#10;包装成主机可使用的 Gemm handle 类型" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=23;fontColor=#19344d;fontStyle=0;fillColor=none;strokeColor=none;" vertex="1" parent="adaptertype">
+          <mxGeometry x="20" y="15" width="780" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="typehint" value="这里的 using / Builder 产生类型关系。&#10;此时没有执行矩阵乘法，也没有把两个 Collective 分别启动。" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=22;fontColor=#19344d;fontStyle=0;fillColor=none;strokeColor=none;" vertex="1" parent="phase1">
+          <mxGeometry x="40" y="480" width="1010" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="phase2" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fillColor=#fffbf1;strokeColor=#e6d2a8;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="800" width="1980" height="490" as="geometry" />
+        </mxCell>
+        <mxCell id="p2title" value="② 编译器：根据模板实例化生成主机代码与设备代码" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=30;fontColor=#19344d;fontStyle=1;fillColor=none;strokeColor=none;" vertex="1" parent="phase2">
+          <mxGeometry x="30" y="20" width="1600" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="compiler" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fillColor=#fff2d8;strokeColor=#be8a30;strokeWidth=1;" vertex="1" parent="phase2">
+          <mxGeometry x="350" y="100" width="1280" height="155" as="geometry" />
+        </mxCell>
+        <mxCell id="compilertitle" value="编译输入：测例 .cu + 多个头文件中的模板实现" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=25;fontColor=#19344d;fontStyle=1;fillColor=none;strokeColor=none;" vertex="1" parent="compiler">
+          <mxGeometry x="20" y="14" width="1240" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="compilerbody" value="模板实例化 / 类型检查 → host/device 编译与优化&#10;实例化入口与编排逻辑；下层方法可被内联，源码文件边界不等于机器码函数边界。" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=23;fontColor=#19344d;fontStyle=0;fillColor=none;strokeColor=none;" vertex="1" parent="compiler">
+          <mxGeometry x="20" y="65" width="1240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="hostcode" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fillColor=#fff2d8;strokeColor=#be8a30;strokeWidth=1;" vertex="1" parent="phase2">
+          <mxGeometry x="40" y="320" width="760" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="hostcodetitle" value="编译产物：主机代码" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=25;fontColor=#19344d;fontStyle=1;fillColor=none;strokeColor=none;" vertex="1" parent="hostcode">
+          <mxGeometry x="20" y="14" width="720" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="hostcodebody" value="TestAll / Testbed / Adapter 参数处理与启动代码" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=22;fontColor=#19344d;fontStyle=0;fillColor=none;strokeColor=none;" vertex="1" parent="hostcode">
+          <mxGeometry x="20" y="65" width="720" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="devicecode" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fillColor=#fff2d8;strokeColor=#be8a30;strokeWidth=1;" vertex="1" parent="phase2">
+          <mxGeometry x="970" y="320" width="960" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="devicecodetitle" value="编译产物：GPU 设备代码" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=25;fontColor=#19344d;fontStyle=1;fillColor=none;strokeColor=none;" vertex="1" parent="devicecode">
+          <mxGeometry x="20" y="14" width="920" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="devicecodebody" value="device_kernel&lt;GemmKernel&gt; 的入口及其计算实现" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=24;fontColor=#19344d;fontStyle=0;fillColor=none;strokeColor=none;" vertex="1" parent="devicecode">
+          <mxGeometry x="20" y="65" width="920" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="phase3" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fillColor=#f3faf6;strokeColor=#bddbc9;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1350" width="1980" height="690" as="geometry" />
+        </mxCell>
+        <mxCell id="p3title" value="③ 运行时：主机启动，GPU 内部协作" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=30;fontColor=#19344d;fontStyle=1;fillColor=none;strokeColor=none;" vertex="1" parent="phase3">
+          <mxGeometry x="30" y="20" width="690" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="hostrun" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fillColor=#e4f5ec;strokeColor=#3e9772;strokeWidth=1;" vertex="1" parent="phase3">
+          <mxGeometry x="40" y="130" width="650" height="235" as="geometry" />
+        </mxCell>
+        <mxCell id="hostruntitle" value="Host：测试与 Device Adapter" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=25;fontColor=#19344d;fontStyle=1;fillColor=none;strokeColor=none;" vertex="1" parent="hostrun">
+          <mxGeometry x="20" y="14" width="610" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="hostrunbody" value="TestAll&lt;Gemm&gt;() → Testbed::run&#10;initialize(Arguments) → Params&#10;GemmUniversalAdapter&lt;GemmKernel&gt;::run&#10;提交 launch：目标为具体的入口函数" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=23;fontColor=#19344d;fontStyle=0;fillColor=none;strokeColor=none;" vertex="1" parent="hostrun">
+          <mxGeometry x="20" y="65" width="610" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="gpu" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fillColor=#e7f4ed;strokeColor=#3e9772;strokeWidth=1;" vertex="1" parent="phase3">
+          <mxGeometry x="770" y="100" width="1160" height="545" as="geometry" />
+        </mxCell>
+        <mxCell id="gputitle" value="GPU：这次启动的一个 kernel 内部" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=26;fontColor=#19344d;fontStyle=1;fillColor=none;strokeColor=none;" vertex="1" parent="gpu">
+          <mxGeometry x="25" y="17" width="970" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="entry" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fillColor=#e4f5ec;strokeColor=#3e9772;strokeWidth=1;" vertex="1" parent="gpu">
+          <mxGeometry x="30" y="75" width="1100" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="entrytitle" value="真正的 __global__ 入口" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=25;fontColor=#19344d;fontStyle=1;fillColor=none;strokeColor=none;" vertex="1" parent="entry">
+          <mxGeometry x="20" y="14" width="1060" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="entrybody" value="device_kernel&lt;GemmKernel&gt;(Params) → GemmKernel op; op(params, smem);" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=23;fontColor=#19344d;fontStyle=0;fillColor=none;strokeColor=none;" vertex="1" parent="entry">
+          <mxGeometry x="20" y="65" width="1060" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="body" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fillColor=#f5f8fc;strokeColor=#6f879f;strokeWidth=1;" vertex="1" parent="gpu">
+          <mxGeometry x="30" y="240" width="1100" height="265" as="geometry" />
+        </mxCell>
+        <mxCell id="bodytitle" value="GemmKernel::operator()(Params, smem)&#10;统一组织：共享存储、warp 分工、scheduler 与同步" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=23;fontColor=#19344d;fontStyle=1;fillColor=none;strokeColor=none;" vertex="1" parent="body">
+          <mxGeometry x="20" y="15" width="1060" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="mlrun" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fillColor=#e6efff;strokeColor=#487ab8;strokeWidth=1;" vertex="1" parent="body">
+          <mxGeometry x="30" y="110" width="430" height="125" as="geometry" />
+        </mxCell>
+        <mxCell id="mlruntitle" value="CollectiveMainloop" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=25;fontColor=#19344d;fontStyle=1;fillColor=none;strokeColor=none;" vertex="1" parent="mlrun">
+          <mxGeometry x="20" y="14" width="390" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="mlrunbody" value="A/B → SMEM → MMA → TMEM" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#19344d;fontStyle=0;fillColor=none;strokeColor=none;" vertex="1" parent="mlrun">
+          <mxGeometry x="20" y="65" width="390" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="eprun" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fillColor=#efe9fb;strokeColor=#8b69b5;strokeWidth=1;" vertex="1" parent="body">
+          <mxGeometry x="620" y="110" width="450" height="125" as="geometry" />
+        </mxCell>
+        <mxCell id="epruntitle" value="CollectiveEpilogue" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=25;fontColor=#19344d;fontStyle=1;fillColor=none;strokeColor=none;" vertex="1" parent="eprun">
+          <mxGeometry x="20" y="14" width="410" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="eprunbody" value="TMEM → 融合 → 写回 GMEM D" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#19344d;fontStyle=0;fillColor=none;strokeColor=none;" vertex="1" parent="eprun">
+          <mxGeometry x="20" y="65" width="410" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="handoff" value="" style="rounded=1;arcSize=8;whiteSpace=wrap;html=0;fillColor=#f5f8fc;strokeColor=#f5f8fc;strokeWidth=1;" vertex="1" parent="body">
+          <mxGeometry x="473" y="110" width="134" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="handofftext" value="同一 tile&#10;TMEM 视图&#10;pipeline 协议" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#19344d;fontStyle=0;fillColor=none;strokeColor=none;" vertex="1" parent="handoff">
+          <mxGeometry x="2" y="5" width="130" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="gpufoot" value="Mainloop 与 Epilogue 是内部逻辑组件；它们通过数据与同步协议协作。" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=20;fontColor=#19344d;fontStyle=0;fillColor=none;strokeColor=none;" vertex="1" parent="gpu">
+          <mxGeometry x="50" y="510" width="1060" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="footer" value="源码分布在多个文件；运行时启动的是具体的函数实例。图表示逻辑组织，编译器可内联与重排实现。&#10;依据本地 SM100 源码绘制；本轮未进行编译、设备运行或机器码验证。" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=top;spacing=0;fontFamily=Microsoft YaHei;fontSize=22;fontColor=#19344d;fontStyle=0;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="50" y="2070" width="1940" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="config_ml" style="html=0;endArrow=block;strokeWidth=2;strokeColor=#58728c;dashed=0;exitX=1.0;exitY=0.23255813953488372;entryX=0.0;entryY=0.5;exitPerimeter=0;entryPerimeter=0;" edge="1" parent="1" source="config" target="mltype">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="525" y="335" />
+              <mxPoint x="525" y="330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="config_ep" style="html=0;endArrow=block;strokeWidth=2;strokeColor=#58728c;dashed=0;exitX=1.0;exitY=0.7441860465116279;entryX=0.0;entryY=0.5;exitPerimeter=0;entryPerimeter=0;" edge="1" parent="1" source="config" target="eptype">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="525" y="445" />
+              <mxPoint x="525" y="530" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ml_kernel" style="html=0;endArrow=block;strokeWidth=2;strokeColor=#58728c;dashed=0;exitX=1.0;exitY=0.5;entryX=0.0;entryY=0.32727272727272727;exitPerimeter=0;entryPerimeter=0;" edge="1" parent="1" source="mltype" target="kerneltype">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1100" y="330" />
+              <mxPoint x="1100" y="375" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ep_kernel" style="html=0;endArrow=block;strokeWidth=2;strokeColor=#58728c;dashed=0;exitX=1.0;exitY=0.5;entryX=0.0;entryY=0.7090909090909091;exitPerimeter=0;entryPerimeter=0;" edge="1" parent="1" source="eptype" target="kerneltype">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1100" y="530" />
+              <mxPoint x="1100" y="480" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="kernel_adapter" style="html=0;endArrow=block;strokeWidth=2;strokeColor=#58728c;dashed=0;exitX=0.5;exitY=1.0;entryX=0.5;entryY=0.0;exitPerimeter=0;entryPerimeter=0;" edge="1" parent="1" source="kerneltype" target="adaptertype">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="types_compile" style="html=0;endArrow=block;strokeWidth=2;strokeColor=#b58a40;dashed=0;exitX=1.0;exitY=0.5263157894736842;entryX=1.0;entryY=0.4967741935483871;exitPerimeter=0;entryPerimeter=0;" edge="1" parent="1" source="adaptertype" target="compiler">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1985" y="665" />
+              <mxPoint x="1985" y="977" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="compile_host" style="html=0;endArrow=block;strokeWidth=2;strokeColor=#b58a40;dashed=0;exitX=0.2890625;exitY=1.0;entryX=0.5;entryY=0.0;exitPerimeter=0;entryPerimeter=0;" edge="1" parent="1" source="compiler" target="hostcode">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="750" y="1085" />
+              <mxPoint x="450" y="1085" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="compile_device" style="html=0;endArrow=block;strokeWidth=2;strokeColor=#b58a40;dashed=0;exitX=0.71875;exitY=1.0;entryX=0.5;entryY=0.0;exitPerimeter=0;entryPerimeter=0;" edge="1" parent="1" source="compiler" target="devicecode">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1300" y="1085" />
+              <mxPoint x="1480" y="1085" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="loadhost" style="html=0;endArrow=block;strokeWidth=2;strokeColor=#8b9caa;dashed=1;exitX=0.9342105263157895;exitY=1.0;entryX=1.0;entryY=0.2127659574468085;exitPerimeter=0;entryPerimeter=0;" edge="1" parent="1" source="hostcode" target="hostrun">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="780" y="1530" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="loaddevice" style="html=0;endArrow=block;strokeWidth=2;strokeColor=#8b9caa;dashed=1;exitX=0.96875;exitY=1.0;entryX=0.9545454545454546;entryY=0.0;exitPerimeter=0;entryPerimeter=0;" edge="1" parent="1" source="devicecode" target="entry">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1980" y="1250" />
+              <mxPoint x="1980" y="1505" />
+              <mxPoint x="1880" y="1505" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="launch" style="html=0;endArrow=block;strokeWidth=2;strokeColor=#298465;dashed=0;exitX=1.0;exitY=0.5106382978723404;entryX=0.0;entryY=0.5769230769230769;exitPerimeter=0;entryPerimeter=0;" edge="1" parent="1" source="hostrun" target="entry">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="entry_body" style="html=0;endArrow=block;strokeWidth=2;strokeColor=#298465;dashed=0;exitX=0.5;exitY=1.0;entryX=0.5;entryY=0.0;exitPerimeter=0;entryPerimeter=0;" edge="1" parent="1" source="entry" target="body">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="collective_handoff" style="html=0;endArrow=block;strokeWidth=2;strokeColor=#477c9f;dashed=0;exitX=1.0;exitY=0.84;entryX=0.0;entryY=0.84;exitPerimeter=0;entryPerimeter=0;" edge="1" parent="1" source="mlrun" target="eprun">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

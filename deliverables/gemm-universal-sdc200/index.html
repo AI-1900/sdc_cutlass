@@ -1,0 +1,625 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>GEMM 完整流程与 SDC200 适配</title><style>body{font-family:"Microsoft YaHei",sans-serif;background:#f5f8fc;color:#19324e;margin:0;line-height:1.8}main{max-width:1200px;margin:auto;padding:30px;background:white}h1,h2,h3{line-height:1.4;color:#173e67}h2{margin-top:55px;border-bottom:2px solid #e1e9f2;padding-bottom:12px}a{color:#2369b1}img{max-width:100%;height:auto;border:1px solid #d8e2ee}table{display:block;overflow:auto;border-collapse:collapse;font-size:14px}th,td{border:1px solid #dce4ed;padding:10px;vertical-align:top;min-width:115px}th{background:#eaf2ff}pre{background:#edf3f9;padding:20px;overflow:auto}code{font-family:Consolas,monospace}nav{position:sticky;top:0;background:#173e67;color:white;padding:12px;z-index:2}nav a{color:white;margin-right:20px}.note{background:#fff2df;padding:15px;border-radius:8px}</style><nav><a href="index.html">完整说明与四张图</a><a href="sdc200-adaptation.html">68 项适配表</a><a href="sdc200-adaptation.csv">CSV</a></nav><main><h1>从两个 Collective 到可启动 GEMM：SM100 源码链与 SDC200 适配指南</h1>
+<p>本文对应本项目此前的 FP16 输入、FP32 累加/输出、<code>ElementC=void</code>、tile <code>64×128×64</code>、cluster <code>1×4×1</code>、1SM 测例。先解释这条具体路径，再区分可泛化的接口与 SM100 专用实现。完整逐项适配清单见 <a href="sdc200-adaptation.html">SDC200 适配参考表</a>，可筛选版本见 <a href="sdc200-adaptation.csv">CSV 表格</a>。</p>
+<h2>0. 最重要的结论与证据边界</h2>
+<p><code>GemmUniversal&lt;Shape&lt;int,int,int,int&gt;, Mainloop, Epilogue&gt;</code> 通过模板特化选中 kernel 编排器。编排器把两个 Collective 的类型、参数、共享存储、线程角色、调度器和同步协议组合起来。真正的 <code>__global__</code> 入口是 <code>device_kernel&lt;GemmKernel&gt;</code>，入口内部构造 kernel functor 并调用其 <code>operator()(Params, smem)</code>。</p>
+<p>两个 Collective 运行于同一次 kernel launch。Mainloop 内部又分搬运和 MMA 角色；Epilogue 内部又分可选 C/辅助输入搬运和输出处理角色。它们通过 <strong>相同的输出 tile 坐标、同一份 TMEM 累加器视图、AccumulatorPipeline 的生产/消费协议</strong> 衔接，整个过程不是一次 host 端 <code>Mainloop(); Epilogue();</code> 的串行调用。</p>
+<p>四个 <code>int</code> 是运行时 <code>(M,N,K,L)</code> 的类型，L 是批次数。主循环 tile、CTA cluster、Atom shape、epilogue subtile 均为另一层概念。</p>
+<p><strong>需要修正原问题的一点：单次 <code>TestAll&lt;Gemm&gt;()</code> 不枚举 A/B/C/D 的 RowMajor/ColumnMajor 类型组合。</strong> 这些布局已在 <code>Gemm</code> 的类型中固定。不同布局组合由其他 <code>TEST</code>/类型实例化覆盖；本次 <code>TestAll</code> 枚举问题规模、raster order、swizzle 和 splits 等候选参数。</p>
+<h3>本次证据来源</h3>
+<ul>
+<li>SM100 源码：<code>D:/000_SDC/001TASK/02_Research/cutlass</code>，HEAD <code>f94ec46f4f63f96003d6cfdf2014731e7672c281</code>。工作树存在既有修改，本文行号以本轮读取的工作树为准。</li>
+<li>SDC200 参考树：<code>D:/lvz/sdc/cutlass</code>，HEAD <code>dc45f979ae336a235da1676b311f35efeb30149a</code>。仅抽查相关包装和描述符，未做全仓适配完成度审计。</li>
+<li>SDC builtin 声明：<code>D:/lvz/sdc/sccnext-main/sccnext-main/clang/lib/Headers/sdc/sdc_builtins.h</code>。</li>
+<li>当前 <code>gemm_testbed_3x.hpp:3828</code> 为 <code>bool  (...)</code>，缺失 <code>TestAll</code> 名称。已对照同一 HEAD 提交内容确认原函数为 <code>bool TestAll(...)</code>。以下描述其函数体的预期语义，<strong>不表示当前工作树可直接编译</strong>，本次没有修复或改动源代码。</li>
+<li>本机 PATH 未发现 <code>nvcc</code>、<code>nvidia-smi</code>。本次只完成源码核对、文档、图稿与文件检查，没有 CUDA/SDC 编译、GPU/模拟器运行、数值通过、机器码或性能验证。</li>
+<li>NVIDIA 官方资料也将 kernel 层定义为两个 Collective 的组合，再由 host adapter 包装；具体 SM100 实现和行号仍以本地版本为准：<a href="https://docs.nvidia.com/cutlass/4.5.0/media/docs/cpp/gemm_api_3x.html">CUTLASS 3.x GEMM API</a>、<a href="https://docs.nvidia.com/cutlass/latest/media/docs/cpp/cutlass_3x_backwards_compatibility.html">内核 API 与兼容性</a>。</li>
+</ul>
+<h2>1. 先看完整调用链</h2>
+<p><img src="01-end-to-end.png" alt="完整流程"></p>
+<p><a href="01-end-to-end.png">PNG</a> · <a href="01-end-to-end.drawio">可编辑 Draw.io</a></p>
+<pre><code class="language-text">编译期
+  CollectiveBuilder(epilogue) → CollectiveEpilogue
+  CollectiveBuilder(mainloop, epilogue SMEM carveout) → CollectiveMainloop
+  GemmUniversal&lt;ProblemShape, Mainloop, Epilogue&gt; → GemmKernel 类型
+  GemmUniversalAdapter&lt;GemmKernel&gt; → Gemm 类型
+
+主机运行期，每个候选问题
+  TEST → TestAll&lt;Gemm&gt; → Testbed3x::run → TestbedImpl::run
+    → sufficient / initialize inputs
+    → Gemm::Arguments{mode, problem_shape, mainloop, epilogue, hw_info, scheduler}
+    → get_workspace_size → allocate → can_implement
+    → adapter.initialize
+         → kernel.initialize_workspace
+         → kernel.to_underlying_arguments
+             → mainloop.to_underlying_arguments：A/B tensor + TMA descriptor
+             → epilogue.to_underlying_arguments：fusion + C/D TMA descriptor
+             → scheduler.to_underlying_arguments
+         → 保存 Params，必要时设置 dynamic SMEM 属性
+    → adapter.run → grid/block/cluster/SMEM
+         → ClusterLauncher::launch_with_fallback_cluster（本例非 1×1×1）
+         → cudaLaunchKernelExC
+
+设备运行期，一次 kernel launch 内
+  device_kernel&lt;GemmKernel&gt;(Params) → GemmKernel::operator()(Params, smem)
+    → 建立共享存储、Collective 对象、pipeline、scheduler、TMEM
+    → scheduler 持续给出 tile
+    → load warp：GMEM A/B → SMEM 多级缓冲
+    → MMA warp：SMEM descriptor → UMMA → FP32 TMEM
+    → accumulator pipeline：通知完成、等待消费、允许复用
+    → epilogue warp：TMEM → registers → fusion → SMEM D → TMA store → GMEM D
+    → tail/drain → 安全释放 TMEM → kernel 完成
+
+主机验证
+  synchronize → host::Gemm3x/Gett reference → compare_reference
+  → bool pass → 内层 EXPECT_TRUE → 外层 EXPECT_TRUE(pass)
+</code></pre>
+<p><code>run()</code> 的成功通常说明 launch 阶段没有报告错误，不意味着异步设备计算已完成。Testbed 后续同步并比较结果，才覆盖设备运行和数值检查。</p>
+<h2>2. 编译期：为什么只写三个模板实参就能组成 kernel</h2>
+<h3>2.1 Builder 产出的是类型</h3>
+<pre><code class="language-cpp">using Epilogue = typename EpilogueBuilder&lt;/*输出、融合、tile、架构*/&gt;::CollectiveOp;
+using Mainloop = typename MainloopBuilder&lt;
+    /*输入、MMA、tile、cluster、stage、schedule*/&gt;::CollectiveOp;
+
+using GemmKernel = cutlass::gemm::kernel::GemmUniversal&lt;
+    cute::Shape&lt;int,int,int,int&gt;, Mainloop, Epilogue&gt;;
+using Gemm = cutlass::gemm::device::GemmUniversalAdapter&lt;GemmKernel&gt;;
+</code></pre>
+<p>这些 <code>using</code> 不申请 GPU 内存，也不执行 GEMM。Builder 根据元素类型、布局、对齐、tile、cluster 和 schedule 选择 <code>CollectiveMma</code>/<code>CollectiveEpilogue</code> 的模板特化。通常先构建 Epilogue，是因为 Mainloop 的 <code>StageCountAutoCarveout&lt;sizeof(Epilogue::SharedStorage)&gt;</code> 需要预留输出侧存储，随后还要扣除 kernel 同步、调度等空间。</p>
+<p>本例 epilogue Auto 选 1SM TMA 路径；Mainloop Auto 选 TMA + UMMA warp-specialized 路径。Mainloop builder 将 <code>TiledMma</code>、A/B 全局拷贝、SMEM layout、stage 数和 <code>DispatchPolicy</code> 打包成 <code>CollectiveMma</code> 类型。</p>
+<h3>2.2 <code>GemmUniversal</code> 不是把任意两个类粘在一起</h3>
+<p>声明在 <code>include/cutlass/gemm/kernel/gemm_universal_decl.h</code>，聚合头 <code>gemm_universal.hpp</code> include 多个架构实现。本例的实现是 <code>sm100_gemm_tma_warpspecialized.hpp:61</code> 起的偏特化，其使能条件检查 <code>Mainloop::DispatchPolicy::Schedule</code> 是否属于 <code>KernelTmaWarpSpecializedSm100</code> 或其 block-scaled 类别。</p>
+<p>它从 Mainloop 提取 <code>TileShape/TiledMma/ArchTag/StrideA/B/ElementAccumulator/ClusterShape/Arguments/Params</code>，从 Epilogue 提取 <code>EpilogueTile/ElementC/D/StrideC/D/Arguments/Params/ThreadCount</code>。随后建立 scheduler 和多个 pipeline。接口必须在这些类型和同步约定上匹配；仅仅同名、继承了某个类或输出类型相同都不够。</p>
+<p>省略的第四个模板参数默认 <code>void</code>。<code>tile_scheduler.hpp:207</code> 的 SM100 selector 把它映射到 <code>PersistentTileSchedulerSm100&lt;ClusterShape, SchedulerPipelineStageCount&gt;</code>。该实现包含硬件 CLC 工作获取，不能把它当作完全与架构无关的整数循环。</p>
+<h3>2.3 形状与地址，必须分四层</h3>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>本例</th>
+<th>谁决定</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>完整问题</td>
+<td><code>(M,N,K,L)</code></td>
+<td>运行时 <code>Arguments.problem_shape</code></td>
+<td>整个 GEMM 和 batch 范围</td>
+</tr>
+<tr>
+<td>Mainloop tile</td>
+<td><code>64×128×64</code></td>
+<td>编译期 Builder</td>
+<td>输出 tile 和 K 分块</td>
+</tr>
+<tr>
+<td>CTA cluster</td>
+<td><code>1×4×1</code></td>
+<td>编译期配置，本例静态</td>
+<td>4 个 CTA 沿 N 协同，完整覆盖 64×512</td>
+</tr>
+<tr>
+<td>MMA Atom</td>
+<td><code>64×128×16</code>，对应本例 FP16</td>
+<td>MMA Traits</td>
+<td>每个完整 K tile 有 4 个 K=16 子操作</td>
+</tr>
+<tr>
+<td>Epilogue subtile</td>
+<td>Auto 推导</td>
+<td>epilogue Builder</td>
+<td>分片加载 TMEM、融合并存回 D</td>
+</tr>
+</tbody></table>
+<p>CuTe 的 A 视图为 <code>(M,K,L)</code>，B 为 <code>(N,K,L)</code>；B 的坐标顺序不同于数学记法 <code>B[K,N]</code>，不代表物理执行转置。batch 是通过 stride 的第 3 分量访问同一问题的第 l 批。</p>
+<h2>3. Kernel 在结构上怎样容纳两个 Collective</h2>
+<h3>3.1 两套参数嵌入一套 kernel 参数</h3>
+<p>本例实现 <code>sm100_gemm_tma_warpspecialized.hpp:215</code> 的 host 接口为：</p>
+<pre><code class="language-cpp">struct Arguments {
+  GemmUniversalMode mode;
+  ProblemShape problem_shape;
+  MainloopArguments mainloop;
+  EpilogueArguments epilogue;
+  KernelHardwareInfo hw_info;
+  TileSchedulerArguments scheduler;
+};
+struct Params {
+  GemmUniversalMode mode;
+  ProblemShape problem_shape;
+  MainloopParams mainloop;
+  EpilogueParams epilogue;
+  TileSchedulerParams scheduler;
+  KernelHardwareInfo hw_info;
+};
+</code></pre>
+<p><code>Arguments</code> 面向调用者：A/B/C/D 指针、stride、alpha/beta 和调度选项。<code>Params</code> 面向设备：包含下层已经转换的 TMA/融合/调度描述。两者不是简单的同结构拷贝，也不是把整块矩阵复制进参数。</p>
+<p>Kernel 的 <code>to_underlying_arguments</code> 是总调度者，分别调用两个 Collective 和 scheduler 的转换函数。Adapter 调用这个总转换并保存 <code>params_</code>；描述符的实际构建知识属于各个 Collective/CuTe 后端。</p>
+<h3>3.2 参数转换的具体数据流</h3>
+<p>Mainloop 的 <code>Arguments</code> 包括 <code>ptr_A, dA, ptr_B, dB</code> 及运行时数据类型字段。转换函数读取 <code>(M,N,K,L)</code>，构造 <code>tensor_a(M,K,L,dA)</code> 与 <code>tensor_b(N,K,L,dB)</code>，结合 SMEM layout、TiledMma 与 cluster layout 调用 <code>make_tma_atom_A_sm100</code> 和 <code>make_tma_atom_B_sm100</code>。该实现还构造 fallback 描述符字段；静态 cluster 的构造函数选择常规路径。</p>
+<p>Epilogue 的转换函数建立 C/D 视图及 TMA 参数，并调用 <code>FusionCallbacks::to_underlying_arguments</code>。C=void 时实际 C 数据路径禁用，D 描述符仍然必要。alpha/beta 的数值与是否读取 C，受 fusion 配置及其参数共同控制。</p>
+<p>注意三种“描述符”不同：</p>
+<table>
+<thead>
+<tr>
+<th>描述符</th>
+<th>构建/使用位置</th>
+<th>描述内容</th>
+<th>移植注意</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>TMA TensorMap</td>
+<td>host 参数转换 → device copy</td>
+<td>全局 tensor、尺寸、stride、tile、swizzle 等</td>
+<td>NVIDIA 路径可调用 <code>cuTensorMapEncodeTiled</code>；SDC 需确认等价 ABI</td>
+</tr>
+<tr>
+<td>UMMA SMEM descriptor</td>
+<td>device MMA fragment/Traits</td>
+<td>共享内存地址、步长和 swizzle 等</td>
+<td>不是 A/B 的数据，也不是普通 64 位指针</td>
+</tr>
+<tr>
+<td>UMMA instruction descriptor</td>
+<td>Traits → fma</td>
+<td>输入/累加类型、M/N、major、取负等指令模式</td>
+<td>不能默认与 SDC 位编码一致</td>
+</tr>
+</tbody></table>
+<h3>3.3 共享存储不是中间矩阵</h3>
+<p><code>SharedStorage</code> 在 kernel 文件 <code>:182</code> 处组合：</p>
+<ul>
+<li><code>pipelines.mainloop</code>：A/B 缓冲的空/满及异步事务同步。</li>
+<li><code>pipelines.epi_load</code>：可选 C/辅助输入搬运同步。</li>
+<li><code>load_order</code>、<code>clc</code>、<code>clc_throttle</code>：搬运顺序和工作分发。</li>
+<li><code>pipelines.accumulator</code>：Mainloop 与 Epilogue 的 TMEM 所有权交接。</li>
+<li><code>tmem_dealloc</code>：退出和释放 TMEM 的参与者同步。</li>
+<li><code>clc_response[]</code>、<code>tmem_base_ptr</code>：调度响应和 TMEM 基地址。</li>
+<li><code>tensors.epilogue</code>、<code>tensors.mainloop</code>：输出侧 SMEM 暂存和 A/B 多级 SMEM 缓冲。</li>
+</ul>
+<p>该版本的 <code>TensorStorage</code> 包含并列成员，不能泛称为两个 Collective 的 SMEM 总是 <code>union</code> 复用。TMEM 累加器本体也不在上述 SMEM 数组中，SMEM 只保存其地址及同步元数据。</p>
+<h2>4. 设备端：两个 Collective 的详细协作</h2>
+<p><img src="02-collective-handoff.png" alt="Collective 分工与交接"></p>
+<p><a href="02-collective-handoff.png">PNG</a> · <a href="02-collective-handoff.drawio">可编辑 Draw.io</a></p>
+<h3>4.1 线程分工</h3>
+<p>本例 kernel 的 <code>WarpCategory</code> 为：warp 0=MMA，warp 1=Sched，warp 2=MainloopLoad，warp 3=EpilogueLoad，warp 4 及之后=Epilogue。线程数公式为 <code>4×NumThreadsPerWarp + Epilogue::ThreadCount</code>；图上角色表示源码分工，不把总线程数硬编码为所有配置都相同。</p>
+<table>
+<thead>
+<tr>
+<th>角色</th>
+<th>主要工作</th>
+<th>所属层</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Sched</td>
+<td>获取/广播下一工作 tile，维护 CLC pipeline</td>
+<td>Kernel + TileScheduler</td>
+</tr>
+<tr>
+<td>MainloopLoad</td>
+<td>取 A/B tile，经 TMA 放入 SMEM stage</td>
+<td>CollectiveMainloop</td>
+</tr>
+<tr>
+<td>MMA</td>
+<td>等待 A/B ready、发射 MMA、写 TMEM、发布 accumulator ready</td>
+<td>CollectiveMainloop + kernel 的交接代码</td>
+</tr>
+<tr>
+<td>EpilogueLoad</td>
+<td>按需搬 C/辅助输入</td>
+<td>CollectiveEpilogue；本例默认 C=void，无需 C load</td>
+</tr>
+<tr>
+<td>Epilogue</td>
+<td>等待累加完成、TMEM→寄存器、融合、存 D、释放 accumulator stage</td>
+<td>CollectiveEpilogue</td>
+</tr>
+</tbody></table>
+<p>角色划分不代表所有代码每个线程都执行。warp/lane predicate 控制具体发射者；一个 warp 的角色也不等于硬件操作必须由 32 个 lane 各自发射一遍。</p>
+<h3>4.2 初始化：先建立共同“坐标系”和同步对象</h3>
+<ol>
+<li>读取 warp、lane、cluster rank，映射角色；将动态 SMEM 缓冲解释为 <code>SharedStorage</code>。</li>
+<li>以各自 <code>Params</code> 构造 <code>CollectiveMainloop</code> 和 <code>CollectiveEpilogue</code>，它们引用同一次 launch 的参数/存储。</li>
+<li>初始化 MainloopPipeline、EpiLoadPipeline、EpiStorePipeline、AccumulatorPipeline、CLC pipeline 和 barrier，并执行所需同步，使初始化结果对参与者可见。</li>
+<li><code>load_init</code> 根据 tensor 与 cluster 分区生成后续 TMA copy 使用的视图和 multicast mask。</li>
+<li><code>init_tmem_tensors</code> 构造累加器 tensor 的布局；MMA 角色申请 TMEM，写入 <code>tmem_base_ptr</code>，通过分配结果 barrier 通知输出角色；双方 <code>set_tmem_offsets</code> 令自己的 tensor 视图指向同一物理 TMEM。</li>
+<li>每个角色从 scheduler 对应的工作流得到相同逻辑输出 tile，并分别维护本角色的 pipeline state。不是所有 warp 去抢同一个任务后自行猜测归属。</li>
+</ol>
+<h3>4.3 A/B 搬运协议：防止提前读取和提前覆盖</h3>
+<p><code>CollectiveMainloop::load</code>，<code>sm100_mma_warpspecialized.hpp:589</code>：</p>
+<pre><code class="language-text">producer_acquire(write_state)          等这个 stage 可写
+producer_get_barrier(write_state)      获得异步事务完成对象
+write_stage = write_state.index()
+copy(TMA_A.with(barrier, maskA), A_tile, smemA[write_stage])
+copy(TMA_B.with(barrier, maskB), B_tile, smemB[write_stage])
+推进 K iterator / state
+</code></pre>
+<p>MMA 侧 <code>consumer_wait(read_state)</code> 等待 TMA 数据完成，再从相同 stage 的 SMEM descriptor 读取。完成对应异步 MMA 读取所要求的同步后，通过 <code>consumer_release</code> 路径允许生产者复用 SMEM。底层 SM100 pipeline 含 UMMA arrival/commit 语义，不能将 release 机械替换为一个普通计数器写。</p>
+<p>本例 cluster 沿 N 有 4 个 CTA，它们需要同一 M/K 范围的 A、不同 N 范围的 B，Builder 因而可为 A 选择 multicast。multicast 是 cluster 搬运能力，不改变 1SM MMA 的协作粒度。</p>
+<h3>4.4 MMA 与 TMEM：两个 Collective 的真正交接点</h3>
+<p><code>CollectiveMainloop::mma</code>，同文件 <code>:652</code> 起：</p>
+<ol>
+<li><code>accumulator_pipeline.producer_acquire(acc_state)</code>，等待有一个可写的 TMEM accumulator stage。</li>
+<li>对新输出 tile 设置 <code>tiled_mma.accumulate_ = ScaleOut::Zero</code>。</li>
+<li>对每个 K tile 等 <code>mainloop_pipeline.consumer_wait</code>，选择 <code>read_stage</code>。</li>
+<li>逐个 Atom K 子块执行 <code>cute::gemm(tiled_mma, descA_fragment, descB_fragment, accumulators)</code>；首次之后设置 <code>ScaleOut::One</code>，继续累计部分和。</li>
+<li>释放对应 A/B stage，推进到下一个 K tile。</li>
+<li>返回 kernel 后，kernel 在 <code>sm100_gemm_tma_warpspecialized.hpp:770</code> 调用 <code>accumulator_pipeline.producer_commit(acc_state)</code>，将异步 UMMA 完成纳入消费者可等待的协议，然后推进 accumulator state。</li>
+</ol>
+<p><code>slice_accumulator(tmem_storage, acc_stage)</code> 传递的是指定 stage 的 tensor 视图，并没有 host 拷贝或先写一份中间 GMEM 矩阵。Epilogue 取得同一地址/布局的 accumulator 视图。</p>
+<p>实际 MMA 调用链：</p>
+<pre><code class="language-text">CollectiveMainloop::mma
+  → cute::gemm
+  → MMA_Atom::call
+  → MMA_Traits&lt;SM100_MMA_F16BF16_SS&gt;::mma_unpack（ADL hidden friend）
+      desc_a = A[0]; desc_b = B[0]
+      tmem_c = raw_pointer_cast(D.data())
+      idesc = make_runtime_instr_desc(traits.idesc_)
+  → SM100_MMA_F16BF16_SS::fma
+  → elect_one_sync 的发射 lane
+  → tcgen05.mma.cta_group::1.kind::f16
+</code></pre>
+<p><code>ElementC=void</code> 是禁用 epilogue 的全局源矩阵 C；<code>scaleC</code>/<code>accumulate_</code> 则控制 MMA 是否保留旧 TMEM 部分和。它们含义不同，因此 C=void 仍有跨 K 的累加。</p>
+<h3>4.5 Epilogue 消费协议与输出</h3>
+<p>Kernel 在 <code>:897</code> 取得 accumulator 视图，调用 <code>scheduler.fixup</code>；本例默认 scheduler 不切分 K，不需要 split-K 归并。随后把 accumulator、对应 pipeline/state、完整 problem shape、tile 坐标和 epilogue SMEM 一并交给 <code>CollectiveEpilogue::store</code>。</p>
+<p>Epilogue 在相关 subtile 上执行：</p>
+<pre><code class="language-text">acc_pipeline.consumer_wait             等 UMMA 的结果可读
+copy(tiled_t2r, tmem_accumulator, rAcc)  TMEM → 寄存器
+fence_view_async_tmem_load              需要释放时确保相关 TMEM 读取满足完成约束
+acc_pipeline.consumer_release          该 stage 不再需要时，交还给 MMA
+cst_callbacks.visit(...)               alpha/beta/融合计算
+NumericArrayConverter                  转成输出 SMEM 元素类型
+copy(tiled_r2s, rD, sD[stage])          寄存器 → SMEM
+fence_view_async_shared + synchronize  让 TMA 看见所有输出写入
+copy(tma_store_d, sD, gD)               SMEM → GMEM D
+store pipeline commit/acquire/tail     等待、复用与排空输出缓冲
+</code></pre>
+<p>TMEM stage 的 release 可以发生在相关累加器数据已读取到寄存器之后，不必等待整个 D 都写完；具体时机由 subtile、<code>do_acc_release</code> 和 overlapping 配置决定。不能把 epilogue 的每个 subtile 都画成“释放整个 TMEM”。</p>
+<p>默认计算为 <code>D = alpha*Acc + beta*C</code>；本例 C=void，等效 <code>D = alpha*Acc</code>。输出 FP32，默认 alpha=1，因而验证的是每批 FP16 A/B 形成的 FP32 GEMM 结果。</p>
+<h3>4.6 持续调度与退出</h3>
+<p>load、MMA、epilogue 可以处理不同流水阶段，持续推进多个输出 tile。Mainloop 的 A/B stage 数、TMEM accumulator stage 数、scheduler pipeline stage 数是不同的容量，不应统称一个 <code>Stages</code>。</p>
+<p>退出时需要 load_tail、accumulator 的完成/消费同步、epilogue load/store tail、TMEM 分配许可释放和最终 free。TMEM 的释放必须满足全部参与者不再访问；单看 <code>mma()</code> 返回不能证明可立即 free。</p>
+<h2>5. Adapter 怎样把这个 C++ 类型启动到设备</h2>
+<p><code>GemmUniversalAdapter</code> 是有状态的 host handle，3.x 特化在 <code>gemm_universal_adapter.h:123</code>。它保存 <code>Params params_</code>，提供稳定接口，但内部 launch 仍有 NVIDIA 架构与运行时依赖。</p>
+<table>
+<thead>
+<tr>
+<th>调用</th>
+<th>实际负责的事</th>
+<th>不应混淆</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>get_workspace_size(args)</code></td>
+<td>查询 kernel/epilogue/scheduler 的额外全局工作区</td>
+<td>不是 <code>SharedStorageSize</code>，也不含调用者的全部 A/B/D 内存</td>
+</tr>
+<tr>
+<td><code>can_implement(args)</code></td>
+<td>聚合 mode、Collective、scheduler、cluster 等约束</td>
+<td>不执行 kernel，不保证后续申请/launch 成功</td>
+</tr>
+<tr>
+<td><code>initialize(args, workspace, stream)</code></td>
+<td>初始化 workspace，调用 kernel 参数转换，保存 params_，必要时设置动态 SMEM 属性</td>
+<td>3.x 这个实现不会自动替调用者执行一遍 <code>can_implement</code></td>
+</tr>
+<tr>
+<td><code>update(args, workspace)</code></td>
+<td>重新转换/更新参数，检查所需 workspace</td>
+<td>不能概括为已重新完成所有 workspace 初始化/函数属性配置</td>
+</tr>
+<tr>
+<td><code>run(stream)</code></td>
+<td>使用保存的 params_ 计算 launch 配置并提交 kernel</td>
+<td>是异步提交，尚未 host reference 比较</td>
+</tr>
+<tr>
+<td><code>run(args, workspace, stream)</code> / 对应 <code>operator()</code></td>
+<td>先 initialize 再 run</td>
+<td>仍需要调用者提供正确生命周期的内存和参数</td>
+</tr>
+</tbody></table>
+<p>本例 <code>ArchTag=Sm100</code>、静态 cluster 大小为 4，所以普通 host launch 路径进入 <code>ClusterLauncher::launch_with_fallback_cluster</code>，内部用 <code>cudaLaunchKernelExC</code>。静态 <code>1×1×1</code>、动态 cluster、其他架构、启用 <code>CudaHostAdapter</code> 等配置会走不同分支，不能把这一条路径推广为所有 Gemm 的唯一 launch。</p>
+<p><code>device_kernel.h:118</code> 中的入口收到 <code>Params</code>，声明动态共享内存 <code>smem[]</code>，构造 <code>Operator op</code>，调用 <code>op(params, smem)</code>。所以严格来说 <code>GemmUniversal</code> 提供 kernel 的实现类型/编排，而可被 runtime launch 的函数实例是这个入口包装。</p>
+<h2>6. TestAll、Testbed、EXPECT_TRUE 的完整语义</h2>
+<h3>6.1 一次 TestAll 的覆盖范围</h3>
+<p>布局来自已经固定的 <code>Gemm</code>；函数体读取其 alignment、TileK 和 Stages 来生成尺寸。本例：</p>
+<table>
+<thead>
+<tr>
+<th>测试轴</th>
+<th>候选/行为</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>M</td>
+<td><code>{8, 488}</code></td>
+</tr>
+<tr>
+<td>N</td>
+<td><code>{8, 496}</code></td>
+</tr>
+<tr>
+<td>K</td>
+<td><code>{8, 64*(S+1)-8}</code>，S=<code>GemmKernel::DispatchPolicy::Stages</code></td>
+</tr>
+<tr>
+<td>L</td>
+<td>常规循环为 1；最后另测 <code>(264,264,168,3)</code></td>
+</tr>
+<tr>
+<td>raster order</td>
+<td>AlongM、AlongN，属于 tile 遍历次序，不是矩阵存储布局</td>
+</tr>
+<tr>
+<td>max swizzle size</td>
+<td>1、4，属于 scheduler tile 重排参数，不是 SMEM swizzle 位编码</td>
+</tr>
+<tr>
+<td>decomposition</td>
+<td>默认 heuristic；显式 StreamK scheduler 才增加其他模式</td>
+</tr>
+<tr>
+<td>splits</td>
+<td>内层依据 K tile 数生成多个候选；默认 persistent scheduler 的 args 只接收 raster/swizzle，不实际启用 split-K</td>
+</tr>
+<tr>
+<td>alpha / beta / equality</td>
+<td>默认 1 / 0（C=void）/ RELATIVE</td>
+</tr>
+</tbody></table>
+<p>举例：<strong>若编译结果 S=8</strong>，较大 K=568，K tile 数为 9。小 K 的 splits 列表为 <code>{1,1,2}</code>，保留重复项；大 K 为 <code>{1,2,3,9,10}</code>。候选 Testbed 调用数是 <code>2*2*2*2*(3+5)+1 = 129</code>。这是条件化的静态枚举推导，不能据此声称本轮真的启动了 129 次 kernel。因为 <code>can_implement</code> 跳过、异常或提前失败都会改变实际执行数，且 S 在本轮未重新编译求值。</p>
+<h3>6.2 每次 Testbed 做什么</h3>
+<ol>
+<li><code>sufficient()</code> 查询设备和每 block 可用动态 SMEM，本版本不满足会返回 false。</li>
+<li>HostCollectiveMainloop 初始化 A/B，HostCollectiveEpilogue 初始化 C/D 与标量/参考数据，并完成所需 host/device 数据传输。</li>
+<li>构建 kernel <code>Arguments</code>：<code>mode=kGemm</code>、problem size、mainloop args、epilogue args、hw_info、scheduler args。注意本测试 rank=4 的 batch 也使用此实现接受的 <code>kGemm</code> 路径，不能把所有 L&gt;1 都机械解释成测试设置了 <code>kBatched</code>。</li>
+<li>查询并申请 workspace；检查 <code>can_implement</code>；初始化 adapter；提交 run。</li>
+<li><code>cudaDeviceSynchronize()</code> 捕捉异步错误。</li>
+<li><code>verify()</code> 调用 <code>cutlass::reference::host::Gemm3x</code>，底层 <code>Gett</code> 做主机参考计算，再比较 D。</li>
+<li>内部断言给出具体问题信息；失败返回 false，<code>TestAll</code> 退出；最外层 <code>EXPECT_TRUE(pass)</code> 将返回结果登记到 GoogleTest。</li>
+</ol>
+<h3>6.3 通过标志的实际限制，移植时尤其重要</h3>
+<p>当前 <code>gemm_testbed_3x.hpp:2991–2996</code> 在 <code>can_implement</code> 不成功时打印“不支持”并返回 <strong>true</strong>。因此 TestAll 的 true 可能包含未执行候选。<code>EXPECT_TRUE(pass)</code> 断言的是函数返回值，不是“所有理论配置都完成了计算”。GoogleTest 还会保留其他内层断言失败，不能只看最终 bool。</p>
+<p>当前 Testbed 在 initialize 错误时仅打印，随后仍调用 run，并覆盖 <code>status</code>。移植验证版建议明确区分初始化失败、launch 失败、设备失败、数值失败、能力跳过，而不是依赖这个宽松控制流。</p>
+<p>SDC200 测试报告应至少记录：候选数、明确不支持数、initialize 成功数、launch 成功数、同步成功数、数值比较成功数，以及每个 <code>(M,N,K,L,layout,scheduler)</code>。强制验收的目标配置如果跳过，应判为未完成，不能算数值通过。本次只给出建议，没有修改测试框架。</p>
+<h2>7. 卡片：每层该记住什么</h2>
+<p><img src="03-concept-cards.png" alt="九张核心卡片"></p>
+<p><a href="03-concept-cards.png">PNG</a> · <a href="03-concept-cards.drawio">可编辑 Draw.io</a></p>
+<table>
+<thead>
+<tr>
+<th>卡片</th>
+<th>一句话</th>
+<th>最容易混淆的边界</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ProblemShape</td>
+<td>int×4 表示运行期 M/N/K/L</td>
+<td>不决定 tile、warp 或 cluster</td>
+</tr>
+<tr>
+<td>Builders</td>
+<td>选择并生成两个 Collective 类型</td>
+<td><code>CollectiveOp</code> 是类型，不是一次运算结果</td>
+</tr>
+<tr>
+<td>Mainloop</td>
+<td>搬 A/B 并跨 K 累加到 TMEM</td>
+<td>一份 Mainloop 内部已经有 load/MMA 两个角色</td>
+</tr>
+<tr>
+<td>Kernel</td>
+<td>组织角色、存储、同步和任务坐标</td>
+<td>不只是两个函数调用的顺序</td>
+</tr>
+<tr>
+<td>Handoff</td>
+<td>accumulator view + pipeline 交接</td>
+<td>ready 信号必须对应异步完成与可见性</td>
+</tr>
+<tr>
+<td>Epilogue</td>
+<td>读累加器、融合、转换并存 D</td>
+<td>C=void 不影响 MMA 内部累加</td>
+</tr>
+<tr>
+<td>Adapter</td>
+<td>host 参数转换入口与 launch handle</td>
+<td>launch 成功不等于数值通过</td>
+</tr>
+<tr>
+<td>TestAll</td>
+<td>对固定 Gemm 枚举尺寸/调度</td>
+<td>多布局需要多个类型/测试实例</td>
+</tr>
+<tr>
+<td>SDC200</td>
+<td>保留抽象契约，重建硬件语义</td>
+<td>替换 MMA builtin 只覆盖链条中的一环</td>
+</tr>
+</tbody></table>
+<h2>8. SDC200：适配边界与现有代码的真实状态</h2>
+<p><img src="04-sdc200-porting.png" alt="SDC200 适配分层"></p>
+<p><a href="04-sdc200-porting.png">PNG</a> · <a href="04-sdc200-porting.drawio">可编辑 Draw.io</a></p>
+<p>“对标 SM100”是能力目标，不自动说明 SDC200 与 NVIDIA 的 ABI、warp、cluster、TMEM、descriptor、CLC、异步内存模型和 CUDA runtime 相同。建议保留 <code>GemmUniversal/CollectiveBuilder/GemmUniversalAdapter</code> 的用户接口形状，新增 SDC 架构策略和后端，按已验证能力启用配置。</p>
+<h3>8.1 当前能确认的 SDC 参考实现</h3>
+<p>现有 <code>D:/lvz/sdc/cutlass/include/cute/arch/mma_sdc200_umma.hpp:72</code> 定义 <code>SDC200_MMA_F16BF16_SS</code>，<code>fma</code> 在 <code>:108</code> 接受两个 64 位 descriptor、32 位 TMEM 地址、scaleC 和组合 instruction descriptor；在 <code>:117</code> 调用：</p>
+<pre><code class="language-cpp">__sdc_uten_mma_bf16(tmem_c, desc_a, desc_b,
+                    uint32_t(idescE &gt;&gt; 32), scaleC);
+</code></pre>
+<p>实际 compiler header <code>sdc_builtins.h:897</code> 声明：</p>
+<pre><code class="language-cpp">void __sdc_uten_mma_bf16(uint32_t dTmem, uint64_t aDesc,
+                        uint64_t bDesc, uint32_t iDesc,
+                        uint32_t inputD);
+</code></pre>
+<p>这证明包装层和 builtin 形参形式已有对应；<strong>不证明 FP16 模式、descriptor 字段、K 粒度、完成事件或数值已正确</strong>。builtin 名含 bf16，包装类型支持 F16/BF16，实际类型选择是否由 iDesc 控制，需要以 SDC 编译器/ISA 契约和 FP16/BF16 两套运行测试确认。</p>
+<p><code>mma_sdc200_desc.hpp:109</code> 具有 <code>SmemDescriptor</code> union，属于 ABI 敏感数据结构。不能因为字段名/位宽和 SM100 相似就将它作为兼容结论；需要 golden bit-pattern、合法/非法布局与硬件读取验证。</p>
+<p><code>cluster_sdc200.hpp:180</code> 的 <code>elect_one_sync</code> 仍含 <code>elect.sync</code>；该文件还有 <code>barrier.cluster</code>、<code>mapa.shared::cluster</code> 和 NVIDIA 宏条件。可能依赖编译器兼容支持，也可能尚未替换，当前不能认定已原生适配。include 应放在全局命名空间，并通过后端选择避免同一翻译单元重复定义 <code>cute::elect_one_sync</code> 或出现 <code>cute::cute</code>。</p>
+<h3>8.2 两条适配路径与边界</h3>
+<table>
+<thead>
+<tr>
+<th>能力条件</th>
+<th>可以保留什么</th>
+<th>必须改变什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SDC 有等价异步 TMA、可寻址 TMEM、完成 barrier、cluster 语义</td>
+<td>可考虑保留类似 Mainloop/Epilogue 的协议和 kernel 分工</td>
+<td>每个 descriptor、builtin、completion、runtime launch 和资源常量仍需验证/替换</td>
+</tr>
+<tr>
+<td>有 MMA/TMEM，但无 CLC</td>
+<td>可保留 GEMM 数据链和部分流水线</td>
+<td>使用静态 tile 调度或软件队列；scheduler 实现、selector 与 kernel 调度角色需适配</td>
+</tr>
+<tr>
+<td>无 cluster 或 multicast</td>
+<td>单 CTA GEMM 抽象仍可保留</td>
+<td>先用 cluster=1；A/B 独立搬运；删除/重做 cluster 同步与发射约束</td>
+</tr>
+<tr>
+<td>无等价 TMA</td>
+<td>Tensor/布局与分块思想可保留</td>
+<td>用协作 load 或其他 DMA，重做 Mainloop load、同步和输出 store 路径</td>
+</tr>
+<tr>
+<td>MMA 结果在寄存器、无等价 TMEM</td>
+<td>GEMM 上层类型接口与计算语义可保留</td>
+<td>重建 accumulator fragment/Traits、Kernel handoff、Epilogue T2R，不能照搬 TMEM kernel</td>
+</tr>
+<tr>
+<td>CUDA runtime/launch ABI 不兼容</td>
+<td>Adapter 用户方法命名可保留</td>
+<td>runtime shim 或新 launcher、设备属性/分配/拷贝/同步/错误、host descriptor encoder</td>
+</tr>
+</tbody></table>
+<p><code>CudaHostAdapter</code> 可作为 host launch 扩展点之一，但不能修复 device 内联 PTX、descriptor ABI 或同步语义。现 Adapter 使用 <code>kMinComputeCapability &gt;= 90</code>、<code>==100/101/103/120</code> 等分支；即便给新架构设置“200”也不等于自动走正确 launch。应该用明确后端/能力选择替代借用 NVIDIA 编号来蒙混分发。</p>
+<h3>8.3 完整参考表与阅读顺序</h3>
+<p><a href="sdc200-adaptation.html">打开完整适配表</a>。表格覆盖：构建与宏、架构标签、类型/布局、Builder、dispatch、两个 Collective、kernel、scheduler、pipeline、barrier、TMA host/device、UMMA Traits/descriptor/Operation、TMEM、epilogue fusion、adapter/runtime、测试/reference、诊断和扩展范围。每行列出实际文件/API、可复用部分、需要适配部分、候选 SDC 落点及验收标准。</p>
+<p>表中“建议新增”是设计建议，不是声称文件已经存在；“条件复用”是接口/算法在满足契约后可复用，不表示整个文件可以原封不动照搬。完整性针对本例 dense FP16/FP32 1SM 链以及扩展接入边界，不代表未经硬件规格就能列尽整个 CUTLASS 仓库的所有架构功能。</p>
+<h3>8.4 建议的落地顺序与验收门槛</h3>
+<ol>
+<li><strong>P0：固化契约。</strong> 确认 lane/warp、MMA 形状、TMEM 地址/容量、三类 descriptor、异步完成、barrier scope、cluster 和 runtime；为每项标记已支持/可兼容/需模拟/不支持。</li>
+<li><strong>P1：底层闭环。</strong> descriptor 编码 → 单次 MMA → TMEM 读回 → 与主机参考比较；覆盖 overwrite/accumulate、FP16/BF16、合法 tile 与拒绝条件。先证明一个 Atom，不直接跳入复杂 persistent kernel。</li>
+<li><strong>P2：单 CTA。</strong> 固定支持的 tile，cluster=1，静态调度，最简单搬运和无融合 epilogue，跑多 K tile、尾块和 batch。该阶段改变了调度/搬运策略，不能将通过结果视为原 SM100 路径全兼容。</li>
+<li><strong>P3：异步流水线。</strong> 增加多级 load/MMA/accumulator/store；用大 K、多 tile、重复运行压力验证 stage 所有权、phase wrap、尾部 drain 与可见性。</li>
+<li><strong>P4：高级功能。</strong> 依次启用 TMA、multicast/cluster、CLC 或软件替代、融合、Stream-K/2SM 等。每项独立列覆盖矩阵，能力不支持要明确拒绝。</li>
+<li><strong>P5：集成验收。</strong> 修复测试入口问题后接入 SDC unit target，强制记录实际执行与 skip；数值通过后再查机器码和性能。优化前记录 baseline，不能用编译成功替代正确性或吞吐达标。</li>
+</ol>
+<h2>9. 关键源码导航</h2>
+<p>下列行号来自本次工作树，后续修改会漂移；完整快照与 SHA-256 见 <code>source-evidence.json</code>，关键片段见 <code>source-excerpts.txt</code>。</p>
+<table>
+<thead>
+<tr>
+<th>目的</th>
+<th>文件</th>
+<th>位置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>本例 Builder/Kernel/Adapter/TestAll</td>
+<td><code>test/unit/gemm/device/sm100_tensorop_gemm/f16_f16_void_f32.cu</code></td>
+<td>197、215、234、244、253</td>
+</tr>
+<tr>
+<td>GemmUniversal 声明/聚合入口</td>
+<td><code>include/cutlass/gemm/kernel/gemm_universal_decl.h</code>；<code>gemm_universal.hpp</code></td>
+<td>模板声明；SM100 include</td>
+</tr>
+<tr>
+<td>偏特化与类型拼装</td>
+<td><code>include/cutlass/gemm/kernel/sm100_gemm_tma_warpspecialized.hpp</code></td>
+<td>61–179</td>
+</tr>
+<tr>
+<td>shared storage / args / params</td>
+<td>同上</td>
+<td>182、215、225</td>
+</tr>
+<tr>
+<td>参数转换/检查/workspace/grid</td>
+<td>同上</td>
+<td>257、301、339、384</td>
+</tr>
+<tr>
+<td>warp 角色与对象建立</td>
+<td>同上</td>
+<td>234、405、435</td>
+</tr>
+<tr>
+<td>TMEM、MMA、发布完成</td>
+<td>同上</td>
+<td>727、762、770</td>
+</tr>
+<tr>
+<td>Epilogue 调用</td>
+<td>同上</td>
+<td>897、911</td>
+</tr>
+<tr>
+<td>Adapter initialize/run</td>
+<td><code>include/cutlass/gemm/device/gemm_universal_adapter.h</code></td>
+<td>313、375、509</td>
+</tr>
+<tr>
+<td>真正 global 入口</td>
+<td><code>include/cutlass/device_kernel.h</code></td>
+<td>118</td>
+</tr>
+<tr>
+<td>扩展 launch</td>
+<td><code>include/cutlass/cluster_launch.hpp</code></td>
+<td>294</td>
+</tr>
+<tr>
+<td>Mainloop host 转换/load/mma</td>
+<td><code>include/cutlass/gemm/collective/sm100_mma_warpspecialized.hpp</code></td>
+<td>355、589、652</td>
+</tr>
+<tr>
+<td>MMA Traits→fma</td>
+<td><code>include/cute/atom/mma_traits_sm100.hpp</code></td>
+<td>284、323</td>
+</tr>
+<tr>
+<td>MMA 指令落点</td>
+<td><code>include/cute/arch/mma_sm100_umma.hpp</code></td>
+<td>86、111</td>
+</tr>
+<tr>
+<td>Epilogue T2R/fusion/store</td>
+<td><code>include/cutlass/epilogue/collective/sm100_epilogue_tma_warpspecialized.hpp</code></td>
+<td>574、866、882、895、922、771</td>
+</tr>
+<tr>
+<td>Testbed 执行与 skip 语义</td>
+<td><code>test/unit/gemm/device/gemm_testbed_3x.hpp</code></td>
+<td>2877、2991、3014、3023、3032、3047</td>
+</tr>
+<tr>
+<td>TestAll 当前损坏与枚举</td>
+<td>同上</td>
+<td>3828、3840、3853、3878、3966</td>
+</tr>
+<tr>
+<td>CPU 参考</td>
+<td><code>tools/util/include/cutlass/util/reference/host/gett.hpp</code></td>
+<td>491、837</td>
+</tr>
+</tbody></table>
+<h2>10. 交付与验证</h2>
+<ul>
+<li>本文、独立适配表、UTF-8 CSV 表、4 组 PNG/Draw.io、离线阅读页均保存在当前项目 <code>deliverables/gemm-universal-sdc200/</code>。</li>
+<li>所有 PNG 和 <code>.drawio</code> 来自同一节点/连线/文本/坐标数据；Draw.io 中节点、箭头和文字可单独编辑，没有用整张位图替代结构。字体字形、抗锯齿和箭头尖端在不同渲染器中可能略有区别。</li>
+<li>检查范围：文件存在、源链接与锚点、UTF-8、Draw.io XML、节点/连线、PNG 尺寸、主要布局和文字视觉检查；详细结果见 <code>validation.json</code>。</li>
+<li>本轮没有改动 CUTLASS/SDC 源文件，也没有进行编译或设备数值测试。</li>
+<li>本轮问答完整记录保存在 <code>qa-history/2026-10-20/</code>。本地持久保存已完成；未配置并验证跨电脑同步渠道，本轮跨电脑同步未完成。</li>
+</ul>
+</main></html>

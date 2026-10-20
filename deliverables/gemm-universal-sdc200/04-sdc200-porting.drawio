@@ -1,0 +1,86 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="26.0.0">
+  <diagram id="04-sdc200-porting" name="04-sdc200-porting">
+    <mxGraphModel dx="1800" dy="1440" grid="1" gridSize="10" page="1" pageWidth="1800" pageHeight="1440">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="SDC200 适配地图与验收顺序" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=30;fontColor=#172e47;fillColor=#edf1f5;strokeColor=#64758b;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="30" y="18" width="1740" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="“对标 SM100”不等于 descriptor、TMEM、cluster、CLC 或 CUDA launch ABI 兼容" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=18;fontColor=#172e47;fillColor=#edf1f5;strokeColor=#64758b;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="30" y="85" width="1740" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="reuse" value="上层优先复用：GEMM 数学语义、ProblemShape、CuTe Layout/Tensor、Atom 框架、公共 Builder/Kernel/Adapter 签名&#10;测试组织、CPU reference 与比较工具尽量保留；host/device 注解、数据类型与 runtime 依赖仍需审查。" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=23;fontColor=#172e47;fillColor=#e7f5ef;strokeColor=#26806b;" vertex="1" parent="1">
+          <mxGeometry x="30" y="170" width="1740" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="compose" value="组合层：新增 SDC 策略与实现&#10;Mainloop / Epilogue Builder&#10;DispatchPolicy / Kernel 特化&#10;SMEM/TMEM 资源和 warp 分工" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=23;fontColor=#172e47;fillColor=#eaf2ff;strokeColor=#3b72b7;" vertex="1" parent="1">
+          <mxGeometry x="30" y="390" width="540" height="205" as="geometry" />
+        </mxCell>
+        <mxCell id="sync" value="协议层：必须确认等价语义&#10;Pipeline acquire/commit/wait/release&#10;TMA/UMMA completion 与 fence&#10;TMEM 生命周期 / cluster scope" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=22;fontColor=#172e47;fillColor=#f0eafa;strokeColor=#8060af;" vertex="1" parent="1">
+          <mxGeometry x="630" y="390" width="540" height="205" as="geometry" />
+        </mxCell>
+        <mxCell id="runtime" value="运行时：替换或证明兼容&#10;参数 ABI / descriptor encoder&#10;launch / cluster / memory / stream&#10;硬件查询 / 错误 / 同步" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=22;fontColor=#172e47;fillColor=#fff2df;strokeColor=#c58428;" vertex="1" parent="1">
+          <mxGeometry x="1230" y="390" width="540" height="205" as="geometry" />
+        </mxCell>
+        <mxCell id="isa" value="底层必须逐项闭环：MMA Operation + Traits + SMEM/instruction descriptor + TMEM allocator / T2R&#10;TMA copy / TensorMap + barrier / fence + election / cluster + scheduler CLC 或软件替代" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=23;fontColor=#172e47;fillColor=#fceaea;strokeColor=#b94c50;" vertex="1" parent="1">
+          <mxGeometry x="30" y="680" width="1740" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="existing" value="已见：SDC200_MMA_F16BF16_SS::fma → __sdc_uten_mma_bf16；SDC descriptor union。&#10;仍待验收：FP16/BF16 模式、编码、完成事件；cluster_sdc200.hpp 仍含 NVIDIA election/cluster PTX。" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=23;fontColor=#172e47;fillColor=#edf1f5;strokeColor=#64758b;" vertex="1" parent="1">
+          <mxGeometry x="30" y="895" width="1740" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="gate0" value="P0 契约 / 能力表" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=19;fontColor=#172e47;fillColor=#e7f5ef;strokeColor=#26806b;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1110" width="324" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="gate1" value="P1 单 Atom 闭环" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=19;fontColor=#172e47;fillColor=#e7f5ef;strokeColor=#26806b;" vertex="1" parent="1">
+          <mxGeometry x="384" y="1110" width="324" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="gate2" value="P2 单 CTA / 静态调度" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=19;fontColor=#172e47;fillColor=#e7f5ef;strokeColor=#26806b;" vertex="1" parent="1">
+          <mxGeometry x="738" y="1110" width="324" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="gate3" value="P3 多级异步流水线" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=19;fontColor=#172e47;fillColor=#e7f5ef;strokeColor=#26806b;" vertex="1" parent="1">
+          <mxGeometry x="1092" y="1110" width="324" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="gate4" value="P4 cluster / CLC / 融合" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=19;fontColor=#172e47;fillColor=#e7f5ef;strokeColor=#26806b;" vertex="1" parent="1">
+          <mxGeometry x="1446" y="1110" width="324" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="accept" value="P5 集成验收：候选 / skip / initialize / launch / synchronize / 数值通过分别计数；承诺支持的配置不能静默跳过。&#10;后续再验证机器码与性能。完整文件/API 清单见 68 项适配参考表；不支持能力应显式拒绝。" style="rounded=1;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacingLeft=14;fontFamily=Microsoft YaHei;fontSize=21;fontColor=#172e47;fillColor=#fff2df;strokeColor=#c58428;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1280" width="1740" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="edge0" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="gate0" target="gate1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge1" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="gate1" target="gate2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge2" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="gate2" target="gate3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge3" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="gate3" target="gate4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge4" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="reuse" target="compose">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge5" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="reuse" target="sync">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge6" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="reuse" target="runtime">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge7" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="compose" target="isa">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge8" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="sync" target="isa">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge9" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="runtime" target="isa">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge10" value="" style="endArrow=block;html=0;strokeWidth=2;strokeColor=#60748a;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#60748a;labelBackgroundColor=#f8fafc;" edge="1" parent="1" source="isa" target="existing">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

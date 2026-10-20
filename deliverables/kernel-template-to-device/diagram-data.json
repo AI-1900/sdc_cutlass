@@ -1,0 +1,957 @@
+{
+  "nodes": [
+    {
+      "id": "title",
+      "x": 45,
+      "y": 25,
+      "w": 1950,
+      "h": 65,
+      "text": "从测例模板，到一个真正启动的 GPU kernel",
+      "size": 42,
+      "bold": true,
+      "color": "#19344d",
+      "parent": null,
+      "kind": "text"
+    },
+    {
+      "id": "subtitle",
+      "x": 45,
+      "y": 100,
+      "w": 1950,
+      "h": 45,
+      "text": "先组合类型，再编译生成代码，最后启动入口；两个 Collective 在同一个 kernel 内协作。",
+      "size": 24,
+      "bold": false,
+      "color": "#19344d",
+      "parent": null,
+      "kind": "text"
+    },
+    {
+      "id": "phase1",
+      "x": 30,
+      "y": 165,
+      "w": 1980,
+      "h": 580,
+      "fill": "#f3f7ff",
+      "stroke": "#c6d6ee",
+      "parent": null,
+      "radius": 20,
+      "kind": "box"
+    },
+    {
+      "id": "p1title",
+      "x": 60,
+      "y": 185,
+      "w": 1900,
+      "h": 50,
+      "text": "① 编译期：测例用模板组合出 GemmKernel 类型",
+      "size": 30,
+      "bold": true,
+      "color": "#19344d",
+      "parent": "phase1",
+      "kind": "text"
+    },
+    {
+      "id": "config",
+      "x": 70,
+      "y": 285,
+      "w": 420,
+      "h": 215,
+      "fill": "#e6efff",
+      "stroke": "#487ab8",
+      "parent": "phase1",
+      "radius": 20,
+      "kind": "box"
+    },
+    {
+      "id": "configtitle",
+      "x": 90,
+      "y": 299,
+      "w": 380,
+      "h": 40,
+      "text": "测例中的编译期配置",
+      "size": 25,
+      "bold": true,
+      "color": "#19344d",
+      "parent": "config",
+      "kind": "text"
+    },
+    {
+      "id": "configbody",
+      "x": 90,
+      "y": 350,
+      "w": 380,
+      "h": 140,
+      "text": "元素类型 / 矩阵布局 / 对齐\ntile / cluster / schedule\n通过 CollectiveBuilder 选择实现",
+      "size": 23,
+      "bold": false,
+      "color": "#19344d",
+      "parent": "config",
+      "kind": "text"
+    },
+    {
+      "id": "mltype",
+      "x": 560,
+      "y": 255,
+      "w": 500,
+      "h": 150,
+      "fill": "#e6efff",
+      "stroke": "#487ab8",
+      "parent": "phase1",
+      "radius": 20,
+      "kind": "box"
+    },
+    {
+      "id": "mltypetitle",
+      "x": 580,
+      "y": 269,
+      "w": 460,
+      "h": 40,
+      "text": "CollectiveMainloop 类型",
+      "size": 25,
+      "bold": true,
+      "color": "#19344d",
+      "parent": "mltype",
+      "kind": "text"
+    },
+    {
+      "id": "mltypebody",
+      "x": 580,
+      "y": 320,
+      "w": 460,
+      "h": 75,
+      "text": "输入搬运 + MMA + 累加器布局",
+      "size": 23,
+      "bold": false,
+      "color": "#19344d",
+      "parent": "mltype",
+      "kind": "text"
+    },
+    {
+      "id": "eptype",
+      "x": 560,
+      "y": 455,
+      "w": 500,
+      "h": 150,
+      "fill": "#efe9fb",
+      "stroke": "#8b69b5",
+      "parent": "phase1",
+      "radius": 20,
+      "kind": "box"
+    },
+    {
+      "id": "eptypetitle",
+      "x": 580,
+      "y": 469,
+      "w": 460,
+      "h": 40,
+      "text": "CollectiveEpilogue 类型",
+      "size": 25,
+      "bold": true,
+      "color": "#19344d",
+      "parent": "eptype",
+      "kind": "text"
+    },
+    {
+      "id": "eptypebody",
+      "x": 580,
+      "y": 520,
+      "w": 460,
+      "h": 75,
+      "text": "输出融合 + 类型转换 + 存储",
+      "size": 23,
+      "bold": false,
+      "color": "#19344d",
+      "parent": "eptype",
+      "kind": "text"
+    },
+    {
+      "id": "kerneltype",
+      "x": 1140,
+      "y": 285,
+      "w": 820,
+      "h": 275,
+      "fill": "#e4f5ec",
+      "stroke": "#3e9772",
+      "parent": "phase1",
+      "radius": 20,
+      "kind": "box"
+    },
+    {
+      "id": "kerneltypetitle",
+      "x": 1160,
+      "y": 299,
+      "w": 780,
+      "h": 40,
+      "text": "组合得到 GemmKernel 类型",
+      "size": 25,
+      "bold": true,
+      "color": "#19344d",
+      "parent": "kerneltype",
+      "kind": "text"
+    },
+    {
+      "id": "kerneltypebody",
+      "x": 1160,
+      "y": 350,
+      "w": 780,
+      "h": 200,
+      "text": "using GemmKernel = GemmUniversal<\n    Shape<int,int,int,int>,\n    CollectiveMainloop,\n    CollectiveEpilogue>;",
+      "size": 24,
+      "bold": false,
+      "color": "#19344d",
+      "parent": "kerneltype",
+      "kind": "text"
+    },
+    {
+      "id": "adaptertype",
+      "x": 1140,
+      "y": 615,
+      "w": 820,
+      "h": 95,
+      "fill": "#e4f5ec",
+      "stroke": "#3e9772",
+      "parent": "phase1",
+      "radius": 20,
+      "kind": "box"
+    },
+    {
+      "id": "adaptertypetext",
+      "x": 1160,
+      "y": 630,
+      "w": 780,
+      "h": 65,
+      "text": "GemmUniversalAdapter<GemmKernel>\n包装成主机可使用的 Gemm handle 类型",
+      "size": 23,
+      "bold": false,
+      "color": "#19344d",
+      "parent": "adaptertype",
+      "kind": "text"
+    },
+    {
+      "id": "typehint",
+      "x": 70,
+      "y": 645,
+      "w": 1010,
+      "h": 65,
+      "text": "这里的 using / Builder 产生类型关系。\n此时没有执行矩阵乘法，也没有把两个 Collective 分别启动。",
+      "size": 22,
+      "bold": false,
+      "color": "#19344d",
+      "parent": "phase1",
+      "kind": "text"
+    },
+    {
+      "id": "phase2",
+      "x": 30,
+      "y": 800,
+      "w": 1980,
+      "h": 490,
+      "fill": "#fffbf1",
+      "stroke": "#e6d2a8",
+      "parent": null,
+      "radius": 20,
+      "kind": "box"
+    },
+    {
+      "id": "p2title",
+      "x": 60,
+      "y": 820,
+      "w": 1600,
+      "h": 45,
+      "text": "② 编译器：根据模板实例化生成主机代码与设备代码",
+      "size": 30,
+      "bold": true,
+      "color": "#19344d",
+      "parent": "phase2",
+      "kind": "text"
+    },
+    {
+      "id": "compiler",
+      "x": 380,
+      "y": 900,
+      "w": 1280,
+      "h": 155,
+      "fill": "#fff2d8",
+      "stroke": "#be8a30",
+      "parent": "phase2",
+      "radius": 20,
+      "kind": "box"
+    },
+    {
+      "id": "compilertitle",
+      "x": 400,
+      "y": 914,
+      "w": 1240,
+      "h": 40,
+      "text": "编译输入：测例 .cu + 多个头文件中的模板实现",
+      "size": 25,
+      "bold": true,
+      "color": "#19344d",
+      "parent": "compiler",
+      "kind": "text"
+    },
+    {
+      "id": "compilerbody",
+      "x": 400,
+      "y": 965,
+      "w": 1240,
+      "h": 80,
+      "text": "模板实例化 / 类型检查 → host/device 编译与优化\n实例化入口与编排逻辑；下层方法可被内联，源码文件边界不等于机器码函数边界。",
+      "size": 23,
+      "bold": false,
+      "color": "#19344d",
+      "parent": "compiler",
+      "kind": "text"
+    },
+    {
+      "id": "hostcode",
+      "x": 70,
+      "y": 1120,
+      "w": 760,
+      "h": 130,
+      "fill": "#fff2d8",
+      "stroke": "#be8a30",
+      "parent": "phase2",
+      "radius": 20,
+      "kind": "box"
+    },
+    {
+      "id": "hostcodetitle",
+      "x": 90,
+      "y": 1134,
+      "w": 720,
+      "h": 40,
+      "text": "编译产物：主机代码",
+      "size": 25,
+      "bold": true,
+      "color": "#19344d",
+      "parent": "hostcode",
+      "kind": "text"
+    },
+    {
+      "id": "hostcodebody",
+      "x": 90,
+      "y": 1185,
+      "w": 720,
+      "h": 55,
+      "text": "TestAll / Testbed / Adapter 参数处理与启动代码",
+      "size": 22,
+      "bold": false,
+      "color": "#19344d",
+      "parent": "hostcode",
+      "kind": "text"
+    },
+    {
+      "id": "devicecode",
+      "x": 1000,
+      "y": 1120,
+      "w": 960,
+      "h": 130,
+      "fill": "#fff2d8",
+      "stroke": "#be8a30",
+      "parent": "phase2",
+      "radius": 20,
+      "kind": "box"
+    },
+    {
+      "id": "devicecodetitle",
+      "x": 1020,
+      "y": 1134,
+      "w": 920,
+      "h": 40,
+      "text": "编译产物：GPU 设备代码",
+      "size": 25,
+      "bold": true,
+      "color": "#19344d",
+      "parent": "devicecode",
+      "kind": "text"
+    },
+    {
+      "id": "devicecodebody",
+      "x": 1020,
+      "y": 1185,
+      "w": 920,
+      "h": 55,
+      "text": "device_kernel<GemmKernel> 的入口及其计算实现",
+      "size": 24,
+      "bold": false,
+      "color": "#19344d",
+      "parent": "devicecode",
+      "kind": "text"
+    },
+    {
+      "id": "phase3",
+      "x": 30,
+      "y": 1350,
+      "w": 1980,
+      "h": 690,
+      "fill": "#f3faf6",
+      "stroke": "#bddbc9",
+      "parent": null,
+      "radius": 20,
+      "kind": "box"
+    },
+    {
+      "id": "p3title",
+      "x": 60,
+      "y": 1370,
+      "w": 690,
+      "h": 50,
+      "text": "③ 运行时：主机启动，GPU 内部协作",
+      "size": 30,
+      "bold": true,
+      "color": "#19344d",
+      "parent": "phase3",
+      "kind": "text"
+    },
+    {
+      "id": "hostrun",
+      "x": 70,
+      "y": 1480,
+      "w": 650,
+      "h": 235,
+      "fill": "#e4f5ec",
+      "stroke": "#3e9772",
+      "parent": "phase3",
+      "radius": 20,
+      "kind": "box"
+    },
+    {
+      "id": "hostruntitle",
+      "x": 90,
+      "y": 1494,
+      "w": 610,
+      "h": 40,
+      "text": "Host：测试与 Device Adapter",
+      "size": 25,
+      "bold": true,
+      "color": "#19344d",
+      "parent": "hostrun",
+      "kind": "text"
+    },
+    {
+      "id": "hostrunbody",
+      "x": 90,
+      "y": 1545,
+      "w": 610,
+      "h": 160,
+      "text": "TestAll<Gemm>() → Testbed::run\ninitialize(Arguments) → Params\nGemmUniversalAdapter<GemmKernel>::run\n提交 launch：目标为具体的入口函数",
+      "size": 23,
+      "bold": false,
+      "color": "#19344d",
+      "parent": "hostrun",
+      "kind": "text"
+    },
+    {
+      "id": "gpu",
+      "x": 800,
+      "y": 1450,
+      "w": 1160,
+      "h": 545,
+      "fill": "#e7f4ed",
+      "stroke": "#3e9772",
+      "parent": "phase3",
+      "radius": 20,
+      "kind": "box"
+    },
+    {
+      "id": "gputitle",
+      "x": 825,
+      "y": 1467,
+      "w": 970,
+      "h": 45,
+      "text": "GPU：这次启动的一个 kernel 内部",
+      "size": 26,
+      "bold": true,
+      "color": "#19344d",
+      "parent": "gpu",
+      "kind": "text"
+    },
+    {
+      "id": "entry",
+      "x": 830,
+      "y": 1525,
+      "w": 1100,
+      "h": 130,
+      "fill": "#e4f5ec",
+      "stroke": "#3e9772",
+      "parent": "gpu",
+      "radius": 20,
+      "kind": "box"
+    },
+    {
+      "id": "entrytitle",
+      "x": 850,
+      "y": 1539,
+      "w": 1060,
+      "h": 40,
+      "text": "真正的 __global__ 入口",
+      "size": 25,
+      "bold": true,
+      "color": "#19344d",
+      "parent": "entry",
+      "kind": "text"
+    },
+    {
+      "id": "entrybody",
+      "x": 850,
+      "y": 1590,
+      "w": 1060,
+      "h": 55,
+      "text": "device_kernel<GemmKernel>(Params) → GemmKernel op; op(params, smem);",
+      "size": 23,
+      "bold": false,
+      "color": "#19344d",
+      "parent": "entry",
+      "kind": "text"
+    },
+    {
+      "id": "body",
+      "x": 830,
+      "y": 1690,
+      "w": 1100,
+      "h": 265,
+      "fill": "#f5f8fc",
+      "stroke": "#6f879f",
+      "parent": "gpu",
+      "radius": 20,
+      "kind": "box"
+    },
+    {
+      "id": "bodytitle",
+      "x": 850,
+      "y": 1705,
+      "w": 1060,
+      "h": 65,
+      "text": "GemmKernel::operator()(Params, smem)\n统一组织：共享存储、warp 分工、scheduler 与同步",
+      "size": 23,
+      "bold": true,
+      "color": "#19344d",
+      "parent": "body",
+      "kind": "text"
+    },
+    {
+      "id": "mlrun",
+      "x": 860,
+      "y": 1800,
+      "w": 430,
+      "h": 125,
+      "fill": "#e6efff",
+      "stroke": "#487ab8",
+      "parent": "body",
+      "radius": 20,
+      "kind": "box"
+    },
+    {
+      "id": "mlruntitle",
+      "x": 880,
+      "y": 1814,
+      "w": 390,
+      "h": 40,
+      "text": "CollectiveMainloop",
+      "size": 25,
+      "bold": true,
+      "color": "#19344d",
+      "parent": "mlrun",
+      "kind": "text"
+    },
+    {
+      "id": "mlrunbody",
+      "x": 880,
+      "y": 1865,
+      "w": 390,
+      "h": 50,
+      "text": "A/B → SMEM → MMA → TMEM",
+      "size": 21,
+      "bold": false,
+      "color": "#19344d",
+      "parent": "mlrun",
+      "kind": "text"
+    },
+    {
+      "id": "eprun",
+      "x": 1450,
+      "y": 1800,
+      "w": 450,
+      "h": 125,
+      "fill": "#efe9fb",
+      "stroke": "#8b69b5",
+      "parent": "body",
+      "radius": 20,
+      "kind": "box"
+    },
+    {
+      "id": "epruntitle",
+      "x": 1470,
+      "y": 1814,
+      "w": 410,
+      "h": 40,
+      "text": "CollectiveEpilogue",
+      "size": 25,
+      "bold": true,
+      "color": "#19344d",
+      "parent": "eprun",
+      "kind": "text"
+    },
+    {
+      "id": "eprunbody",
+      "x": 1470,
+      "y": 1865,
+      "w": 410,
+      "h": 50,
+      "text": "TMEM → 融合 → 写回 GMEM D",
+      "size": 21,
+      "bold": false,
+      "color": "#19344d",
+      "parent": "eprun",
+      "kind": "text"
+    },
+    {
+      "id": "handoff",
+      "x": 1303,
+      "y": 1800,
+      "w": 134,
+      "h": 90,
+      "fill": "#f5f8fc",
+      "stroke": "#f5f8fc",
+      "parent": "body",
+      "radius": 0,
+      "kind": "box"
+    },
+    {
+      "id": "handofftext",
+      "x": 1305,
+      "y": 1805,
+      "w": 130,
+      "h": 80,
+      "text": "同一 tile\nTMEM 视图\npipeline 协议",
+      "size": 18,
+      "bold": false,
+      "color": "#19344d",
+      "parent": "handoff",
+      "kind": "text"
+    },
+    {
+      "id": "gpufoot",
+      "x": 850,
+      "y": 1960,
+      "w": 1060,
+      "h": 30,
+      "text": "Mainloop 与 Epilogue 是内部逻辑组件；它们通过数据与同步协议协作。",
+      "size": 20,
+      "bold": false,
+      "color": "#19344d",
+      "parent": "gpu",
+      "kind": "text"
+    },
+    {
+      "id": "footer",
+      "x": 50,
+      "y": 2070,
+      "w": 1940,
+      "h": 65,
+      "text": "源码分布在多个文件；运行时启动的是具体的函数实例。图表示逻辑组织，编译器可内联与重排实现。\n依据本地 SM100 源码绘制；本轮未进行编译、设备运行或机器码验证。",
+      "size": 22,
+      "bold": false,
+      "color": "#19344d",
+      "parent": null,
+      "kind": "text"
+    }
+  ],
+  "edges": [
+    {
+      "id": "config_ml",
+      "a": "config",
+      "b": "mltype",
+      "pts": [
+        [
+          490,
+          335
+        ],
+        [
+          525,
+          335
+        ],
+        [
+          525,
+          330
+        ],
+        [
+          560,
+          330
+        ]
+      ],
+      "color": "#58728c",
+      "dashed": false
+    },
+    {
+      "id": "config_ep",
+      "a": "config",
+      "b": "eptype",
+      "pts": [
+        [
+          490,
+          445
+        ],
+        [
+          525,
+          445
+        ],
+        [
+          525,
+          530
+        ],
+        [
+          560,
+          530
+        ]
+      ],
+      "color": "#58728c",
+      "dashed": false
+    },
+    {
+      "id": "ml_kernel",
+      "a": "mltype",
+      "b": "kerneltype",
+      "pts": [
+        [
+          1060,
+          330
+        ],
+        [
+          1100,
+          330
+        ],
+        [
+          1100,
+          375
+        ],
+        [
+          1140,
+          375
+        ]
+      ],
+      "color": "#58728c",
+      "dashed": false
+    },
+    {
+      "id": "ep_kernel",
+      "a": "eptype",
+      "b": "kerneltype",
+      "pts": [
+        [
+          1060,
+          530
+        ],
+        [
+          1100,
+          530
+        ],
+        [
+          1100,
+          480
+        ],
+        [
+          1140,
+          480
+        ]
+      ],
+      "color": "#58728c",
+      "dashed": false
+    },
+    {
+      "id": "kernel_adapter",
+      "a": "kerneltype",
+      "b": "adaptertype",
+      "pts": [
+        [
+          1550,
+          560
+        ],
+        [
+          1550,
+          615
+        ]
+      ],
+      "color": "#58728c",
+      "dashed": false
+    },
+    {
+      "id": "types_compile",
+      "a": "adaptertype",
+      "b": "compiler",
+      "pts": [
+        [
+          1960,
+          665
+        ],
+        [
+          1985,
+          665
+        ],
+        [
+          1985,
+          977
+        ],
+        [
+          1660,
+          977
+        ]
+      ],
+      "color": "#b58a40",
+      "dashed": false
+    },
+    {
+      "id": "compile_host",
+      "a": "compiler",
+      "b": "hostcode",
+      "pts": [
+        [
+          750,
+          1055
+        ],
+        [
+          750,
+          1085
+        ],
+        [
+          450,
+          1085
+        ],
+        [
+          450,
+          1120
+        ]
+      ],
+      "color": "#b58a40",
+      "dashed": false
+    },
+    {
+      "id": "compile_device",
+      "a": "compiler",
+      "b": "devicecode",
+      "pts": [
+        [
+          1300,
+          1055
+        ],
+        [
+          1300,
+          1085
+        ],
+        [
+          1480,
+          1085
+        ],
+        [
+          1480,
+          1120
+        ]
+      ],
+      "color": "#b58a40",
+      "dashed": false
+    },
+    {
+      "id": "loadhost",
+      "a": "hostcode",
+      "b": "hostrun",
+      "pts": [
+        [
+          780,
+          1250
+        ],
+        [
+          780,
+          1530
+        ],
+        [
+          720,
+          1530
+        ]
+      ],
+      "color": "#8b9caa",
+      "dashed": true
+    },
+    {
+      "id": "loaddevice",
+      "a": "devicecode",
+      "b": "entry",
+      "pts": [
+        [
+          1930,
+          1250
+        ],
+        [
+          1980,
+          1250
+        ],
+        [
+          1980,
+          1505
+        ],
+        [
+          1880,
+          1505
+        ],
+        [
+          1880,
+          1525
+        ]
+      ],
+      "color": "#8b9caa",
+      "dashed": true
+    },
+    {
+      "id": "launch",
+      "a": "hostrun",
+      "b": "entry",
+      "pts": [
+        [
+          720,
+          1600
+        ],
+        [
+          830,
+          1600
+        ]
+      ],
+      "color": "#298465",
+      "dashed": false
+    },
+    {
+      "id": "entry_body",
+      "a": "entry",
+      "b": "body",
+      "pts": [
+        [
+          1380,
+          1655
+        ],
+        [
+          1380,
+          1690
+        ]
+      ],
+      "color": "#298465",
+      "dashed": false
+    },
+    {
+      "id": "collective_handoff",
+      "a": "mlrun",
+      "b": "eprun",
+      "pts": [
+        [
+          1290,
+          1905
+        ],
+        [
+          1450,
+          1905
+        ]
+      ],
+      "color": "#477c9f",
+      "dashed": false
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "table_rows": 68,
+  "source_files": 70,
+  "all_source_files_and_regex_anchors_exist": true,
+  "diagrams": [
+    {
+      "name": "01-end-to-end",
+      "nodes": 19,
+      "edges": 12,
+      "png": [
+        2610,
+        2130
+      ]
+    },
+    {
+      "name": "02-collective-handoff",
+      "nodes": 21,
+      "edges": 13,
+      "png": [
+        2850,
+        2490
+      ]
+    },
+    {
+      "name": "03-concept-cards",
+      "nodes": 12,
+      "edges": 0,
+      "png": [
+        2700,
+        2085
+      ]
+    },
+    {
+      "name": "04-sdc200-porting",
+      "nodes": 14,
+      "edges": 11,
+      "png": [
+        2700,
+        2160
+      ]
+    }
+  ],
+  "xml_parse": true,
+  "png_visual_review": "reviewed all four PNGs; revised launch routing and ready/empty label routing",
+  "utf8": true,
+  "compiled": false,
+  "device_run": false,
+  "numerical_validation": false,
+  "sass_or_sdc_machine_code": false,
+  "performance": false,
+  "source_modified": false,
+  "cross_computer_sync": false,
+  "html_structure_and_local_image_paths": true,
+  "csv_rows": 68,
+  "all_source_hashes_unchanged_at_final_verification": true,
+  "drawio_nodes_are_editable": true,
+  "visual_differences": "Font glyphs, antialiasing, arrow tip geometry may differ between Pillow and diagrams.net."
+}

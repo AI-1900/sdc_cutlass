@@ -1,0 +1,1628 @@
+
+### 01 构建 | D:\000_SDC\001TASK\02_Research\cutlass\CMakeLists.txt:58
+55: 
+56: ## CUTLASS PROJECT #############################################################
+57: 
+58: project(CUTLASS VERSION ${_CUTLASS_VERSION_MAJOR}.${_CUTLASS_VERSION_MINOR}.${_CUTLASS_VERSION_PATCH} LANGUAGES CXX)
+59: 
+60: ################################################################################
+61: 
+62: if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+63:   set(CUTLASS_GNU_HOST_COMPILE ON CACHE BOOL "Using GNU tools for host code compilation")
+64: endif()
+65: if (CMAKE_CXX_COMPILER_ID MATCHES "[Cc]lang")
+66:   set(CUTLASS_CLANG_HOST_COMPILE ON CACHE BOOL "Using Clang tools for host code compilation")
+67: endif()
+68: if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+69:   set(CUTLASS_MSVC_HOST_COMPILE ON CACHE BOOL "Using MSVC tools for host code compilation")
+70: endif()
+71: 
+72: ################################################################################
+73: 
+74: include(${CMAKE_CURRENT_SOURCE_DIR}/CUDA.cmake)
+
+### 02 能力宏 | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\config.hpp:42
+39: // 三者都要求强制内联，以便大量小型 constexpr/模板函数不产生额外调用开销。
+40: // 普通 C++ 编译器不认识 CUDA 属性，因此统一退化为标准 inline。
+41: #if defined(__CUDACC__) || defined(_NVHPC_CUDA)
+42: #  define CUTE_HOST_DEVICE __forceinline__ __host__ __device__
+43: #  define CUTE_DEVICE      __forceinline__          __device__
+44: #  define CUTE_HOST        __forceinline__ __host__
+45: #else
+46: #  define CUTE_HOST_DEVICE inline
+47: #  define CUTE_DEVICE      inline
+48: #  define CUTE_HOST        inline
+49: #endif // CUTE_HOST_DEVICE, CUTE_DEVICE
+50: 
+51: // NVRTC 只进行 CUDA 运行时编译，没有独立的 host 编译阶段，因此需要让原本供 host
+52: // 使用的 RTC 兼容函数同时具备 device 属性；非 NVRTC 环境则保持为纯 host 函数。
+53: #if defined(__CUDACC_RTC__)
+54: #  define CUTE_HOST_RTC CUTE_HOST_DEVICE
+55: #else
+56: #  define CUTE_HOST_RTC CUTE_HOST
+57: #endif
+58: 
+
+### 03 指令能力 | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\arch\config.hpp:56
+53: 
+54: ////////////////////////////////////////////////////////////////////////////////////////////////////
+55: 
+56: #if (defined(CUTLASS_ARCH_MMA_SM100A_ENABLED) || defined(CUTLASS_ARCH_MMA_SM101A_ENABLED) ||\
+57:      defined(CUTLASS_ARCH_MMA_SM103A_ENABLED) || defined(CUTLASS_ARCH_MMA_SM120A_ENABLED) ||\
+58:      defined(CUTLASS_ARCH_MMA_SM121A_ENABLED))
+59: #  define CUTE_ARCH_TMA_SM90_ENABLED
+60: #  define CUTE_ARCH_DEVICE_MODIFIABLE_TMA_SM90_ENABLED
+61: #  define CUTE_ARCH_STSM_SM90_ENABLED
+62: #endif
+63: 
+64: #if (defined(CUTLASS_ARCH_MMA_SM100A_ENABLED) || defined(CUTLASS_ARCH_MMA_SM101A_ENABLED) ||\
+65:      defined(CUTLASS_ARCH_MMA_SM103A_ENABLED))
+66: #  define CUTE_ARCH_TCGEN05_TF32_MMA_ENABLED
+67: #  define CUTE_ARCH_TCGEN05_F16F32_MMA_ENABLED
+68: #  define CUTE_ARCH_TCGEN05_MXF8F6F4_MMA_ENABLED
+69: #  define CUTE_ARCH_TCGEN05_MXF4_MMA_ENABLED
+70: #  define CUTE_ARCH_TCGEN05_MXF4NVF4_MMA_ENABLED
+71: #endif
+72: 
+
+### 04 架构标签 | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\arch\arch.h:100
+97: };
+98: 
+99: 
+100: struct Sm100 {
+101:   static int const kMinComputeCapability = 100; 
+102: };
+103: 
+104: struct Sm101 {
+105:   static int const kMinComputeCapability = 101; 
+106: };
+107: 
+108: struct Sm120 {
+109:   static int const kMinComputeCapability = 120;
+110: };
+111: 
+112: struct Sm103 {
+113:   static int const kMinComputeCapability = 103; 
+114: };
+115: 
+116: /// Triggers a breakpoint on the device
+
+### 05 架构 SIMD 配套（按需） | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\arch\mma_sm100.h:68
+65:   /// Layout of C matrix (concept: MatrixLayout)
+66:   typename LayoutC
+67: >
+68: struct Mma<gemm::GemmShape<2, 1, 1>, 1, ElementA, LayoutA, ElementB, LayoutB, ElementC_, LayoutC, OpMultiplyAdd> {
+69: 
+70:   using Shape = gemm::GemmShape<2, 1, 1>;
+71:   using Operator = OpMultiplyAdd;
+72:   using ElementC = ElementC_;
+73: 
+74:   CUTLASS_DEVICE
+75:   void operator()(
+76:     Array<ElementC, 2> &d,
+77:     Array<ElementA, 2> const &a,
+78:     Array<ElementB, 1> const &b,
+79:     Array<ElementC, 2> const &c
+80:   ) {
+81:     CUTLASS_PRAGMA_UNROLL
+82:     for (int i = 0; i < 2; ++i) {
+83:       d[i] = a[i] * b[0] + c[i];
+84:     }
+
+### 06 问题与模式 | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\gemm\gemm_enumerated_types.h:57
+54: 
+55: /////////////////////////////////////////////////////////////////////////////////////////////////
+56: 
+57: enum class GemmUniversalMode {
+58:   kGemm,
+59:   kGemmSplitKParallel,
+60:   kBatched,
+61:   kArray,
+62:   kGrouped,
+63:   kInvalid
+64: };
+65: 
+66: ////////////////////////////////////////////////////////////////////////////////
+67: 
+68: /// Some options for clearing shared memory
+69: enum class SharedMemoryClearOption {
+70:   kNone,            ///< SMEM is in don't-care state
+71:   kZfill,           ///< Kernels fill out of bounds accesses with zeros
+72:   kClearLastStage   ///< Last SMEM stage is explicitly cleared. Mainloop uses 'kNone'
+73: };
+
+### 07 类型元编程 | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\int_tuple.hpp:371
+368:   CUTE_GCC_UNREACHABLE;
+369: }
+370: 
+371: /** Division for Shapes
+372:  * Case Tuple Tuple:
+373:  *   Perform shape_div element-wise
+374:  * Case Tuple Int:
+375:  *   Fold the division of b across each element of a
+376:  *   Example: shape_div((4,5,6),40) -> shape_div((1,5,6),10) -> shape_div((1,1,6),2) -> (1,1,3)
+377:  * Case Int Tuple:
+378:  *   Return shape_div(a, product(b))
+379:  * Case Int Int:
+380:  *   Enforce the divisibility condition a % b == 0 || b % a == 0 when possible
+381:  *   Return ceil_div(a, b)
+382:  */
+383: template <class IntTupleA, class IntTupleB>
+384: CUTE_HOST_DEVICE constexpr
+385: auto
+386: shape_div(IntTupleA const& a, IntTupleB const& b)
+387: {
+
+### 08 Layout | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\layout.hpp:231
+228:     return composition(*this, make_tile(layouts...));
+229:   }
+230: 
+231:   // 用紧致 LayoutLeft 布局 make_layout(shape) 重新定义当前布局的输入域。
+232:   template <class OtherShape>
+233:   CUTE_HOST_DEVICE constexpr
+234:   auto
+235:   with_shape(OtherShape const& shape) const {
+236:     return composition(*this, make_layout(shape));
+237:   }
+238: 
+239:   // 多维形状便捷重载：先构造 Shape，再复合为新的输入域。
+240:   template <class... Shapes>
+241:   CUTE_HOST_DEVICE constexpr
+242:   auto
+243:   with_shape(Shapes const&... shapes) const {
+244:     return composition(*this, make_layout(make_shape(shapes...)));
+245:   }
+246: 
+247:   //
+
+### 09 Tensor | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\tensor_impl.hpp:263
+260:     if constexpr (has_underscore<Coord>::value) {
+261:       // 结构化绑定分别取得子 Layout 和该切片首元素相对原 data() 的偏移。
+262:       auto [sliced_layout,offset] = slice_and_offset(coord, layout());
+263:       return make_tensor(data() + offset, sliced_layout);
+264:     } else {
+265:       return data()[layout()(coord)];
+266:     }
+267: 
+268:     CUTE_GCC_UNREACHABLE;
+269:   }
+270: 
+271:   template <class Coord>
+272:   CUTE_HOST_DEVICE constexpr
+273:   decltype(auto)
+274:   operator()(Coord const& coord) const {
+275:     // const Tensor 采用同一切片规则；最终可写性仍由 Engine::reference/迭代器语义决定。
+276:     if constexpr (has_underscore<Coord>::value) {
+277:       auto [sliced_layout,offset] = slice_and_offset(coord, layout());
+278:       return make_tensor(data() + offset, sliced_layout);
+279:     } else {
+
+### 10 Swizzle | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\swizzle.hpp:64
+61:  * BBits==0 表示恒等变换；SShift 默认等于 BBits。
+62:  */
+63: template <int BBits, int MBase, int SShift = BBits>
+64: struct Swizzle
+65: {
+66:   // 对外暴露模板配置，供布局/描述符代码进行编译期查询。
+67:   static constexpr int num_bits = BBits;
+68:   static constexpr int num_base = MBase;
+69:   static constexpr int num_shft = SShift;
+70: 
+71:   static_assert(num_base >= 0,             "MBase must be positive.");
+72:   static_assert(num_bits >= 0,             "BBits must be positive.");
+73:   static_assert(abs(num_shft) >= num_bits, "abs(SShift) must be more than BBits.");
+74: 
+75:   // 使用有符号 int 生成掩码，避免中间表达式过早提升为 unsigned。
+76:   // bit_msk 是 B 个低位 1；yyy_msk 是源字段；zzz_msk 是被 XOR 的目标字段；
+77:   // msk_sft 保存有符号移位量，供 shiftr 同时处理正、负方向。
+78:   using bit_msk = cute::constant<int, (1 << num_bits) - 1>;
+79:   using yyy_msk = cute::constant<int, bit_msk{} << (num_base + max(0,num_shft))>;
+80:   using zzz_msk = cute::constant<int, bit_msk{} << (num_base - min(0,num_shft))>;
+
+### 11 主循环入口 | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\gemm\collective\collective_builder.hpp:39
+36: 
+37: /////////////////////////////////////////////////////////////////////////////////////////////////
+38: 
+39: #include "cutlass/gemm/collective/collective_builder_decl.hpp"
+40: #include "cutlass/gemm/collective/builders/sm90_gmma_builder.inl"
+41: #include "cutlass/gemm/collective/builders/sm90_sparse_gmma_builder.inl"
+42: #if !defined(__CUDACC_RTC__)
+43: #include "cutlass/gemm/collective/builders/sm100_umma_builder.inl"
+44: #include "cutlass/gemm/collective/builders/sm100_9xBF16_umma_builder.inl"
+45: #include "cutlass/gemm/collective/builders/sm100_sparse_umma_builder.inl"
+46: #include "cutlass/gemm/collective/builders/sm100_blockscaled_umma_builder.inl"
+47: #include "cutlass/gemm/collective/builders/sm100_blockwise_umma_builder.inl"
+48: #include "cutlass/gemm/collective/builders/sm100_blockscaled_sparse_umma_builder.inl"
+49: #include "cutlass/gemm/collective/builders/sm100_simt_builder.inl"
+50: #include "cutlass/gemm/collective/builders/sm100_mixed_input_umma_builder.inl"
+51: #include "cutlass/gemm/collective/builders/sm100_cpasync_umma_builder.inl"
+52: #include "cutlass/gemm/collective/builders/sm100_mixed_tma_cpasync_umma_builder.inl"
+53: #include "cutlass/gemm/collective/builders/sm100_blockscaled_mixed_tma_cpasync_umma_builder.inl"
+54: #include "cutlass/gemm/collective/builders/sm103_blockscaled_umma_builder.inl"
+55: #include "cutlass/gemm/collective/builders/sm120_mma_builder.inl"
+
+### 12 Mainloop builder | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\gemm\collective\builders\sm100_umma_builder.inl:329
+326:       >
+327:     >;
+328: 
+329:   using CollectiveOp = cutlass::gemm::collective::CollectiveMma<
+330:       DispatchPolicy,
+331:       TileShape_MNK,
+332:       ElementA,
+333:       cutlass::gemm::TagToStrideA_t<GmemLayoutATag>,
+334:       ElementB,
+335:       cutlass::gemm::TagToStrideB_t<GmemLayoutBTag>,
+336:       TiledMma,
+337:       GmemTiledCopyA,
+338:       SmemLayoutAtomA,
+339:       void,
+340:       cute::identity,
+341:       GmemTiledCopyB,
+342:       SmemLayoutAtomB,
+343:       void,
+344:       cute::identity
+345:     >;
+
+### 13 主循环 helper | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\gemm\collective\builders\sm100_common.inl:444
+441:   UMMA::ScaleIn BNeg = UMMA::ScaleIn::One
+442: >
+443: constexpr auto
+444: sm100_make_trivial_tiled_mma() {
+445:   // MMA_2SM requested
+446:   if constexpr (cute::is_base_of_v<KernelSchedule2Sm, BuilderScheduleTag> ) {
+447:     return sm100_make_2sm_trivial_tiled_mma<ElementAMma, ElementBMma, ElementAccumulator,
+448:                                     TileShape_MNK, ClusterShape_MNK, UmmaMajorA, UmmaMajorB, ANeg, BNeg>();
+449:   }
+450:   // MMA_1SM requested
+451:   else if constexpr (cute::is_base_of_v<KernelSchedule1Sm, BuilderScheduleTag> ) {
+452:     return sm100_make_1sm_trivial_tiled_mma<ElementAMma, ElementBMma, ElementAccumulator,
+453:                                     TileShape_MNK, ClusterShape_MNK, UmmaMajorA, UmmaMajorB, ANeg, BNeg>();
+454:   }
+455:   // Auto scheduling requested
+456:   else if constexpr (cute::is_same_v<BuilderScheduleTag, KernelScheduleAuto>) {
+457:     // Static cluster
+458:     if constexpr (cute::is_static_v<ClusterShape_MNK>) {
+459:       // For MMA_2SM we need a cluster shape that is multiple of 2x1
+460:       // and only M=128 and M=256 are supported, otherwise, fall back to MMA_1SM
+
+### 14 Kernel carveout | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\gemm\collective\builders\sm100_pipeline_carveout.inl:45
+42:   bool IsArrayOfPointersGemm,
+43:   int NumTensorMaps=2
+44: >
+45: struct Sm100DenseGemmTmaUmmaCarveout {
+46:   // AccumulatorPipeline = PipelineUmmaAsync
+47:   static constexpr auto AccumulatorPipelineStorage = sizeof(typename cutlass::PipelineUmmaAsync<AccumulatorPipelineStageCount>::SharedStorage);
+48:   // CLCPipeline = PipelineCLCFetchAsync
+49:   // For pointer-array and grouped GEMM, we have two CLC responses, one for TMA updater, one for the TMA/MMA/Epilogue warps.
+50:   static constexpr int NumCLCResponses = (IsArrayOfPointersGemm ? 2 : 1);
+51:   static constexpr auto CLCPipelineStorage = sizeof(typename cutlass::PipelineCLCFetchAsync<SchedulerPipelineStageCount, ClusterShape_MNK>::SharedStorage) * NumCLCResponses;
+52:   // LoadOrderBarrier = OrderedSequenceBarrier<1,2>
+53:   static constexpr auto LoadOrderBarrierStorage = sizeof(typename cutlass::OrderedSequenceBarrier<1,2>::SharedStorage);
+54:   // CLC (scheduler) response
+55:   static constexpr auto CLCResponseStorage = SchedulerPipelineStageCount * detail::CLCResponseSize * NumCLCResponses;
+56:   // CLC Throttle pipeline storage
+57:   static constexpr auto CLCThrottlePipelineStorage = sizeof(typename cutlass::PipelineAsync<SchedulerPipelineStageCount>::SharedStorage);
+58:   // Tmem dealloc
+59:   static constexpr auto TmemDeallocStorage = sizeof(cutlass::arch::ClusterBarrier);
+60:   // Tmem ptr storage
+61:   static constexpr auto TmemBasePtrsStorage = SchedulerPipelineStageCount * sizeof(uint32_t);
+
+### 15 Mainloop policy | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\gemm\dispatch_policy.hpp:1029
+1026:   class ClusterShape_ = Shape<_1,_1,_1>,
+1027:   class ArchTag_ = arch::Sm100
+1028: >
+1029: struct MainloopSm100TmaUmmaWarpSpecialized {
+1030:   constexpr static int Stages = Stages_;
+1031:   using ClusterShape = ClusterShape_;
+1032:   using ArchTag = ArchTag_;
+1033:   using Schedule = KernelTmaWarpSpecializedSm100<SchedulerPipelineStageCount_, AccumulatorPipelineStageCount_>;
+1034:   constexpr static bool IsOverlappingAccum = false;
+1035: };
+1036: 
+1037: // n-buffer in smem, pipelined with Blackwell UMMA and TMA, Warp specialized dynamic schedule
+1038: template<
+1039:   int Stages_,
+1040:   int SchedulerPipelineStageCount_,
+1041:   int AccumulatorPipelineStageCount_,
+1042:   class ClusterShape_ = Shape<_1,_1,_1>,
+1043:   class ArchTag_ = arch::Sm100
+1044: >
+1045: struct MainloopSm100TmaUmmaWarpSpecializedBlockwiseScaling {
+
+### 16 主循环主体 | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\gemm\collective\sm100_mma_warpspecialized.hpp:81
+78:   class SmemLayoutAtomB_,
+79:   class SmemCopyAtomB_,
+80:   class TransformB_>
+81: struct CollectiveMma<
+82:     MainloopSm100TmaUmmaWarpSpecialized<
+83:       Stages,
+84:       SchedulerPipelineStageCount,
+85:       AccumulatorPipelineStageCount,
+86:       ClusterShape,
+87:       ArchTag_>,
+88:     TileShape_,
+89:     ElementA_,
+90:     StrideA_,
+91:     ElementB_,
+92:     StrideB_,
+93:     TiledMma_,
+94:     GmemTiledCopyA_,
+95:     SmemLayoutAtomA_,
+96:     SmemCopyAtomA_,
+97:     TransformA_,
+
+### 17 主循环 host 转换 | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\gemm\collective\sm100_mma_warpspecialized.hpp:355
+352: 
+353:   template <class ProblemShape>
+354:   static constexpr Params
+355:   to_underlying_arguments(
+356:     ProblemShape const& problem_shape,
+357:     Arguments const& args,
+358:     [[maybe_unused]] void* workspace,
+359:     cutlass::KernelHardwareInfo const& hw_info = cutlass::KernelHardwareInfo{}) {
+360: 
+361:     // Optionally append 1s until problem shape is rank-4 (MNKL), in case it is only rank-3 (MNK)
+362:     auto problem_shape_MNKL = append<4>(problem_shape, 1);
+363:     auto [M,N,K,L] = problem_shape_MNKL;
+364: 
+365:     auto ptr_A = recast_ptr<TmaInternalElementA>(args.ptr_A);
+366:     auto ptr_B = recast_ptr<TmaInternalElementB>(args.ptr_B);
+367: 
+368:     Tensor tensor_a = make_tensor(ptr_A, make_layout(make_shape(M,K,L), args.dA));
+369:     Tensor tensor_b = make_tensor(ptr_B, make_layout(make_shape(N,K,L), args.dB));
+370: 
+371:     auto cluster_shape = cutlass::detail::select_cluster_shape(ClusterShape{}, hw_info.cluster_shape);
+
+### 18 MMA 通用算法 | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\algorithm\gemm.hpp:77
+74:           class TC, class CLayout>
+75: CUTE_HOST_DEVICE
+76: void
+77: gemm(Tensor<TA, ALayout> const& A,
+78:      Tensor<TB, BLayout> const& B,
+79:      Tensor<TC, CLayout>      & C)
+80: {
+81:   return gemm(C, A, B, C);
+82: }
+83: 
+84: template <class MMA,
+85:           class TA, class ALayout,
+86:           class TB, class BLayout,
+87:           class TC, class CLayout>
+88: CUTE_HOST_DEVICE
+89: void
+90: gemm(MMA_Atom<MMA>       const& mma,
+91:      Tensor<TA, ALayout> const& A,
+92:      Tensor<TB, BLayout> const& B,
+93:      Tensor<TC, CLayout>      & C)
+
+### 19 MMA Atom | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\atom\mma_atom.hpp:117
+114:     static_assert(CLayout::rank == 1, "Expected rank-1 C tensor");
+115: 
+116:     // 将派生的 MMA_Atom 显式向上转型为 Traits，既传递 Traits 状态，也触发正确的 ADL 重载。
+117:     return mma_unpack(static_cast<Traits const&>(*this), D, A, B, C);
+118:   }
+119: 
+120:   // 三参数原位累加形式：把 C 同时作为输入 accumulator 和输出 D，即 C = A * B + C。
+121:   template <class TA, class ALayout,
+122:             class TB, class BLayout,
+123:             class TC, class CLayout>
+124:   CUTE_HOST_DEVICE constexpr
+125:   void
+126:   call(Tensor<TA, ALayout> const& A,
+127:        Tensor<TB, BLayout> const& B,
+128:        Tensor<TC, CLayout>      & C) const
+129:   {
+130:     return call(C, A, B, C);
+131:   }
+132: 
+133:   // make_fragment_A/B/C 接受已经由 partition_A/B/C 分区的 Tensor。
+
+### 20 MMA Traits | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\atom\mma_traits_sm100.hpp:284
+281: template <class a_type, class b_type, class c_type,
+282:           int M, int N, UMMA::Major a_major, UMMA::Major b_major,
+283:           UMMA::ScaleIn a_neg, UMMA::ScaleIn b_neg>
+284: struct MMA_Traits<SM100_MMA_F16BF16_SS<a_type, b_type, c_type,
+285:                                 M, N, a_major, b_major,
+286:                                 a_neg, b_neg>>
+287: {
+288:   using ValTypeD = c_type;
+289:   using ValTypeA = a_type;
+290:   using ValTypeB = b_type;
+291:   using ValTypeC = c_type;
+292: 
+293:   static_assert(cute::sizeof_bits_v<a_type> == cute::sizeof_bits_v<b_type> && cute::sizeof_bits_v<b_type> == 16, "SM100_MMA_F16BF16_SS supports 16bit types");
+294: 
+295:   using FrgTypeA = UMMA::smem_desc<a_major>;
+296:   using FrgTypeB = UMMA::smem_desc<b_major>;
+297:   using FrgTypeC = UMMA::tmem_frg_1sm<c_type>;
+298: 
+299:   // Logical shape-K is always 256bits, transform to units of elements
+300:   static constexpr int K = 256 / cute::sizeof_bits<ValTypeA>::value;
+
+### 21 TMEM fragment | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\atom\mma_traits_sm100_frag.hpp:78
+75:   ScaleFactorDuplicated2by2 = 4
+76: };
+77: 
+78: struct tmem_frg_base {};
+79: 
+80: // The UMMA Traits below have custom fragment type flags for their tmem tensors.
+81: // These flags specialize a MakeTensor customization point to correctly make the fragment that is desired.
+82: template <class ValueType, class StorageType, int N_SM, UMMA::TmemAllocMode TmemAlloc = UMMA::TmemAllocMode::Interleaved>
+83: struct tmem_frg : tmem_frg_base
+84: {
+85:   static_assert(sizeof_bits_v<ValueType> <= sizeof_bits_v<StorageType>, "TMEM MMA allocations require StorageType big enough for ValueType.");
+86: 
+87:   // UMMA TMEM Allocator
+88:   //   Each UMMA expects a specific MxN layout of TMEM for accumulators
+89:   //   and sometimes a specific MxK layout of TMEM for A-values.
+90:   // @tparam ValueType The value type of the TMEM Tensor to allocate.
+91:   // @tparam StorageType The storage type of the TMEM Tensor to allocate.
+92:   //                     "Sparse" allocations often allocate ValueType=half_t within StorageType=uint32_t.
+93:   //                     "Dense"  allocations often allocate ValueType=half_t within StorageType=half_t.
+94:   // @tparam N_SM The number of SMs in this UMMA_XSM instruction.
+
+### 22 MMA 指令 | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\arch\mma_sm100_umma.hpp:86
+83: template <class a_type, class b_type, class c_type,
+84:           int M, int N, UMMA::Major a_major, UMMA::Major b_major,
+85:           UMMA::ScaleIn a_neg = UMMA::ScaleIn::One, UMMA::ScaleIn b_neg = UMMA::ScaleIn::One>
+86: struct SM100_MMA_F16BF16_SS
+87: {
+88:   static_assert(M == 64 || M == 128, "SM100_MMA_F16BF16 M-mode size should be 64 or 128 for 1 CTA cluster MMA.");
+89:   static_assert((N % 8 == 0)  && (8 <= N)  && (N <= 256),
+90:                 "SM100_MMA_F16BF16 N-mode size should be a multiple of 8 between 8 and 256.");
+91: 
+92:   using DRegisters = void;
+93:   using ARegisters = uint64_t[1];
+94:   using BRegisters = uint64_t[1];
+95:   using CRegisters = uint32_t[1];
+96: 
+97:   CUTE_HOST_DEVICE static void
+98:   fma(uint64_t const& desc_a,
+99:       uint64_t const& desc_b,
+100:       uint32_t const& tmem_c,
+101:       uint32_t const& scaleC,
+102:       uint64_t const& idescE)
+
+### 23 MMA descriptor | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\arch\mma_sm100_desc.hpp:131
+128:  * 因此原始 byte address/offset 的低 4 bit 不写入 descriptor，并要求 16B 对齐。
+129:  * version_=1 是 Blackwell 固定版本；lbo_mode_=0 使用相对 offset，1 使用绝对地址模式。
+130:  */
+131: union SmemDescriptor
+132: {
+133:   uint64_t desc_ = 0;
+134:   // Bitfield implementation avoids the need for shifts in assignment
+135:   struct {
+136:     // start_address, bit [0,14), 4LSB not included
+137:     uint16_t start_address_ : 14, : 2;                     // 14 bits [0,14), 2 bits unused
+138:     // leading dimension byte offset, bit [16,30), 4LSB not included
+139:     uint16_t leading_byte_offset_ : 14, : 2;               // 14 bits [0,14), 2 bits unused
+140:     // stride dimension byte offset, bit [32,46), 4LSB not included
+141:     uint16_t stride_byte_offset_ : 14, version_ : 2;       // 14 bits [0,14), 2 bits [14,16)
+142:     // base_offset, bit [49,52). leading_byte_offset_mode, bit [52,53).
+143:     uint8_t : 1, base_offset_ : 3, lbo_mode_ : 1, : 3;     // 1 bit unused, 3 bits [1,4), 1 bit [4,5), 3 bits unused
+144:     // layout type, bit [61,64), SWIZZLE_NONE matrix descriptor = 0, SWIZZLE_128B matrix descriptor = 2, SWIZZLE_64B descriptor = 4, SWIZZLE_32B descriptor = 6, SWIZZLE_128B_BASE32B = 1, N/A = 3, N/A = 5, N/A = 7
+145:     uint8_t : 5, layout_type_ : 3;                         // 6 bits unused, 3 bits [5,8)
+146:   };
+147:   // Seperate the field, as we may only update one part of desc
+
+### 24 TMEM 分配 | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\arch\tmem_allocator_sm100.hpp:84
+81: 
+82: // 单 CTA/单 SM 分配器，对应所有 PTX 的 .cta_group::1 形式。
+83: // 每次调用必须且只能由 CTA 内同一个完整 active warp 一致执行；类本身无运行时成员。
+84: class Allocator1Sm {
+85: public:
+86:   // tcgen05.alloc/dealloc 的最小分配粒度：一次 allocation slice 为 32 列。
+87:   static constexpr int ColumnsPerAllocationSlice = 32;
+88:   // SM100 每个 TMEM 地址空间可分配的最大列数。
+89:   static constexpr int Sm100TmemCapacityColumns = 512;
+90: 
+91:   // 无状态构造函数；构造对象不会立即申请 TMEM。
+92:   __device__ Allocator1Sm() { }
+93: 
+94:   /**
+95:    * 动态申请当前 CTA 使用的 TMEM 列，底层发射 tcgen05.alloc.cta_group::1。
+96:    * 当所需 TMEM 暂不可用时指令会阻塞，直到硬件能够满足请求。
+97:    *
+98:    * @param num_columns 申请的列数。必须在 [32,512] 内且为 2 的幂；分配单位为
+99:    *                    32 列和这些列的全部 128 条 DP lane。连续多次申请时，
+100:    *                    后一次 num_columns 不得大于前一次。
+
+### 25 TMEM helper | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\detail\sm100_tmem_helper.hpp:49
+46: 
+47: template <class TmemTensor>
+48: CUTE_HOST_DEVICE
+49: static constexpr auto find_tmem_tensor_col_offset(TmemTensor tensor) {
+50:   using namespace cute;
+51:   return cosize(recast<uint32_t>(tensor).layout()) & TmemColMask;
+52: }
+53: 
+54: template <int AccumulatorPipelineStageCount, bool IsOverlappingAccum,
+55:           class TiledMma, class AccumulatorShape,
+56:           class EpilogueTile>
+57: CUTE_HOST_DEVICE 
+58: static constexpr auto make_sm100_accumulator(TiledMma tiled_mma, AccumulatorShape acc_shape, EpilogueTile epilogue_tile) {
+59:   using namespace cute;
+60:   static_assert(rank(acc_shape) == 3 || (rank(acc_shape) == 4 && IsOverlappingAccum == false), 
+61:     "Expect a rank >= 3 accumulator shape compatible with an SM100 tiled mma, Overlapping accumulators is only available for non-complex kernels");
+62:   if constexpr (IsOverlappingAccum) {
+63:     Tensor accumulators_tmp = TiledMma::make_fragment_C(append(acc_shape, Int<2>{}));
+64:     return make_tensor(
+65:         accumulators_tmp.data(),
+
+### 26 Copy Atom | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\atom\copy_atom.hpp:45
+42: {
+43: 
+44: template <class... Args>
+45: struct Copy_Atom;
+46: 
+47: template <class CopyOperation, class CopyInternalType>
+48: struct Copy_Atom<CopyOperation, CopyInternalType> : Copy_Atom<Copy_Traits<CopyOperation>, CopyInternalType>
+49: {};
+50: 
+51: template <class... Args, class CopyInternalType>
+52: struct Copy_Atom<Copy_Traits<Args...>, CopyInternalType>
+53:   : Copy_Traits<Args...>
+54: {
+55:   using Traits = Copy_Traits<Args...>;
+56: 
+57:   // Bit and Thr layouts from the Copy_Traits
+58:   using ThrID        = typename Traits::ThrID;
+59:   using BitLayoutSrc = typename Traits::SrcLayout;
+60:   using BitLayoutDst = typename Traits::DstLayout;
+61:   using BitLayoutRef = typename Traits::RefLayout;
+
+### 27 TMEM copy Traits | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\atom\copy_traits_sm100.hpp:274
+271:  * Example:
+272:  *   Tensor gmem_tensor = ...                                            // (M,N,...)
+273:  *   Tensor tmem_tensor = ...                                            // (M,N,...)
+274:  *   auto tiled_tmem_load = make_tmem_copy(TMEM_LOAD_Operation, tmem_tensor);
+275:  *   auto thr_tmem_load = tiled_tmem_load.get_slice(thread_idx);
+276:  *
+277:  *   Tensor tDtC = thr_tmem_load.partition_S(tmem_tensor);                    // (TMEM_LOAD,TMEM_LOAD_M,TMEM_LOAD_N,...)
+278:  *   Tensor tDgC = thr_tmem_load.partition_D(gmem_tensor);                    // (TMEM_LOAD,TMEM_LOAD_M,TMEM_LOAD_N,...)
+279:  *   Tensor tDrC = make_tensor<ElementAccumulator>(shape(tDgD));         // (TMEM_LOAD,TMEM_LOAD_M,TMEM_LOAD_N,...)
+280:  *
+281:  *   copy(tiled_tmem_load, tDtC, tDrC);       // tmem -> rmem
+282:  *   copy(tDrC, tDgC);                   // rmem -> gmem
+283:  */
+284: template <class CopyOp, class CopyT,
+285:           class TEngine, class TLayout>
+286: CUTE_HOST_DEVICE constexpr
+287: auto
+288: make_tmem_copy(Copy_Atom<CopyOp,CopyT> const& atom,
+289:                Tensor<TEngine,TLayout> const& tmem)
+290: {
+
+### 28 TMEM copy ISA | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\arch\copy_sm100.hpp:628
+625:        uint32_t& dst0, uint32_t& dst1, uint32_t& dst2, uint32_t& dst3)
+626:   {
+627: #if defined(CUTE_ARCH_TCGEN05_TMEM_ENABLED)
+628:     asm volatile ("tcgen05.ld.sync.aligned.16x256b.x1.b32"
+629:                     "{%0, %1, %2, %3},"
+630:                     "[%4];\n"
+631:     :  "=r"(dst0), "=r"(dst1), "=r"(dst2), "=r"(dst3)
+632:     :  "r"(src_addr));
+633: #else
+634:     CUTE_INVALID_CONTROL_PATH("Trying to use TMEM_LOAD without CUTE_ARCH_TCGEN05_TMEM_ENABLED.");
+635: #endif
+636:   }
+637: };
+638: 
+639: ////////////////////////////////////////////////////////////////////////////////////////////////////
+640: 
+641: // 16 data path lanes, 256-bit pattern, repeated 1 times, packed 16b read
+642: struct SM100_TMEM_LOAD_16dp256b1x_16b
+643: {
+644:   using SRegisters = uint32_t[1];
+
+### 29 TMA Traits SM100 | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\atom\copy_traits_sm100_tma.hpp:729
+726:           class ClusterShapeVMNK>
+727: CUTE_HOST
+728: auto
+729: make_tma_atom_A_sm100(CopyOp                  const& copy_op,
+730:                       Tensor<GEngine,GLayout> const& gtensor,        // (M, K, ...)
+731:                       SLayout                 const& slayout,        // (MMA, MMA_M, MMA_K, ...)
+732:                       MMA_Tiler               const& mma_tiler,      // (TILE_M, TILE_N, TILE_K, ...)
+733:                       TiledMMA<Args...>       const& mma,
+734:                       ClusterShapeVMNK        const& cluster_shape)  // (CTA_V, CTA_M, CTA_N, CTA_K)
+735: {
+736:   // Keep only MK modes from MNK
+737:   auto mma_tiler_mk = remove<1>(mma_tiler);
+738: 
+739:   // cluster tile coord -> gtensor coord
+740:   auto g_tile = make_identity_layout(shape(gtensor)).compose(mma_tiler_mk);         // (TILE_M, TILE_K, ...)
+741: 
+742:   // cta val idx -> gmem mode
+743:   auto cta_v_tile = layout<1>(mma.thrfrg_A(g_tile))(_, repeat<rank(g_tile)>(_));    // (MMA, MMA_M, MMA_K, ...)
+744: 
+745: #if 0
+
+### 30 TMA host 编码 | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\atom\copy_traits_sm90_tma.hpp:1047
+1044:     TMA::SmemSwizzleBits swizzle_bits = get_tma_swizzle_bits(swizzle);
+1045:     TMA::SmemSwizzleBase swizzle_base = get_tma_swizzle_base(swizzle);
+1046:     CUtensorMapSwizzle smem_swizzle = TMA::to_CUtensorMapSwizzle(swizzle_bits, swizzle_base);
+1047:     CUresult result = CUTLASS_CUDA_DRIVER_WRAPPER_CALL(cuTensorMapEncodeTiled)(
+1048:         &tma_desc,
+1049:         tma_format,
+1050:         tma_dim,
+1051:         gmem_address,
+1052:         gmem_prob_shape.data(),
+1053:         gmem_prob_stride.data() + 1,  // gmem_prob_stride[0] implicitly 1
+1054:         smem_box_shape.data(),
+1055:         smem_box_stride.data(),
+1056:         tma_interleave,
+1057:         smem_swizzle,
+1058:         tma_l2Promotion,
+1059:         tma_oobFill);
+1060:    
+1061:     int driver_version = 0;
+1062:     cudaError_t driver_version_err = cudaDriverGetVersion(&driver_version);
+1063:     assert(driver_version_err == cudaSuccess);
+
+### 31 TMA descriptor 类型 | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\arch\copy_sm90_desc.hpp:292
+289: } // end namespace TMA
+290: 
+291: #if (__CUDACC_VER_MAJOR__ >= 12) && !defined(__CUDACC_RTC__)
+292:   using TmaDescriptor = CUtensorMap;
+293:   using Im2ColTmaDescriptor = CUtensorMap;
+294: #else
+295:   using TmaDescriptor = struct alignas(64) { char bytes[128]; };
+296:   using Im2ColTmaDescriptor = struct alignas(64) { char bytes[128]; };
+297: #endif
+298: ////////////////////////////////////////////////////////////////////////////////////////////////////
+299: /// Initiates a TensorMap Prefetch
+300: ////////////////////////////////////////////////////////////////////////////////////////////////////
+301: 
+302: CUTE_HOST_DEVICE
+303: void
+304: prefetch_tma_descriptor(TmaDescriptor const* desc_ptr)
+305: {
+306: #if defined(CUTE_ARCH_TMA_SM90_ENABLED)
+307:   uint64_t gmem_int_desc = reinterpret_cast<uint64_t>(desc_ptr);
+308:   // Prefetch TMA Descriptor using generic addressing (i.e. no specific state space: const or param)
+
+### 32 TMA device load/store | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\arch\copy_sm90_tma.hpp:61
+58:     cutlass::arch::synclog_emit_tma_load(__LINE__, gmem_int_desc, smem_int_mbar, smem_int_ptr);
+59: #if defined(CUTE_ARCH_TMA_SM120_ENABLED)
+60:     asm volatile (
+61:       "cp.async.bulk.tensor.1d.shared::cta.global.mbarrier::complete_tx::bytes.L2::cache_hint"
+62:       " [%0], [%1, {%3}], [%2], %4;"
+63:       :
+64:       : "r"(smem_int_ptr), "l"(gmem_int_desc), "r"(smem_int_mbar),
+65:         "r"(crd0), "l"(cache_hint)
+66:       : "memory");
+67: #else
+68:     asm volatile (
+69:       "cp.async.bulk.tensor.1d.shared::cluster.global.mbarrier::complete_tx::bytes.L2::cache_hint"
+70:       " [%0], [%1, {%3}], [%2], %4;"
+71:       :
+72:       : "r"(smem_int_ptr), "l"(gmem_int_desc), "r"(smem_int_mbar),
+73:         "r"(crd0), "l"(cache_hint)
+74:       : "memory");
+75: #endif
+76: #else
+77:     CUTE_INVALID_CONTROL_PATH("Trying to use tma without CUTE_ARCH_TMA_SM90_ENABLED.");
+
+### 33 TMA SM100 扩展 | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\arch\copy_sm100_tma.hpp:52
+49: /// UTMA_LOAD : Initiates a TMA copy from global memory to shared memory
+50: ////////////////////////////////////////////////////////////////////////////////////////////////////
+51: 
+52: struct SM100_TMA_2SM_LOAD_1D
+53: {
+54:   CUTE_HOST_DEVICE static void
+55:   copy([[maybe_unused]] void const* desc_ptr, [[maybe_unused]] uint64_t* mbar_ptr, [[maybe_unused]] uint64_t cache_hint,
+56:        [[maybe_unused]] void      * smem_ptr,
+57:        [[maybe_unused]] int32_t const& crd0)
+58:   {
+59: #if defined(CUTE_ARCH_TMA_SM100_ENABLED)
+60:     uint64_t gmem_int_desc = reinterpret_cast<uint64_t>(desc_ptr);
+61:     // Executed by both CTAs. Set peer bit to 0 so that the
+62:     // transaction bytes will update CTA0's barrier.
+63:     uint32_t smem_int_mbar = cast_smem_ptr_to_uint(mbar_ptr) & Sm100MmaPeerBitMask;
+64:     uint32_t smem_int_ptr  = cast_smem_ptr_to_uint(smem_ptr);
+65:     asm volatile (
+66:       "cp.async.bulk.tensor.1d.cta_group::2.shared::cluster.global.mbarrier::complete_tx::bytes.L2::cache_hint"
+67:       " [%0], [%1, {%3}], [%2], %4;"
+68:       :
+
+### 34 pipeline | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\pipeline\sm100_pipeline.hpp:119
+116: //
+117: ///////////////////////////////////////////////////////////////////////////////////////////////////
+118: template <int Stages_, class AtomThrShape_MNK_ = Shape<_1,_1,_1>>
+119: class PipelineUmmaAsync {
+120: public:
+121:   static constexpr uint32_t Stages = Stages_;
+122:   using AtomThrShape_MNK = AtomThrShape_MNK_;
+123: private:
+124:   using Impl = PipelineAsync<Stages>;
+125: public:
+126:   using FullBarrier  = typename Impl::FullBarrier;
+127:   using EmptyBarrier = typename Impl::EmptyBarrier;
+128:   using ProducerBarrierType = typename Impl::ProducerBarrierType;
+129:   using ConsumerBarrierType = typename Impl::ConsumerBarrierType;
+130:   using PipelineState = typename Impl::PipelineState;
+131:   using SharedStorage = typename Impl::SharedStorage;
+132:   using ThreadCategory = typename Impl::ThreadCategory;
+133:   using Params = typename Impl::Params;
+134: 
+135:   // Helper function to initialize barriers
+
+### 35 通用 pipeline | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\pipeline\sm90_pipeline.hpp:1015
+1012: };
+1013: 
+1014: template <int Stages_>
+1015: class PipelineAsync {
+1016: public:
+1017:   static constexpr uint32_t Stages = Stages_;
+1018:   using SharedStorage = PipelineDetail::PipelineAsyncSharedStorage<Stages>;
+1019:   using FullBarrier = typename SharedStorage::FullBarrier;
+1020:   using EmptyBarrier = typename SharedStorage::EmptyBarrier;
+1021:   using ProducerBarrierType = typename FullBarrier::ValueType;
+1022:   using ConsumerBarrierType = typename EmptyBarrier::ValueType;
+1023:   using PipelineState = PipelineDetail::PipelineAsyncPipelineState<Stages>;
+1024: 
+1025:   enum class ThreadCategory {
+1026:     NonParticipant,
+1027:     Producer,
+1028:     Consumer,
+1029:     ProducerConsumer
+1030:   };
+1031: 
+
+### 36 barrier/fence | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\arch\barrier.h:797
+794: 
+795: 
+796: CUTLASS_HOST_DEVICE
+797: void umma_arrive(uint64_t const* smem_ptr) {
+798: #if defined(CUTLASS_ARCH_TCGEN_ENABLED)
+799:   uint32_t bar_intptr = cute::cast_smem_ptr_to_uint(smem_ptr);
+800:   if (cute::elect_one_sync()) {
+801:     asm volatile("tcgen05.commit.cta_group::1.mbarrier::arrive::one.shared::cluster.b64 [%0];"
+802:       :
+803:       :"r"(bar_intptr)
+804:       : "memory");
+805:   }
+806: #else
+807:     CUTLASS_NOT_IMPLEMENTED();
+808: #endif
+809: }
+810: 
+811: //UMMA arrive for MMA_2x1SM
+812: CUTLASS_HOST_DEVICE
+813: void umma_arrive_2x1SM(uint64_t const* smem_ptr) {
+
+### 37 named/order barrier | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\pipeline\sm90_pipeline.hpp:1255
+1252: namespace PipelineDetail {
+1253: 
+1254: template<int SequenceDepth, int SequenceLength>
+1255: struct OrderedSequenceBarrierSharedStorage {
+1256:   using Barrier = cutlass::arch::ClusterBarrier;
+1257:   Barrier barrier_[SequenceDepth][SequenceLength];
+1258: };
+1259: 
+1260: } // namespace PipelineDetail
+1261: 
+1262: template<int SequenceDepth_, int SequenceLength_>
+1263: class OrderedSequenceBarrier {
+1264: public:
+1265:   static constexpr int SequenceDepth = SequenceDepth_;
+1266:   static constexpr int SequenceLength = SequenceLength_;
+1267:   using SharedStorage =
+1268:     PipelineDetail::OrderedSequenceBarrierSharedStorage<SequenceDepth, SequenceLength>;
+1269:   using Barrier = typename SharedStorage::Barrier;
+1270: 
+1271:   struct Params {
+
+### 38 cluster/election | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\arch\cluster_sm90.hpp:180
+177: }
+178: 
+179: // Elect one thread in the warp. The elected thread gets its predicate set to true, all others obtain false.
+180: CUTE_HOST_DEVICE uint32_t elect_one_sync()
+181: {
+182: #if defined(CUTE_ARCH_ELECT_ONE_SM90_ENABLED)
+183:   uint32_t pred = 0;
+184:   uint32_t laneid = 0;
+185:   asm volatile(
+186:     "{\n"
+187:     ".reg .b32 %%rx;\n"
+188:     ".reg .pred %%px;\n"
+189:     "     elect.sync %%rx|%%px, %2;\n"
+190:     "@%%px mov.s32 %1, 1;\n"
+191:     "     mov.s32 %0, %%rx;\n"
+192:     "}\n"
+193:     : "+r"(laneid), "+r"(pred)
+194:     : "r"(0xFFFFFFFF));
+195:   return pred;
+196: #elif defined(__CUDA_ARCH__)
+
+### 39 cluster SM100 | D:\000_SDC\001TASK\02_Research\cutlass\include\cute\arch\cluster_sm100.hpp:49
+46: //
+47: CUTE_HOST
+48: bool
+49: initialize_preferred_cluster_launch(void const* const kernel_function,
+50:                                    dim3 const& grid_dims,
+51:                                    dim3 const& cluster_dims_preferred,
+52:                                    dim3 const& cluster_dims_fallback)
+53: {
+54:   //
+55:   // Validate cluster_dims
+56:   //
+57: 
+58:   // Total number of cluster cannot be greater than 32 (hardware requirement)
+59:   if (cluster_dims_preferred.x * cluster_dims_preferred.y * cluster_dims_preferred.z <= 0 ||
+60:       cluster_dims_preferred.x * cluster_dims_preferred.y * cluster_dims_preferred.z > 32) {
+61:     std::cout << "Invalid preferred cluster dimensions: Attempting to init preferred cluster (" << cluster_dims_preferred.x << "," << cluster_dims_preferred.y << "," << cluster_dims_preferred.z
+62:               << ") [" << (cluster_dims_preferred.x * cluster_dims_preferred.y * cluster_dims_preferred.z) << "] which must be within (0,32]." << std::endl;
+63:     return false;
+64:   }
+65: 
+
+### 40 register 调度 | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\arch\reg_reconfig.h:74
+71: 
+72: template<uint32_t RegCount>
+73: CUTLASS_DEVICE
+74: void warpgroup_reg_alloc(){
+75: #if CUDA_CTA_RECONFIG_ACTIVATED
+76:   asm volatile( "setmaxnreg.inc.sync.aligned.u32 %0;\n" : : "n"(RegCount) );
+77: #endif
+78: }
+79: 
+80: template<uint32_t RegCount>
+81: CUTLASS_DEVICE
+82: void warpgroup_reg_dealloc(){
+83: #if CUDA_CTA_RECONFIG_ACTIVATED
+84:   asm volatile( "setmaxnreg.dec.sync.aligned.u32 %0;\n" : : "n"(RegCount) );
+85: #endif
+86: }
+87: 
+88: } // namespace arch
+89: } // namespace cutlass
+
+### 41 epilogue Builder | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\epilogue\collective\collective_builder.hpp:70
+67:   class FusionOpOrCallbacks = cutlass::epilogue::fusion::LinearCombination<ElementD,ElementCompute,ElementC,ElementCompute>,
+68:   class Enable = void
+69: >
+70: struct CollectiveBuilder {
+71:   static_assert(cutlass::detail::dependent_false<ArchTag>,
+72:       "Could not build a collective epilogue for given parameters.");
+73: };
+74: 
+75: // helper sub-builder for epilogue fusion callbacks (for internal use by CollectiveBuilder only)
+76: namespace detail {
+77: 
+78: // callbacks builder with operation tag
+79: template<
+80:   class DispatchPolicy,
+81:   class FusionOp,
+82:   class TileShape_MNK,
+83:   class EpilogueTile_MN,
+84:   class ElementAccumulator,
+85:   class AccLoadOp = cute::DefaultCopy,
+86:   class = void
+
+### 42 epilogue 策略生成 | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\epilogue\collective\builders\sm100_builder.inl:593
+590:   bool IsBlockScaleSupported
+591: >
+592: constexpr auto
+593: sm100_get_tmem_load_op() {
+594:   using namespace cute;
+595: 
+596:   // Number of datapaths (dp) available in this warp's tmem subpartition.
+597:   // If only 16dp are available then we must use 16dp TMEM_LOAD variants
+598:   // otherwise we prefer 32dp variants as those have higher throughput
+599: 
+600:   // For those fused patterns which have RowReduction or RowBroadcast
+601:   // 16dp tmem load op can effectively reduce the usage of registers & shuffle instrs
+602:   // Compared to TMEM_LOAD throughput, it's more critical
+603:   constexpr int num_dp = size<0>(TmemShape_MN{});
+604:   static_assert(num_dp == 16 || num_dp == 32, "Unsupported tmem datapath count");
+605: 
+606:   // Number of columns in this tmem subpartition, in bits
+607:   // Used to select the widest cross variant TMEM_LOAD available
+608:   constexpr int num_col_bits = size<1>(TmemShape_MN{}) * sizeof_bits_v<ElementAccumulator>;
+609: 
+
+### 43 epilogue dispatch | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\epilogue\dispatch_policy.hpp:226
+223:   bool ReuseSmemC_,
+224:   bool DelayTmaStore_
+225: >
+226: struct Sm100TmaWarpSpecialized {
+227:   constexpr static int StagesC = StagesC_;
+228:   constexpr static int StagesD = StagesD_;
+229:   constexpr static int FragmentSize = FragmentSize_;
+230:   constexpr static bool ReuseSmemC = ReuseSmemC_;
+231:   constexpr static bool DelayTmaStore = DelayTmaStore_;
+232: };
+233: 
+234: template<
+235:   int StagesC_,
+236:   int StagesD_,
+237:   int FragmentSize_,
+238:   bool ReuseSmemC_,
+239:   bool DelayTmaStore_
+240: >
+241: struct Sm100PtrArrayTmaWarpSpecialized {
+242:   constexpr static int StagesC = StagesC_;
+
+### 44 epilogue 主体 | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\epilogue\collective\sm100_epilogue_tma_warpspecialized.hpp:84
+81:   class CopyOpR2S_,
+82:   class CopyOpR2R_
+83: >
+84: class CollectiveEpilogue<
+85:     Sm100TmaWarpSpecialized<StagesC_, StagesD_, FragmentSize_, ReuseSmemC_, DelayTmaStore_>,
+86:     CtaTileShape_,
+87:     EpilogueTile_,
+88:     ElementC_,
+89:     StrideC_,
+90:     ElementD_,
+91:     StrideD_,
+92:     FusionCallbacks_,
+93:     CopyOpT2R_,
+94:     CopyOpG2S_,
+95:     SmemLayoutAtomC_,
+96:     CopyOpS2R_,
+97:     CopyOpS2G_,
+98:     SmemLayoutAtomD_,
+99:     CopyOpR2S_,
+100:     CopyOpR2R_
+
+### 45 fusion 架构回调 | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\epilogue\fusion\sm100_callbacks_tma_warpspecialized.hpp:68
+65:   class EpilogueTile_MN,
+66:   class... Args
+67: >
+68: struct FusionCallbacks<
+69:     epilogue::Sm100TmaWarpSpecialized<StagesC, StagesD, FragmentSize, ReuseSmemC, DelayTmaStore>,
+70:     Operation,
+71:     CtaTile_MNK,
+72:     EpilogueTile_MN,
+73:     Args...
+74: > : FusionCallbacks<
+75:       epilogue::Sm90TmaWarpSpecialized<StagesC, StagesD, FragmentSize, ReuseSmemC, DelayTmaStore>,
+76:       Operation,
+77:       CtaTile_MNK,
+78:       EpilogueTile_MN,
+79:       Args...
+80:     > {
+81:   using FusionCallbacks<
+82:       epilogue::Sm90TmaWarpSpecialized<StagesC, StagesD, FragmentSize, ReuseSmemC, DelayTmaStore>,
+83:       Operation,
+84:       CtaTile_MNK,
+
+### 46 fusion 通用算术 | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\epilogue\fusion\operations.hpp:116
+113:   class ElementScalar_ = ElementCompute_,
+114:   FloatRoundStyle RoundStyle_ = FloatRoundStyle::round_to_nearest
+115: >
+116: struct LinearCombination
+117:     : ScaledAcc<ElementOutput_, ElementCompute_, ElementScalar_, RoundStyle_> {
+118:   using ElementSource = ElementSource_;
+119:   static constexpr bool IsSourceSupported = true;
+120: };
+121: 
+122: // D = activation(alpha * acc + beta * C)
+123: template<
+124:   template <class> class ActivationFn_,
+125:   class ElementOutput_,
+126:   class ElementCompute_,
+127:   class ElementSource_ = ElementOutput_,
+128:   class ElementScalar_ = ElementCompute_,
+129:   FloatRoundStyle RoundStyle_ = FloatRoundStyle::round_to_nearest
+130: >
+131: struct LinCombEltAct
+132:     : LinearCombination<ElementOutput_, ElementCompute_, ElementSource_, ElementScalar_, RoundStyle_> {
+
+### 47 数值转换 | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\numeric_conversion.h:850
+847:   FloatRoundStyle Round = FloatRoundStyle::round_to_nearest,
+848:   typename Transform = cutlass::transform::thread::UnaryTransform::Identity
+849: >
+850: struct NumericArrayConverter {
+851: 
+852:   using result_type = Array<T, N>;
+853:   using source_type = Array<S, N>;
+854:   static FloatRoundStyle const round_style = Round;
+855: 
+856:   static_assert(platform::is_same<Transform, cutlass::transform::thread::UnaryTransform::Identity>::value ||
+857:                 platform::is_same<Transform, cutlass::transform::thread::UnaryTransform::Conjugate>::value,
+858:                   "Unary Operator not supported.");
+859: 
+860:   CUTLASS_HOST_DEVICE
+861:   static result_type convert(source_type const & s) {
+862: 
+863:     result_type result;
+864:     NumericConverter<T, S, Round> convert_;
+865: 
+866:     CUTLASS_PRAGMA_UNROLL
+
+### 48 Kernel 声明 | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\gemm\kernel\gemm_universal_decl.h:57
+54:   class TileScheduler_ = void,
+55:   class Enable = void
+56: >
+57: class GemmUniversal;
+58: 
+59: 
+60: } // namespace cutlass::gemm::kernel
+61: 
+
+### 49 Kernel 聚合 | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\gemm\kernel\gemm_universal.hpp:67
+64: #include "cutlass/gemm/kernel/sm90_gemm_tma_warpspecialized_cooperative.hpp"
+65: #include "cutlass/gemm/kernel/sm90_gemm_array_tma_warpspecialized_pingpong.hpp"
+66: #include "cutlass/gemm/kernel/sm90_gemm_array_tma_warpspecialized_cooperative.hpp"
+67: #include "cutlass/gemm/kernel/sm100_gemm_tma_warpspecialized.hpp"
+68: #include "cutlass/gemm/kernel/sm100_gemm_tma_warpspecialized_mma_transform.hpp"
+69: #include "cutlass/gemm/kernel/sm100_gemm_array_tma_warpspecialized.hpp"
+70: #include "cutlass/gemm/kernel/sm100_gemm_tma_warpspecialized_input_transform.hpp"
+71: #include "cutlass/gemm/kernel/sm100_gemm_tma_warpspecialized_mixed_input_transform.hpp"
+72: #include "cutlass/gemm/kernel/sm100_gemm_array_tma_warpspecialized_input_transform.hpp"
+73: #include "cutlass/gemm/kernel/sm100_gemm_array_tma_warpspecialized_mma_transform.hpp"
+74: #include "cutlass/gemm/kernel/sm100_sparse_gemm_tma_warpspecialized.hpp"
+75: #include "cutlass/gemm/kernel/sm100_gemm_cpasync_warpspecialized.hpp"
+76: #include "cutlass/gemm/kernel/sm100_gemm_mixed_tma_cpasync_warpspecialized.hpp"
+77: #include "cutlass/gemm/kernel/sm103_blockscaled_gemm_tma_warpspecialized.hpp"
+78: #include "cutlass/gemm/kernel/sm103_blockscaled_gemm_array_tma_warpspecialized.hpp"
+79: #include "cutlass/gemm/kernel/sm120_gemm_tma_warpspecialized_cooperative_asymmetric_dma.hpp"
+80: 
+81: ////////////////////////////////////////////////////////////////////////////////
+
+### 50 Kernel 编排 | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\gemm\kernel\sm100_gemm_tma_warpspecialized.hpp:67
+64:   class CollectiveEpilogue_,
+65:   class TileSchedulerTag_
+66: >
+67: class GemmUniversal<
+68:   ProblemShape_,
+69:   CollectiveMainloop_,
+70:   CollectiveEpilogue_,
+71:   TileSchedulerTag_,
+72:   cute::enable_if_t<
+73:     cute::disjunction_v<cutlass::detail::is_kernel_tag_of<typename CollectiveMainloop_::DispatchPolicy::Schedule,
+74:                                 KernelTmaWarpSpecializedSm100>,
+75:     cutlass::detail::is_kernel_tag_of<typename CollectiveMainloop_::DispatchPolicy::Schedule,
+76:                                 KernelTmaWarpSpecializedBlockScaledSm100>>>>
+77: {
+78: public:
+79:   //
+80:   // Type Aliases
+81:   //
+82:   using ProblemShape = ProblemShape_;
+83:   static_assert(rank(ProblemShape{}) == 3 or rank(ProblemShape{}) == 4,
+
+### 51 scheduler selector | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\gemm\kernel\tile_scheduler.hpp:207
+204:                         SchedulerPipelineStageCount>;
+205: };
+206: 
+207: // Default (void) for Sm100 maps to PersistentTileSchedulerSm100
+208: template <class TileShape, class ClusterShape, uint32_t SchedulerPipelineStageCount>
+209: struct TileSchedulerSelector<
+210:     void,
+211:     arch::Sm100,
+212:     TileShape,
+213:     ClusterShape,
+214:     SchedulerPipelineStageCount> {
+215:     using Scheduler = PersistentTileSchedulerSm100<
+216:                 ClusterShape,
+217:                 SchedulerPipelineStageCount
+218:                 >;
+219: };
+220: 
+221: // Default (void) for Sm100 maps to PersistentTileSchedulerSm100
+222: // Ptr-Array kernel may provide a specialized ArrayProblemShape type
+223: template <class TileShape,
+
+### 52 persistent scheduler | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\gemm\kernel\sm100_tile_scheduler.hpp:394
+391: 
+392:   CUTLASS_HOST_DEVICE
+393:   static void
+394:   issue_clc_query(PipelineState<Stages> state, uint32_t mbarrier_addr, CLCResponse* clc_response_ptr) {
+395:   #if defined(CUTLASS_ARCH_CLC_ENABLED)
+396:       uint32_t result_addr = cute::cast_smem_ptr_to_uint(reinterpret_cast<const void*>(
+397:             &clc_response_ptr[state.index()]));
+398:       asm volatile(
+399:         "{\n\t"
+400:         "clusterlaunchcontrol.try_cancel.async.shared::cta.mbarrier::complete_tx::bytes.multicast::cluster::all.b128 [%0], [%1];\n\t" 
+401:         "}\n"
+402:         :
+403:         : "r"(result_addr), "r"(mbarrier_addr));
+404:   #else
+405:       CUTLASS_NOT_IMPLEMENTED();
+406:   #endif
+407:   }
+408: 
+409:   CUTLASS_DEVICE
+410:   static WorkTileInfo
+
+### 53 device adapter | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\gemm\device\gemm_universal_adapter.h:123
+120: } // namespace detail
+121: 
+122: template <class GemmKernel_>
+123: class GemmUniversalAdapter<
+124:   GemmKernel_,
+125:   cute::enable_if_t<gemm::detail::IsCutlass3GemmKernel<GetUnderlyingKernel_t<GemmKernel_>>::value>>
+126: {
+127: public:
+128:   using GemmKernel = GetUnderlyingKernel_t<GemmKernel_>;
+129:   using TileShape = typename GemmKernel::TileShape;
+130:   using ElementA = typename GemmKernel::ElementA;
+131:   using ElementB = typename GemmKernel::ElementB;
+132:   using ElementC = typename GemmKernel::ElementC;
+133:   using ElementD = typename GemmKernel::ElementD;
+134:   using ElementAccumulator = typename GemmKernel::ElementAccumulator;
+135:   using DispatchPolicy = typename GemmKernel::DispatchPolicy;
+136:   using CollectiveMainloop = typename GemmKernel::CollectiveMainloop;
+137:   using CollectiveEpilogue = typename GemmKernel::CollectiveEpilogue;
+138: 
+139:   // Map back to 2.x type as best as possible
+
+### 54 全局入口 | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\device_kernel.h:118
+115: // Enclosing this in __CUDACC__ suppresses MSVC warnings.
+116: __launch_bounds__(Operator::MaxThreadsPerBlock, Operator::MinBlocksPerMultiprocessor)
+117: #endif // __CUDACC__
+118: void device_kernel(CUTLASS_GRID_CONSTANT typename Operator::Params const params)
+119: {
+120:   // Dynamic shared memory base pointer
+121:   extern __shared__ char smem[];
+122:   Operator op;
+123:   op(params, smem);
+124:   cutlass::arch::synclog_print();
+125: 
+126: }
+127: 
+128: ////////////////////////////////////////////////////////////////////////////////
+129: } /// namespace cutlass
+
+### 55 普通 launcher | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\kernel_launch.h:76
+73: 
+74: 
+75: template <typename GemmKernel, typename Params>
+76: Status kernel_launch(
+77:     dim3 const grid_dims,
+78:     dim3 const block_dims,
+79:     size_t const smem_size,
+80:     cudaStream_t cuda_stream,
+81:     const Params &kernel_params,
+82:     bool launch_with_pdl) {
+83: #if (CUTLASS_DEBUG_TRACE_LEVEL > 1)
+84:   CUTLASS_TRACE_HOST("cutlass::kernel_launch");
+85: #endif
+86: 
+87:   if (not launch_with_pdl) {
+88: #if (CUTLASS_DEBUG_TRACE_LEVEL > 1)
+89:     CUTLASS_TRACE_HOST("cutlass::kernel_launch: No PDL");
+90: #endif
+91:     device_kernel<GemmKernel><<<grid_dims, block_dims, smem_size, cuda_stream>>>(kernel_params);
+92:   }
+
+### 56 cluster launcher | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\cluster_launch.hpp:248
+245:         "(" << cluster_dims.x << ", " << cluster_dims.y << ", " << cluster_dims.z << ")\n");
+246: 
+247:     cutlass::arch::synclog_setup();
+248:     cudaError_t status = cudaLaunchKernelExC(&cluster_launch_config.launch_config, kernel, kernel_params);
+249:     Return_Status(status);
+250: #else
+251:     CUTLASS_TRACE_HOST("ClusterLauncher: CUTLASS_SM90_CLUSTER_LAUNCH_ENABLED not defined! Aborting cluster launch.");
+252:     return Status::kInvalid;
+253: #endif
+254:   }
+255: 
+256:   
+257:   // This is the method we expect to use going forward
+258:   // Launch a preferred cluster grid
+259:   static inline CUTLASS_HOST
+260:   Status launch_with_fallback_cluster(
+261:       dim3 const grid_dims,
+262:       dim3 const preferred_cluster_dims,
+263:       dim3 const fallback_cluster_dims,
+264:       dim3 const block_dims,
+
+### 57 硬件信息 | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\kernel_hardware_info.h:43
+40: 
+41: namespace cutlass {
+42: 
+43: struct KernelHardwareInfo {
+44:   //
+45:   // Data members
+46:   //
+47: 
+48:   // Hardware properties
+49:   int device_id = 0;
+50:   int sm_count  = 0;
+51: 
+52:   // Kernel properties
+53:   int max_active_clusters = 0;              // Maximum number of clusters that could co-exist on the target device.
+54:   dim3 cluster_shape = {0,0,0};             
+55:   dim3 cluster_shape_fallback = {0,0,0};    
+56: 
+57:   //
+58:   // Methods
+59:   //
+
+### 58 host/device 内存 | D:\000_SDC\001TASK\02_Research\cutlass\tools\util\include\cutlass\util\device_memory.h:61
+58:   T* ptr = 0;
+59:   size_t bytes = count * sizeof_bits<T>::value / 8;
+60: 
+61:   cudaError_t cuda_error = cudaMalloc((void**)&ptr, bytes);
+62: 
+63:   if (cuda_error != cudaSuccess) {
+64: #if (CUTLASS_DEBUG_TRACE_LEVEL > 0)
+65:     std::ostringstream os;
+66:     os << "cutlass::device_memory::allocate: cudaMalloc failed: bytes=" << bytes;
+67:     CUTLASS_TRACE_HOST(os.str());
+68: #endif
+69:     throw cuda_exception("Failed to allocate memory", cuda_error);
+70:   }
+71: #if (CUTLASS_DEBUG_TRACE_LEVEL > 1)
+72:   else {
+73:     std::ostringstream os;
+74:     os << "cutlass::device_memory::allocate: Successful cudaMalloc: bytes=" << bytes;
+75:     CUTLASS_TRACE_HOST(os.str());
+76:   }
+77: #endif
+
+### 59 HostTensor | D:\000_SDC\001TASK\02_Research\cutlass\tools\util\include\cutlass\util\host_tensor.h:403
+400:   }
+401: 
+402:   /// Copies data from host to device
+403:   void sync_device() {
+404:     if (device_backed()) {
+405:       device_memory::copy_to_device(
+406:           device_.get(), host_.data(), host_.size());
+407:     }
+408:   }
+409: 
+410:   /// Copy data from a caller-supplied device pointer into host memory.
+411:   void copy_in_device_to_host(
+412:     Element const* ptr_device,        ///< source device memory
+413:     LongIndex count = -1) {           ///< number of elements to transfer; if negative, entire tensor is overwritten.
+414: 
+415:     if (count < 0) {
+416:       count = capacity();
+417:     }
+418:     else {
+419:       count = __NV_STD_MIN(capacity(), count);
+
+### 60 Testbed | D:\000_SDC\001TASK\02_Research\cutlass\test\unit\gemm\device\gemm_testbed_3x.hpp:3828
+3825:   typename Gemm,
+3826:   template <class T> class ActivationFunctor = cutlass::epilogue::thread::Identity
+3827: >
+3828: bool  (double alpha = 1.0, double beta = cute::is_same_v<typename Gemm::GemmKernel::ElementC, void> ? 0.0 : 1.0, CheckEquality check_relative_equality = CheckEquality::RELATIVE) {
+3829:   using ElementScalar = typename Gemm::EpilogueOutputOp::ElementScalar;
+3830:   using ProblemShapeType = typename Gemm::GemmKernel::ProblemShape;
+3831: 
+3832:   Testbed3x<Gemm, ActivationFunctor> testbed(check_relative_equality, ScalarLoc::ON_HOST, VectorScale::DISABLED);
+3833: 
+3834:   int max_alignment_m = std::max({Gemm::kAlignmentA, Gemm::kAlignmentC, Gemm::kAlignmentD});
+3835:   int max_alignment_n = std::max({Gemm::kAlignmentB, Gemm::kAlignmentC, Gemm::kAlignmentD});
+3836:   if constexpr (std::is_base_of_v<cutlass::epilogue::fusion::FusionOperation, typename Gemm::EpilogueOutputOp>) {
+3837:     max_alignment_m = std::max(max_alignment_m, Gemm::EpilogueOutputOp::AlignmentAux);
+3838:     max_alignment_n = std::max(max_alignment_n, Gemm::EpilogueOutputOp::AlignmentAux);
+3839:   }
+3840:   std::vector<int> problem_size_m = {max_alignment_m, 512 - 3 * max_alignment_m};
+3841:   std::vector<int> problem_size_n = {max_alignment_n, 512 - 2 * max_alignment_n};
+3842: 
+3843:   if constexpr (cute::is_same_v<typename Gemm::GemmKernel::DispatchPolicy::Schedule,
+3844:                 cutlass::gemm::KernelTmaWarpSpecializedPingpong>) {
+
+### 61 具体测试 | D:\000_SDC\001TASK\02_Research\cutlass\test\unit\gemm\device\sm100_tensorop_gemm\f16_f16_void_f32.cu:133
+130:   EXPECT_TRUE(pass);
+131: }
+132: 
+133: TEST(SM100Only_Device_Gemm_f16t_f16n_void_f32t_tensor_op_f32, 64x128x64_1x4x1_1sm) {
+134:   // [LVZ_NOTE] 本测例的数学语义（默认 alpha=1、beta=0）：
+135:   // 对每个 batch l，D[m,n,l] = sum_k float(A[m,k,l]) * float(B[k,n,l])。
+136:   // FP16 输入，FP32 累加/输出；C=void 表示 kernel 不需要读取源矩阵 C。
+137:   // 测试名中的 64x128x64 是计算 tile；1x4x1 是 CTA cluster，均不是完整问题尺寸。
+138:   // 实际 M/N/K/L 在 TestAll 中枚举，Shape<int,int,int,int> 按 (M,N,K,L) 排列。
+139:   // 注意：当前工作区 gemm_testbed_3x.hpp 的 TestAll 声明名称已有缺失；本注释不修改该处。
+140:   // Describe A and B tensors
+141:   // A 的数学 shape=(M,K)，CuTe shape=(M,K,L)，RowMajor：K 连续。
+142:   // 默认紧密存储时 stride_A=(K,1,M*K)，offset=m*K+k+l*M*K。
+143:   using ElementA = cutlass::half_t;
+144:   // AlignA 的单位是元素：8 个 FP16 = 16 字节，对应该 TMA 路径的 128-bit 对齐要求。
+145:   // 对齐值不是矩阵维度、tile 大小，也不是一次 UMMA 必须只处理 8 个元素。
+146:   constexpr int AlignA = 8;
+147:   using GmemLayoutA = cutlass::layout::RowMajor;
+148:   // B 的 AlignB=8 同样表示 8 个 FP16，即 16 字节。
+149:   constexpr int AlignB = 8;
+
+### 62 主机参考 | D:\000_SDC\001TASK\02_Research\cutlass\tools\util\include\cutlass\util\reference\host\gett.hpp:837
+834:   class MainloopParams,
+835:   class EpilogueParams
+836: >
+837: void Gemm3x(
+838:     MainloopParams const& mainloop_params,
+839:     EpilogueParams const& epilogue_params)
+840: {
+841:   using namespace cute;
+842: 
+843:   static_assert(cute::rank(typename MainloopParams::LayoutA{}) == cute::rank(typename MainloopParams::LayoutB{}));
+844:   static_assert(cute::rank(typename EpilogueParams::LayoutC{}) == cute::rank(typename EpilogueParams::LayoutD{}));
+845:   static_assert(cute::rank(typename MainloopParams::LayoutA{}) == cute::rank(typename EpilogueParams::LayoutC{}));
+846: 
+847:   if constexpr (cute::rank(typename MainloopParams::LayoutA{}) == 2) {
+848:     cute::Layout layout_A = make_layout_rank3(mainloop_params.A);
+849:     cute::Layout layout_B = make_layout_rank3(mainloop_params.B);
+850:     cute::Layout layout_C = make_layout_rank3(epilogue_params.C);
+851:     cute::Layout layout_D = make_layout_rank3(epilogue_params.D);
+852:     cute::Layout layout_Aux = make_layout_rank3(epilogue_params.Aux);
+853:     cute::Layout layout_Bias = make_layout_rank3(epilogue_params.Bias);
+
+### 63 数值比较 | D:\000_SDC\001TASK\02_Research\cutlass\tools\util\include\cutlass\util\reference\host\tensor_compare.h:179
+176: template <
+177:   typename Element,               ///< Element type
+178:   typename Layout>                ///< Layout function
+179: struct TensorEqualsFunc {
+180: 
+181:   //
+182:   // Data members
+183:   //
+184: 
+185:   TensorView<Element, Layout> lhs;
+186:   TensorView<Element, Layout> rhs;
+187:   bool result;
+188: 
+189:   /// Ctor
+190:   TensorEqualsFunc(): result(true) { }
+191: 
+192:   /// Ctor
+193:   TensorEqualsFunc(
+194:     TensorView<Element, Layout> const &lhs_,
+195:     TensorView<Element, Layout> const &rhs_
+
+### 64 构建测试 target | D:\000_SDC\001TASK\02_Research\cutlass\test\unit\gemm\device\sm100_tensorop_gemm\CMakeLists.txt:32
+29: 
+30: if (CUTLASS_NVCC_ARCHS MATCHES 100a)
+31: add_custom_target(
+32:   cutlass_test_unit_gemm_device_sm100_tensorop
+33:   DEPENDS
+34:   cutlass_test_unit_gemm_device_tensorop_sm100_f16xf16
+35:   cutlass_test_unit_gemm_device_tensorop_sm100_f8xf8
+36:   cutlass_test_unit_gemm_device_tensorop_sm100_s8xs8
+37: )
+38: 
+39: cutlass_test_unit_gemm_device_add_executable(
+40:   cutlass_test_unit_gemm_device_tensorop_sm100_f16xf16
+41: 
+42:   BATCH_SOURCES ON
+43:   BATCH_SIZE 1
+44: 
+45:   f16_f16_void_f32.cu
+46:   f16_f16_f16_f16_fusion.cu
+47:   f16_f16_void_f32_narrow_mma_n.cu
+48: )
+
+### 65 扩展范围 | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\gemm\kernel\sm100_tile_scheduler_stream_k.hpp:52
+49:   class ClusterShape,
+50:   uint32_t Stages_
+51: >
+52: class PersistentTileSchedulerSm100StreamK {
+53:   using UnderlyingScheduler = PersistentTileSchedulerSm100<ClusterShape, Stages_>;
+54:   using UnderlyingStreamKScheduler = PersistentTileSchedulerSm90StreamK<TileShape, ClusterShape>;
+55:   using InternalWorkTileInfo = typename UnderlyingScheduler::WorkTileInfo;
+56:   using InternalParams = typename UnderlyingScheduler::Params;
+57:   // Shapediv failures currently occur with tile shape N of 192
+58:   static constexpr bool ForceDataParallel = size<1>(TileShape{}) == 192;
+59: 
+60: public:
+61:   static constexpr uint32_t Stages = Stages_;
+62: 
+63:   using CLCResponse = typename UnderlyingScheduler::CLCResponse;
+64:   using WorkTileInfo = typename UnderlyingStreamKScheduler::WorkTileInfo;
+65:   using Arguments = typename UnderlyingStreamKScheduler::Arguments;
+66: 
+67:   using Params = PersistentTileSchedulerSm100StreamKParams;
+68:   using RasterOrder = PersistentTileSchedulerSm90Params::RasterOrder;
+
+### 66 CUTLASS 能力宏 | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\arch\config.h:87
+84: 
+85: // SM100, SM100a
+86: #if !CUTLASS_CLANG_CUDA && (__CUDACC_VER_MAJOR__ > 12 || (__CUDACC_VER_MAJOR__ == 12 && __CUDACC_VER_MINOR__ >= 8))
+87:   #define CUTLASS_ARCH_MMA_SM100_SUPPORTED 1
+88:   #if (!defined(CUTLASS_ARCH_MMA_SM100_ENABLED) && defined(__CUDA_ARCH__) && __CUDA_ARCH__ == 1000)
+89:     #define CUTLASS_ARCH_MMA_SM100_ENABLED 1
+90: 
+91:     #if (!defined(CUTLASS_ARCH_MMA_SM100A_ENABLED) && defined(__CUDA_ARCH_FEAT_SM100_ALL))
+92:       #define CUTLASS_ARCH_MMA_SM100A_ENABLED 1
+93:     #endif
+94: 
+95:     // SM100f
+96:     #if (__CUDACC_VER_MAJOR__ > 12 || (__CUDACC_VER_MAJOR__ == 12 && __CUDACC_VER_MINOR__ >= 9))
+97:     #define CUTLASS_ARCH_MMA_SM100F_SUPPORTED 1
+98:     #endif
+99: 
+100:     #if (!defined(CUTLASS_ARCH_MMA_SM100F_ENABLED) && CUDA_ARCH_FAMILY(1000))
+101:       #define CUTLASS_ARCH_MMA_SM100F_ENABLED CUTLASS_ARCH_MMA_SM100F_SUPPORTED
+102:     #endif
+103:   #endif
+
+### 67 HostAdapter / Driver 接入 | D:\000_SDC\001TASK\02_Research\cutlass\include\cutlass\cuda_host_adapter.hpp:152
+149: #endif // defined(CUTLASS_ENABLE_DIRECT_CUDA_DRIVER_CALL)
+150: 
+151: #if (__CUDACC_VER_MAJOR__ >= 12)
+152: CUTLASS_CUDA_DRIVER_WRAPPER_DECL(cuTensorMapEncodeTiled, 12000);
+153: CUTLASS_CUDA_DRIVER_WRAPPER_DECL(cuTensorMapEncodeIm2col, 12000);
+154: #endif
+155: 
+156: #undef CUTLASS_CUDA_DRIVER_STRINGIFY
+157: 
+158: #define CUTLASS_CUDA_DRIVER_WRAPPER_CALL(func) cutlass::call_##func
+159: 
+160: #endif // !defined(__CUDACC_RTC__)
+161: 
+162: 
+163: /////////////////////////////////////////////////////////////////////////////////////////////////
+164: 
+165: /// This class manages runtime CUlaunchAttribute that can be supplied to CudaHostAdapter
+166: /// CudaHostLaunchAttributes will be an empty struct in earlier CTK where CUlaunchAttribute
+167: /// is not introduced.
+168: struct CudaHostLaunchAttributes {
+
+### 68 编译器 builtin 声明 | D:\lvz\sdc\sccnext-main\sccnext-main\clang\lib\Headers\sdc\sdc_builtins.h:897
+894:     maskOut    : __int32x4, 可选参数，D矩阵mask，1: 对应的TMEM lane的D矩阵不用更新，0:对应的TMEM lane的D矩阵需要照常更新; 
+895:     N          : scale-input-d， 当它启用时，计算公式为D = A * B + D * (2 ^ - scale-input-d), 以模板参数形式出现是因为对应的builtin参数必须是立即数(编译期常量)
+896: */
+897: void __sdc_uten_mma_bf16(uint32_t dTmem, uint64_t aDesc, uint64_t bDesc, uint32_t iDesc, uint32_t inputD);
+898: void __sdc_uten_mma_bf16_atmem(uint32_t dTmem, uint32_t aTmem, uint64_t bDesc, uint32_t iDesc, uint32_t inputD);
+899: void __sdc_uten_mma_bf16_atmem_maskout(uint32_t dTmem, uint32_t aTmem, uint64_t bDesc, uint32_t iDesc, __int32x4 maskOut, uint32_t inputD);
+900: void __sdc_uten_mma_bf16_atmem_maskout_dscale(uint32_t dTmem, uint32_t aTmem, uint64_t bDesc, uint32_t iDesc, __int32x4 maskOut, uint32_t inputD, int N);
+901: void __sdc_uten_mma_bf16_atmem_dscale(uint32_t dTmem, uint32_t aTmem, uint64_t bDesc, uint32_t iDesc, uint32_t inputD, int N);
+902: void __sdc_uten_mma_bf16_maskout(uint32_t dTmem, uint64_t aDesc, uint64_t bDesc, uint32_t iDesc, __int32x4 maskOut, uint32_t inputD);
+903: void __sdc_uten_mma_bf16_maskout_dscale(uint32_t dTmem, uint64_t aDesc, uint64_t bDesc, uint32_t iDesc, __int32x4 maskOut, uint32_t inputD, int N);
+904: void __sdc_uten_mma_bf16_dscale(uint32_t dTmem, uint64_t aDesc, uint64_t bDesc, uint32_t iDesc, uint32_t inputD, int N);
+905: void __sdc_uten_mma_bf16_discard(uint32_t dTmem, uint64_t aDesc, uint64_t bDesc, uint32_t iDesc, uint32_t inputD);
+906: void __sdc_uten_mma_bf16_discard_atmem(uint32_t dTmem, uint32_t aTmem, uint64_t bDesc, uint32_t iDesc, uint32_t inputD);
+907: void __sdc_uten_mma_bf16_discard_atmem_maskout(uint32_t dTmem, uint32_t aTmem, uint64_t bDesc, uint32_t iDesc, __int32x4 maskOut, uint32_t inputD);
+908: void __sdc_uten_mma_bf16_discard_atmem_maskout_dscale(uint32_t dTmem, uint32_t aTmem, uint64_t bDesc, uint32_t iDesc, __int32x4 maskOut, uint32_t inputD, int N);
+909: void __sdc_uten_mma_bf16_discard_atmem_dscale(uint32_t dTmem, uint32_t aTmem, uint64_t bDesc, uint32_t iDesc, uint32_t inputD, int N);
+910: void __sdc_uten_mma_bf16_discard_maskout(uint32_t dTmem, uint64_t aDesc, uint64_t bDesc, uint32_t iDesc, __int32x4 maskOut, uint32_t inputD);
+911: void __sdc_uten_mma_bf16_discard_maskout_dscale(uint32_t dTmem, uint64_t aDesc, uint64_t bDesc, uint32_t iDesc, __int32x4 maskOut, uint32_t inputD, int N);
+912: void __sdc_uten_mma_bf16_discard_dscale(uint32_t dTmem, uint64_t aDesc, uint64_t bDesc, uint32_t iDesc, uint32_t inputD, int N);
+913: void __sdc_uten_mma_bf16_fill(uint32_t dTmem, uint64_t aDesc, uint64_t bDesc, uint32_t iDesc, uint32_t inputD);
+
+### D:\lvz\sdc\cutlass\include\cute\arch\mma_sdc200_umma.hpp:72
+72:   struct SDC200_MMA_F16BF16_SS
+73:   {
+74:     static_assert(M == 64 || M == 128, "SDC200_MMA_F16BF16 M-mode size should be "
+75:                                        "64 or 128 for 1 CTA cluster MMA.");
+76:     static_assert((N % 8 == 0) && (8 <= N) && (N <= 256),
+77:                   "SDC200_MMA_F16BF16 N-mode size should be a multiple of 8 "
+78:                   "between 8 and 256.");
+79: 
+80:     // CuTe MMA Operation 的底层 ABI/fragment 元数据：
+81:     // - A/B 各占一个 64 位通用寄存器，保存 SMEM 描述符而非矩阵元素；
+82:     // - C 以一个 32 位值表示 TMEM 累加器地址；
+83:     // - D 没有独立的寄存器返回 fragment，结果直接写到 tmem_c 指向的 TMEM。
+84:     using DRegisters = void;
+85:     using ARegisters = uint64_t[1];
+86:     using BRegisters = uint64_t[1];
+87:     using CRegisters = uint32_t[1];
+88: 
+89:     /**
+90:      * 发射一次 `D = A * B` 或 `D = A * B + C` 的 SDC200 UMMA 操作。
+91:      * C 与 D 使用同一片 TMEM 存储，因此累加情形也可写成 `D = A * B + D_old`。
+92:      *
+93:      * 参数：
+94:      *   desc_a - A 的 64 位 SMEM 描述符，编码共享内存起始地址、步长、swizzle
+95:      *            及布局类型；它不是普通指针，也不携带 A 的矩阵元素。
+96:      *   desc_b - B 的 64 位 SMEM 描述符，编码内容与 desc_a 对 B 相同。
+97:      *   tmem_c - C/D fragment 的 32 位 TMEM 原始地址；builtin 从此处读取旧累加值
+98:      *            （若启用累加），并把最终 D 写回同一地址。
+99:      *   scaleC - 传给 builtin 的 inputD 控制值：0 忽略旧 TMEM 值并覆盖 D，非 0
+100:      *            读取旧值并执行累加。它在这里不是任意数值缩放因子。
+101:      *   idescE - 组合运行时描述符：高 32 位是 InstrDescriptor，低 32 位预留给
+102:      *            稀疏 MMA 的 E 元数据 TMEM 地址；本稠密路径忽略低 32 位。
+103:      *
+104:      * 参数采用 const 引用是为了匹配 CuTe 操作接口；builtin 最终按值接收这些
+105:      * 标量。调用方需保证所有参与线程以一致的控制流到达 elect_one_sync()。
+106:      */
+107:     CUTE_HOST_DEVICE static void
+108:     fma(uint64_t const &desc_a, uint64_t const &desc_b, uint32_t const &tmem_c,
+109:         uint32_t const &scaleC, uint64_t const &idescE)
+110:     {
+111:       // UMMA 是单线程发射的协作操作：同步参与线程，并只让选中的线程调用 builtin，
+112:       // 避免同一协作组重复发射同一条矩阵乘加指令。
+113:       if (cute::elect_one_sync())
+114:       {
+115:         // SDC builtin 仅接收 32 位指令描述符，因此取 idescE 的高 32 位；
+116:         // 参数依次为 D 的 TMEM 地址、A/B 的 SMEM 描述符、指令描述符和 inputD。
+117:         __sdc_uten_mma_bf16(tmem_c, desc_a, desc_b, uint32_t(idescE >> 32),
+118:                             scaleC);
+119:       }
+120:     }
+121:   };
+
+### D:\lvz\sdc\cutlass\include\cute\arch\mma_sdc200_desc.hpp:109
+109:     union SmemDescriptor
+110:     {
+111:       uint64_t desc_ = 0;
+112:       // Bitfield implementation avoids the need for shifts in assignment
+113:       struct
+114:       {
+115: 
+116:         // start_address, bit [0,14), 4LSB not included
+117:         uint16_t start_address_ : 14, : 2; // 14 bits [0,14), 2 bits unused
+118:         // leading dimension byte offset, bit [16,30), 4LSB not included
+119:         uint16_t leading_byte_offset_ : 14, : 2; // 14 bits [0,14), 2 bits unused
+120: 
+121:         // stride dimension byte offset, bit [32,46), 4LSB not included
+122:         uint16_t stride_byte_offset_ : 14, version_ : 2; // 14 bits [0,14), 2 bits [14,16)
+123:         // base_offset, bit [49,52). leading_byte_offset_mode, bit [52,53).
+124:         uint8_t : 1, base_offset_ : 3, lbo_mode_ : 1, : 3; // 1 bit unused, 3 bits [1,4), 1 bit [4,5), 3 bits unused
+125:         // layout type, bit [61,64), SWIZZLE_NONE matrix descriptor = 0, SWIZZLE_128B matrix descriptor = 2, SWIZZLE_64B descriptor = 4, SWIZZLE_32B descriptor = 6, SWIZZLE_128B_BASE32B = 1, N/A = 3, N/A = 5, N/A = 7
+126:         uint8_t : 5, layout_type_ : 3; // 6 bits unused, 3 bits [5,8)
+127:       };
+128:       // Seperate the field, as we may only update one part of desc
+129:       struct
+130:       {
+131:         uint32_t lo;
+132:         uint32_t hi;
+133:       };
+134: 
+135:       // Decay to a uint64_t
+136:       CUTE_HOST_DEVICE constexpr
+137:       operator uint64_t() const noexcept { return desc_; }
+138:     };
+139: 
+140:     enum class F16F32Format : uint8_t
+141:     {
+142:       F16 = 0,
+143:       BF16 = 1,
+144:       TF32 = 2,
+145:     };
+146: 
+147:     CUTE_HOST_DEVICE char const *to_string(F16F32Format const &t)
+148:     {
+149:       switch (t)
+150:       {
+151:       case F16F32Format::F16:
+152:         return "F16";
+153:       case F16F32Format::BF16:
+154:         return "BF16";
+155:       case F16F32Format::TF32:
+156:         return "TF32";
+157:       }
+158:       return nullptr;
+159:     }
+160: 
+
+### D:\lvz\sdc\cutlass\include\cute\arch\cluster_sdc200.hpp:175
+175:   return smemAddr;
+176: #endif
+177: }
+178: 
+179: // Elect one thread in the warp. The elected thread gets its predicate set to true, all others obtain false.
+180: CUTE_HOST_DEVICE uint32_t elect_one_sync()
+181: {
+182: #if defined(CUTE_ARCH_ELECT_ONE_SM90_ENABLED)
+183:   uint32_t pred = 0;
+184:   uint32_t laneid = 0;
+185:   asm volatile(
+186:     "{\n"
+187:     ".reg .b32 %%rx;\n"
+188:     ".reg .pred %%px;\n"
+189:     "     elect.sync %%rx|%%px, %2;\n"
+190:     "@%%px mov.s32 %1, 1;\n"
+191:     "     mov.s32 %0, %%rx;\n"
+192:     "}\n"
+193:     : "+r"(laneid), "+r"(pred)
+194:     : "r"(0xFFFFFFFF));
+195:   return pred;
+196: #elif defined(__CUDA_ARCH__)
+197:   return (threadIdx.x % 32) == 0;
+198: #else
+199:   return true;
+200: #endif
+201: }
+202: 
+203: struct ElectOneLaneIdReturnType {
+204:   uint32_t is_leader;
+205:   uint32_t leader_lane_id;
+206: };
+207: 
+
+### D:\lvz\sdc\sccnext-main\sccnext-main\clang\lib\Headers\sdc\sdc_builtins.h:892
+892:     iDesc      : uint32_t, instruction descriptor
+893:     inputD     : uint32_t, enable-input-d, 当 enable-input-d 为 0 时，MMA 运算公式变为 D = A * B;
+894:     maskOut    : __int32x4, 可选参数，D矩阵mask，1: 对应的TMEM lane的D矩阵不用更新，0:对应的TMEM lane的D矩阵需要照常更新; 
+895:     N          : scale-input-d， 当它启用时，计算公式为D = A * B + D * (2 ^ - scale-input-d), 以模板参数形式出现是因为对应的builtin参数必须是立即数(编译期常量)
+896: */
+897: void __sdc_uten_mma_bf16(uint32_t dTmem, uint64_t aDesc, uint64_t bDesc, uint32_t iDesc, uint32_t inputD);
+898: void __sdc_uten_mma_bf16_atmem(uint32_t dTmem, uint32_t aTmem, uint64_t bDesc, uint32_t iDesc, uint32_t inputD);
+899: void __sdc_uten_mma_bf16_atmem_maskout(uint32_t dTmem, uint32_t aTmem, uint64_t bDesc, uint32_t iDesc, __int32x4 maskOut, uint32_t inputD);
+900: void __sdc_uten_mma_bf16_atmem_maskout_dscale(uint32_t dTmem, uint32_t aTmem, uint64_t bDesc, uint32_t iDesc, __int32x4 maskOut, uint32_t inputD, int N);
